@@ -7,6 +7,7 @@ using NicaRunner.Api.Middleware;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Dashboard;
 using NicaRunner.Application.PublicResults;
 using NicaRunner.Application.Races;
 using NicaRunner.Application.Results;
@@ -60,6 +61,7 @@ builder.Services.AddScoped<IRaceCategoryService, RaceCategoryService>();
 builder.Services.AddScoped<IRunnerService, RunnerService>();
 builder.Services.AddScoped<IResultService, ResultService>();
 builder.Services.AddScoped<IPublicResultService, PublicResultService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services
