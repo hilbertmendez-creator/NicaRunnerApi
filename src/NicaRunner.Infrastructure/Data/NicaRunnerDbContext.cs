@@ -30,6 +30,15 @@ public class NicaRunnerDbContext : DbContext
             .HasIndex(t => t.Token)
             .IsUnique();
 
+        // FK explícito: la convención de EF no detecta CreatedBy como la clave foránea
+        // de la navegación Creator (no sigue el patrón "<Navegacion>Id"), y sin esto
+        // EF crea una columna sombra "CreatorId" adicional que nunca se rellena.
+        modelBuilder.Entity<PublicResultToken>()
+            .HasOne(t => t.Creator)
+            .WithMany()
+            .HasForeignKey(t => t.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Email único por usuario
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
