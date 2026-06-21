@@ -8,6 +8,7 @@ using NicaRunner.Application.Auth;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Races;
+using NicaRunner.Application.Results;
 using NicaRunner.Application.Runners;
 using NicaRunner.Infrastructure.Data;
 using NicaRunner.Infrastructure.Repositories;
@@ -45,12 +46,15 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IRaceCategoryRepository, RaceCategoryRepository>();
 builder.Services.AddScoped<IRunnerRepository, RunnerRepository>();
+builder.Services.AddScoped<IResultRepository, ResultRepository>();
+builder.Services.AddScoped<IResultAuditRepository, ResultAuditRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IRaceCategoryService, RaceCategoryService>();
 builder.Services.AddScoped<IRunnerService, RunnerService>();
+builder.Services.AddScoped<IResultService, ResultService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services

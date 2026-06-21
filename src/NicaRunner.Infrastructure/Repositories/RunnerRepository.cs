@@ -10,6 +10,9 @@ public class RunnerRepository(NicaRunnerDbContext context) : IRunnerRepository
     public Task<Runner?> GetByIdAsync(int raceId, int runnerId, CancellationToken ct = default) =>
         context.Runners.FirstOrDefaultAsync(r => r.RaceId == raceId && r.Id == runnerId, ct);
 
+    public Task<Runner?> GetByDorsalAsync(int raceId, string dorsal, CancellationToken ct = default) =>
+        context.Runners.FirstOrDefaultAsync(r => r.RaceId == raceId && r.Dorsal == dorsal, ct);
+
     public Task<List<Runner>> GetAllByRaceAsync(int raceId, CancellationToken ct = default) =>
         context.Runners
             .Where(r => r.RaceId == raceId)
