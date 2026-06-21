@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NicaRunner.Api.Middleware;
 using NicaRunner.Application.Auth;
+using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Races;
 using NicaRunner.Infrastructure.Data;
@@ -41,10 +42,12 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
+builder.Services.AddScoped<IRaceCategoryRepository, RaceCategoryRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
+builder.Services.AddScoped<IRaceCategoryService, RaceCategoryService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services
