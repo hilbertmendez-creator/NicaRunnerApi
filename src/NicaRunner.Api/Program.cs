@@ -46,6 +46,7 @@ builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
 });
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
@@ -56,7 +57,11 @@ builder.Services.AddScoped<IResultAuditRepository, ResultAuditRepository>();
 builder.Services.AddScoped<IExcelRunnerParser, ExcelRunnerParser>();
 builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenRepository>();
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
-builder.Services.AddScoped<INotificationSender, StubEmailSender>();
+builder.Services.AddHttpClient<ResendEmailSender>(client =>
+{
+    client.BaseAddress = new Uri("https://api.resend.com/");
+});
+builder.Services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<ResendEmailSender>());
 builder.Services.AddScoped<INotificationSender, StubWhatsAppSender>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
