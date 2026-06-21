@@ -18,6 +18,8 @@ export function RaceDetailPage() {
 
   useEffect(() => {
     if (!Number.isInteger(id)) {
+      // One-time bail-out for an invalid route param, not a derived-state mirror.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNotFound(true)
       return
     }

@@ -15,10 +15,16 @@ export function usePolling<T>(
   const [error, setError] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
   const fetcherRef = useRef(fetcher)
-  fetcherRef.current = fetcher
+
+  useEffect(() => {
+    fetcherRef.current = fetcher
+  })
 
   useEffect(() => {
     let cancelled = false
+    // Effect-driven data fetching with a loading flag is the pattern React's own
+    // docs recommend (https://react.dev/learn/synchronizing-with-effects#fetching-data).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
 
     async function tick() {
