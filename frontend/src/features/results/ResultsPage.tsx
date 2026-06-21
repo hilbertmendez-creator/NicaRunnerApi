@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
-import { getResults } from '../../api/endpoints'
+import { getResults, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
 import { EditResultModal } from './EditResultModal'
@@ -15,6 +15,16 @@ export function ResultsPage() {
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<ResultDto | null>(null)
   const [auditingId, setAuditingId] = useState<number | null>(null)
+  const [notifyingId, setNotifyingId] = useState<number | null>(null)
+
+  async function handleNotify(resultId: number) {
+    setNotifyingId(resultId)
+    try {
+      await notifyResult(resultId)
+    } finally {
+      setNotifyingId(null)
+    }
+  }
 
   function reload() {
     if (!raceId) return
@@ -66,12 +76,21 @@ export function ResultsPage() {
                       Auditoría
                     </button>
                     {canEdit && (
-                      <button
-                        onClick={() => setEditing(result)}
-                        className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
-                      >
-                        Editar
-                      </button>
+                      <>
+                        <button
+                          onClick={() => setEditing(result)}
+                          className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleNotify(result.id)}
+                          disabled={notifyingId === result.id}
+                          className="rounded border border-teal-300 px-2 py-1 text-xs text-teal-700 hover:bg-teal-50 disabled:opacity-60"
+                        >
+                          {notifyingId === result.id ? 'Enviando...' : 'Notificar'}
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>

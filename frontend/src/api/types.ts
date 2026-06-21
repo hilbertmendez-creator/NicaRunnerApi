@@ -95,3 +95,105 @@ export interface ResultAuditDto {
   razon?: string | null
   createdAt: string
 }
+
+export interface CreateRaceRequest {
+  nombre: string
+  descripcion?: string | null
+  fechaCarrera: string
+}
+
+export interface UpdateRaceRequest {
+  nombre: string
+  descripcion?: string | null
+  fechaCarrera: string
+  estado: RaceStatus
+}
+
+export interface RaceCategoryDto {
+  id: number
+  raceId: number
+  nombreCategoria: string
+  distancia: number
+  edadMinima: number
+  edadMaxima: number
+  orden: number
+}
+
+export interface CreateRaceCategoryRequest {
+  nombreCategoria: string
+  distancia: number
+  edadMinima: number
+  edadMaxima: number
+  orden: number
+}
+
+export type UpdateRaceCategoryRequest = CreateRaceCategoryRequest
+
+export interface RunnerDto {
+  id: number
+  raceId: number
+  nombre: string
+  dorsal: string
+  telefono?: string | null
+  email?: string | null
+  edad: number
+  categoryId: number
+  createdAt: string
+}
+
+export interface CreateRunnerRequest {
+  nombre: string
+  dorsal: string
+  telefono?: string | null
+  email?: string | null
+  edad: number
+  categoryId: number
+}
+
+export type UpdateRunnerRequest = CreateRunnerRequest
+
+export interface ImportRunnerError {
+  fila: number
+  motivo: string
+}
+
+export interface ImportRunnersResultDto {
+  totalFilas: number
+  importados: number
+  errores: ImportRunnerError[]
+}
+
+export type NotificationChannel = 'Email' | 'WhatsApp'
+export type NotificationStatus = 'Pendiente' | 'Enviada' | 'Fallida'
+
+export interface NotificationDto {
+  id: number
+  raceId: number
+  runnerId: number
+  resultId: number
+  channel: NotificationChannel
+  status: NotificationStatus
+  mensaje: string
+  error?: string | null
+  createdAt: string
+  sentAt?: string | null
+}
+
+export interface NotifyAllSummaryDto {
+  totalResultados: number
+  notificacionesCreadas: number
+  enviadas: number
+  fallidas: number
+}
+
+export interface PublicTokenDto {
+  id: number
+  raceId: number
+  token: string
+  fechaExpiracion: string
+  createdAt: string
+}
+
+export interface CreatePublicTokenRequest {
+  diasExpiracion: number
+}
