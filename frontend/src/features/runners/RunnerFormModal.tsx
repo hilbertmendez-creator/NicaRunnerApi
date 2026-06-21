@@ -1,11 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { RaceCategoryDto, RunnerDto } from '../../api/types'
 import { createRunner, updateRunner } from '../../api/endpoints'
-import { Modal } from '../../components/Modal'
-import { Button } from '../../components/Button'
-import { Label } from '../../components/form/Label'
-import { Input } from '../../components/form/Input'
-import { Select } from '../../components/form/Select'
+import { Modal, Button, Label, Input, Select } from '@nicarunner/ui'
 
 interface RunnerFormModalProps {
   raceId: number

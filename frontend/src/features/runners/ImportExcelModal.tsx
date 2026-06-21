@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react'
 import { importRunnersExcel } from '../../api/endpoints'
 import type { ImportRunnersResultDto } from '../../api/types'
-import { Modal } from '../../components/Modal'
-import { Button } from '../../components/Button'
+import { Modal, Button } from '@nicarunner/ui'
 
 interface ImportExcelModalProps {
   raceId: number

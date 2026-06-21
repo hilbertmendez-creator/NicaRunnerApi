@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/auth-context'
-import { Button } from './Button'
+import { Button } from '@nicarunner/ui'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard' },

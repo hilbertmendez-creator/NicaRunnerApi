@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { deleteCategory, getCategories } from '../../api/endpoints'
 import type { RaceCategoryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button } from '../../components/Button'
+import { Button } from '@nicarunner/ui'
 import { CategoryFormModal } from './CategoryFormModal'
 
 export function CategoriesTab({ raceId }: { raceId: number }) {

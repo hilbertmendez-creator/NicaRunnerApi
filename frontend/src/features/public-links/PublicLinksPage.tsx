@@ -3,9 +3,7 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { createPublicToken, getPublicTokens } from '../../api/endpoints'
 import type { PublicTokenDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button } from '../../components/Button'
-import { Label } from '../../components/form/Label'
-import { Input } from '../../components/form/Input'
+import { Button, Label, Input } from '@nicarunner/ui'
 
 function publicUrl(token: string) {
   return `${window.location.origin}/resultados/${token}`
