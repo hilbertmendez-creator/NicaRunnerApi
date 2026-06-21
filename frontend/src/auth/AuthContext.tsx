@@ -1,25 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { login as loginRequest } from '../api/endpoints'
 import { getStoredToken, setStoredToken, setUnauthorizedHandler } from '../api/client'
-import type { UserRole } from '../api/types'
-
-interface CurrentUser {
-  userId: number
-  email: string
-  nombre: string
-  role: UserRole
-}
+import { AuthContext, type AuthContextValue, type CurrentUser } from './auth-context'
 
 const USER_STORAGE_KEY = 'nicarunner.user'
-
-interface AuthContextValue {
-  user: CurrentUser | null
-  isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
 
 function readStoredUser(): CurrentUser | null {
   const raw = localStorage.getItem(USER_STORAGE_KEY)
@@ -65,10 +49,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider')
-  return ctx
 }

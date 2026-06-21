@@ -16,6 +16,8 @@ export function PublicResultsPage() {
   useEffect(() => {
     if (!token) return
     let cancelled = false
+    // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     getPublicResults(token)
       .then((result) => !cancelled && setData(result))

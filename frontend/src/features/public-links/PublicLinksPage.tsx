@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
 import { createPublicToken, getPublicTokens } from '../../api/endpoints'
 import type { PublicTokenDto } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/auth-context'
 import { Button } from '../../components/Button'
 import { Label } from '../../components/form/Label'
 import { Input } from '../../components/form/Input'
@@ -30,6 +30,8 @@ export function PublicLinksPage() {
       .finally(() => setLoading(false))
   }
 
+  // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(reload, [raceId])
 
   async function handleCreate() {

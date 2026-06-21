@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
 import { notifyAll } from '../../api/endpoints'
 import type { NotifyAllSummaryDto } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/auth-context'
 import { Button } from '../../components/Button'
 
 export function NotificationsPage() {

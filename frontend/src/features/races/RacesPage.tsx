@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { deleteRace, getRaces } from '../../api/endpoints'
 import type { RaceDto } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/auth-context'
 import { StatusBadge } from '../../components/StatusBadge'
 import { Button } from '../../components/Button'
 import { RaceFormModal } from './RaceFormModal'
@@ -23,6 +23,8 @@ export function RacesPage() {
       .finally(() => setLoading(false))
   }
 
+  // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(reload, [])
 
   async function handleDelete(race: RaceDto) {

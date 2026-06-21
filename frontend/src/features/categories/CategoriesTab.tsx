@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { deleteCategory, getCategories } from '../../api/endpoints'
 import type { RaceCategoryDto } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/auth-context'
 import { Button } from '../../components/Button'
 import { CategoryFormModal } from './CategoryFormModal'
 
@@ -21,6 +21,8 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
       .finally(() => setLoading(false))
   }
 
+  // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(reload, [raceId])
 
   async function handleDelete(category: RaceCategoryDto) {

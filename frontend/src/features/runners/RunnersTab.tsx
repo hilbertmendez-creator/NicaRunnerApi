@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { deleteRunner, getCategories, getRunners } from '../../api/endpoints'
 import type { RaceCategoryDto, RunnerDto } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/auth-context'
 import { Button } from '../../components/Button'
 import { RunnerFormModal } from './RunnerFormModal'
 import { ImportExcelModal } from './ImportExcelModal'
@@ -27,6 +27,8 @@ export function RunnersTab({ raceId }: { raceId: number }) {
       .finally(() => setLoading(false))
   }
 
+  // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(reload, [raceId])
 
   function categoryName(categoryId: number) {

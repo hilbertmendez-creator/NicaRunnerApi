@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
 import { getResults, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
-import { useAuth } from '../../auth/AuthContext'
+import { useAuth } from '../../auth/auth-context'
 import { Button } from '../../components/Button'
 import { EditResultModal } from './EditResultModal'
 import { AuditHistory } from './AuditHistory'
@@ -35,6 +35,8 @@ export function ResultsPage() {
       .finally(() => setLoading(false))
   }
 
+  // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(reload, [raceId])
 
   return (
