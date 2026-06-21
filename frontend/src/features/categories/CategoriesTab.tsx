@@ -59,7 +59,7 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
             </tr>
           </thead>
           <tbody>
-            {categories
+            {[...categories]
               .sort((a, b) => a.orden - b.orden)
               .map((cat) => (
                 <tr key={cat.id} className="border-t border-gray-100">

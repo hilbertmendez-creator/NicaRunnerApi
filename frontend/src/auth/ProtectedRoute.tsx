@@ -7,14 +7,23 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, logout } = useAuth()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-100 text-center">
+        <p className="text-sm text-gray-700">
+          Tu rol ({user.role}) no tiene acceso al back office. Usa la app móvil de captura.
+        </p>
+        <button onClick={logout} className="text-sm text-blue-700 hover:underline">
+          Cerrar sesión
+        </button>
+      </div>
+    )
   }
 
   return <Outlet />

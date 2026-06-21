@@ -9,6 +9,8 @@ import type {
   ImportRunnersResultDto,
   NotificationDto,
   NotifyAllSummaryDto,
+  PublicRaceResultsDto,
+  PublicRunnerDetailDto,
   PublicTokenDto,
   RaceCategoryDto,
   RaceDashboardDto,
@@ -165,5 +167,18 @@ export async function createPublicToken(
   request: CreatePublicTokenRequest,
 ): Promise<PublicTokenDto> {
   const { data } = await apiClient.post<PublicTokenDto>(`/races/${raceId}/public-token`, request)
+  return data
+}
+
+export async function getPublicResults(token: string): Promise<PublicRaceResultsDto> {
+  const { data } = await apiClient.get<PublicRaceResultsDto>(`/public/results/${token}`)
+  return data
+}
+
+export async function getPublicRunnerResult(
+  token: string,
+  runnerId: number,
+): Promise<PublicRunnerDetailDto> {
+  const { data } = await apiClient.get<PublicRunnerDetailDto>(`/public/runner/${token}/${runnerId}`)
   return data
 }

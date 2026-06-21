@@ -13,11 +13,29 @@ export function RaceDetailPage() {
   const id = Number(raceId)
 
   const [race, setRace] = useState<RaceDto | null>(null)
+  const [notFound, setNotFound] = useState(false)
   const [tab, setTab] = useState<Tab>('categorias')
 
   useEffect(() => {
-    getRace(id).then(setRace)
+    if (!Number.isInteger(id)) {
+      setNotFound(true)
+      return
+    }
+    getRace(id)
+      .then(setRace)
+      .catch(() => setNotFound(true))
   }, [id])
+
+  if (notFound) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-gray-700">No se encontró la carrera solicitada.</p>
+        <Link to="/carreras" className="text-sm text-blue-700 hover:underline">
+          ← Volver a carreras
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">

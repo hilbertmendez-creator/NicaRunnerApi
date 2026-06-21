@@ -197,3 +197,34 @@ export interface PublicTokenDto {
 export interface CreatePublicTokenRequest {
   diasExpiracion: number
 }
+
+export interface PublicRunnerResultDto {
+  runnerId: number
+  nombre: string
+  dorsal: string
+  posicion: number
+  tiempoLlegada: string
+}
+
+export interface PublicCategoryResultsDto {
+  nombreCategoria: string
+  distancia: number
+  resultados: PublicRunnerResultDto[]
+}
+
+export interface PublicRaceResultsDto {
+  raceName: string
+  fechaCarrera: string
+  categorias: PublicCategoryResultsDto[]
+}
+
+export interface PublicRunnerDetailDto {
+  raceName: string
+  nombreCategoria: string
+  distancia: number
+  runnerId: number
+  nombre: string
+  dorsal: string
+  posicion: number
+  tiempoLlegada: string
+}
