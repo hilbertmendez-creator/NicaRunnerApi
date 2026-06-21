@@ -9,6 +9,7 @@ import { RacesPage } from './features/races/RacesPage'
 import { RaceDetailPage } from './features/races/RaceDetailPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { PublicLinksPage } from './features/public-links/PublicLinksPage'
+import { PublicResultsPage } from './features/public-results/PublicResultsPage'
 
 function App() {
   return (
@@ -16,8 +17,9 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/resultados/:token" element={<PublicResultsPage />} />
 
-          <Route element={<ProtectedRoute />}>
+          <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Lector']} />}>
             <Route element={<AppLayout />}>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/carreras" element={<RacesPage />} />

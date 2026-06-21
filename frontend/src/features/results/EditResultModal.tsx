@@ -6,7 +6,7 @@ interface EditResultModalProps {
   raceId: number
   result: ResultDto
   onClose: () => void
-  onSaved: (updated: ResultDto) => void
+  onSaved: () => void
 }
 
 function toLocalInputValue(iso: string) {
@@ -27,12 +27,12 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
     setError(null)
     setSubmitting(true)
     try {
-      const updated = await updateResult(raceId, result.id, {
+      await updateResult(raceId, result.id, {
         dorsal,
         tiempoLlegada: new Date(tiempoLlegada).toISOString(),
         razon,
       })
-      onSaved(updated)
+      onSaved()
     } catch {
       setError('No se pudo guardar el cambio. Verifica los datos.')
     } finally {
