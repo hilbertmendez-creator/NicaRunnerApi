@@ -8,7 +8,8 @@ namespace NicaRunner.Application.Runners;
 public class RunnerService(
     IRunnerRepository runnerRepository,
     IRaceRepository raceRepository,
-    IRaceCategoryRepository categoryRepository) : IRunnerService
+    IRaceCategoryRepository categoryRepository,
+    IExcelRunnerParser excelRunnerParser) : IRunnerService
 {
     public async Task<RunnerDto> CreateAsync(int raceId, CreateRunnerRequest request, CancellationToken ct = default)
     {
@@ -74,6 +75,77 @@ public class RunnerService(
         runnerRepository.Remove(runner);
         await runnerRepository.SaveChangesAsync(ct);
     }
+
+    public async Task<ImportRunnersResultDto> ImportFromExcelAsync(int raceId, Stream excelStream, CancellationToken ct = default)
+    {
+        await EnsureRaceExistsAsync(raceId, ct);
+
+        var rows = excelRunnerParser.Parse(excelStream);
+
+        var categoriesByName = (await categoryRepository.GetAllByRaceAsync(raceId, ct))
+            .GroupBy(c => Normalize(c.NombreCategoria))
+            .ToDictionary(g => g.Key, g => g.First());
+
+        var existingDorsals = (await runnerRepository.GetAllByRaceAsync(raceId, ct))
+            .Select(r => r.Dorsal)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var seenDorsals = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var errors = new List<ImportRunnerError>();
+        var toAdd = new List<Runner>();
+
+        foreach (var row in rows)
+        {
+            var reasons = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(row.Nombre))
+                reasons.Add("Nombre vacío");
+
+            if (string.IsNullOrWhiteSpace(row.Dorsal))
+                reasons.Add("Dorsal vacío");
+
+            if (row.Edad is null)
+                reasons.Add("Edad inválida o vacía");
+
+            RaceCategory? category = null;
+            if (string.IsNullOrWhiteSpace(row.Categoria))
+                reasons.Add("Categoría vacía");
+            else if (!categoriesByName.TryGetValue(Normalize(row.Categoria), out category))
+                reasons.Add($"La categoría '{row.Categoria}' no existe en esta carrera");
+
+            if (reasons.Count == 0 && !string.IsNullOrWhiteSpace(row.Dorsal) &&
+                (existingDorsals.Contains(row.Dorsal) || seenDorsals.Contains(row.Dorsal)))
+                reasons.Add($"El dorsal '{row.Dorsal}' ya existe en esta carrera o está duplicado en el archivo");
+
+            if (reasons.Count > 0)
+            {
+                errors.Add(new ImportRunnerError(row.Fila, string.Join("; ", reasons)));
+                continue;
+            }
+
+            seenDorsals.Add(row.Dorsal);
+            toAdd.Add(new Runner
+            {
+                RaceId = raceId,
+                Nombre = row.Nombre.Trim(),
+                Dorsal = row.Dorsal.Trim(),
+                Telefono = row.Telefono,
+                Email = row.Email,
+                Edad = row.Edad!.Value,
+                CategoryId = category!.Id
+            });
+        }
+
+        if (toAdd.Count > 0)
+        {
+            await runnerRepository.AddRangeAsync(toAdd, ct);
+            await runnerRepository.SaveChangesAsync(ct);
+        }
+
+        return new ImportRunnersResultDto(rows.Count, toAdd.Count, errors);
+    }
+
+    private static string Normalize(string value) => value.Trim().ToLowerInvariant();
 
     private async Task EnsureRaceExistsAsync(int raceId, CancellationToken ct)
     {

@@ -27,6 +27,9 @@ public class RunnerRepository(NicaRunnerDbContext context) : IRunnerRepository
     public async Task AddAsync(Runner runner, CancellationToken ct = default) =>
         await context.Runners.AddAsync(runner, ct);
 
+    public async Task AddRangeAsync(IEnumerable<Runner> runners, CancellationToken ct = default) =>
+        await context.Runners.AddRangeAsync(runners, ct);
+
     public void Remove(Runner runner) => context.Runners.Remove(runner);
 
     public Task SaveChangesAsync(CancellationToken ct = default) =>

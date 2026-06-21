@@ -39,4 +39,17 @@ public class RunnersController(IRunnerService runnerService) : ControllerBase
         await runnerService.DeleteAsync(raceId, runnerId, ct);
         return NoContent();
     }
+
+    [HttpPost("/api/races/{raceId:int}/import-excel")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<ImportRunnersResultDto>> ImportExcel(int raceId, IFormFile file, CancellationToken ct)
+    {
+        if (file.Length == 0)
+            return BadRequest("Debe adjuntar un archivo Excel (.xlsx) con al menos una fila de datos.");
+
+        await using var stream = file.OpenReadStream();
+        var result = await runnerService.ImportFromExcelAsync(raceId, stream, ct);
+        return Ok(result);
+    }
 }

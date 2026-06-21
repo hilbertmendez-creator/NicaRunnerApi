@@ -9,6 +9,7 @@ public interface IRunnerRepository
     Task<List<Runner>> GetAllByRaceAsync(int raceId, CancellationToken ct = default);
     Task<bool> DorsalExistsAsync(int raceId, string dorsal, int? excludeRunnerId = null, CancellationToken ct = default);
     Task AddAsync(Runner runner, CancellationToken ct = default);
+    Task AddRangeAsync(IEnumerable<Runner> runners, CancellationToken ct = default);
     void Remove(Runner runner);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

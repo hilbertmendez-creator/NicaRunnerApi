@@ -11,6 +11,7 @@ using NicaRunner.Application.Races;
 using NicaRunner.Application.Results;
 using NicaRunner.Application.Runners;
 using NicaRunner.Infrastructure.Data;
+using NicaRunner.Infrastructure.Excel;
 using NicaRunner.Infrastructure.Repositories;
 using NicaRunner.Infrastructure.Security;
 
@@ -48,6 +49,7 @@ builder.Services.AddScoped<IRaceCategoryRepository, RaceCategoryRepository>();
 builder.Services.AddScoped<IRunnerRepository, RunnerRepository>();
 builder.Services.AddScoped<IResultRepository, ResultRepository>();
 builder.Services.AddScoped<IResultAuditRepository, ResultAuditRepository>();
+builder.Services.AddScoped<IExcelRunnerParser, ExcelRunnerParser>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
