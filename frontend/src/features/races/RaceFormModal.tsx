@@ -1,12 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { RaceDto, RaceStatus } from '../../api/types'
 import { createRace, updateRace } from '../../api/endpoints'
-import { Modal } from '../../components/Modal'
-import { Button } from '../../components/Button'
-import { Label } from '../../components/form/Label'
-import { Input } from '../../components/form/Input'
-import { Textarea } from '../../components/form/Textarea'
-import { Select } from '../../components/form/Select'
+import { Modal, Button, Label, Input, Textarea, Select } from '@nicarunner/ui'
 
 interface RaceFormModalProps {
   race: RaceDto | null

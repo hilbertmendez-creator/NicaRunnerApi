@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ResultAuditDto } from '../../api/types'
 import { getResultAudit } from '../../api/endpoints'
-import { Modal } from '../../components/Modal'
-import { Button } from '../../components/Button'
+import { Modal, Button } from '@nicarunner/ui'
 
 interface AuditHistoryProps {
   raceId: number

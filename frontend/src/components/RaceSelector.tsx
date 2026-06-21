@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getRaces } from '../api/endpoints'
 import type { RaceDto } from '../api/types'
-import { Select } from './form/Select'
+import { Select } from '@nicarunner/ui'
 
 interface RaceSelectorProps {
   value: number | null

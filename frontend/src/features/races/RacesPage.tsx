@@ -4,7 +4,7 @@ import { deleteRace, getRaces } from '../../api/endpoints'
 import type { RaceDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { StatusBadge } from '../../components/StatusBadge'
-import { Button } from '../../components/Button'
+import { Button } from '@nicarunner/ui'
 import { RaceFormModal } from './RaceFormModal'
 
 export function RacesPage() {

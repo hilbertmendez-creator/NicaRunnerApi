@@ -3,7 +3,7 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { notifyAll } from '../../api/endpoints'
 import type { NotifyAllSummaryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button } from '../../components/Button'
+import { Button } from '@nicarunner/ui'
 
 export function NotificationsPage() {
   const { user } = useAuth()

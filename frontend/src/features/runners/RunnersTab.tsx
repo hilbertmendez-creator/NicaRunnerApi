@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { deleteRunner, getCategories, getRunners } from '../../api/endpoints'
 import type { RaceCategoryDto, RunnerDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button } from '../../components/Button'
+import { Button } from '@nicarunner/ui'
 import { RunnerFormModal } from './RunnerFormModal'
 import { ImportExcelModal } from './ImportExcelModal'
 

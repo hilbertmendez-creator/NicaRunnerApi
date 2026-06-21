@@ -3,7 +3,7 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { getResults, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button } from '../../components/Button'
+import { Button } from '@nicarunner/ui'
 import { EditResultModal } from './EditResultModal'
 import { AuditHistory } from './AuditHistory'
 
