@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { deleteRunner, getCategories, getRunners } from '../../api/endpoints'
 import type { RaceCategoryDto, RunnerDto } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
+import { Button } from '../../components/Button'
 import { RunnerFormModal } from './RunnerFormModal'
 import { ImportExcelModal } from './ImportExcelModal'
 
@@ -43,19 +44,14 @@ export function RunnersTab({ raceId }: { raceId: number }) {
       <div className="flex items-center justify-end gap-2">
         {canManage && (
           <>
-            <button
-              onClick={() => setShowImport(true)}
-              className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Importar Excel
-            </button>
-            <button
+            <Button onClick={() => setShowImport(true)}>Importar Excel</Button>
+            <Button
+              variant="primary"
               onClick={() => setShowCreate(true)}
               disabled={categories.length === 0}
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
             >
               Nuevo corredor
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -95,18 +91,12 @@ export function RunnersTab({ raceId }: { raceId: number }) {
                 <td className="flex gap-2 py-2">
                   {canManage && (
                     <>
-                      <button
-                        onClick={() => setEditing(runner)}
-                        className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"
-                      >
+                      <Button size="sm" onClick={() => setEditing(runner)}>
                         Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(runner)}
-                        className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
-                      >
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(runner)}>
                         Eliminar
-                      </button>
+                      </Button>
                     </>
                   )}
                 </td>

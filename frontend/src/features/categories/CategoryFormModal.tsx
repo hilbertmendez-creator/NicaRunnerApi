@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import type { RaceCategoryDto } from '../../api/types'
 import { createCategory, updateCategory } from '../../api/endpoints'
+import { Modal } from '../../components/Modal'
+import { Button } from '../../components/Button'
+import { Label } from '../../components/form/Label'
+import { Input } from '../../components/form/Input'
 
 interface CategoryFormModalProps {
   raceId: number
@@ -38,25 +42,27 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30">
-      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">
+    <Modal onClose={onClose} labelledBy="category-form-title">
+      <form onSubmit={handleSubmit}>
+        <h2 id="category-form-title" className="mb-4 text-base font-semibold text-gray-900">
           {category ? 'Editar categoría' : 'Nueva categoría'}
         </h2>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
-        <input
+        <Label htmlFor="cat-nombre">Nombre</Label>
+        <Input
+          id="cat-nombre"
           value={nombreCategoria}
           onChange={(e) => setNombreCategoria(e.target.value)}
           required
           maxLength={100}
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
         <div className="mb-3 grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Distancia (km)</label>
-            <input
+            <Label htmlFor="cat-distancia">Distancia (km)</Label>
+            <Input
+              id="cat-distancia"
               type="number"
               step="0.1"
               min="0.1"
@@ -64,45 +70,48 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
               value={distancia}
               onChange={(e) => setDistancia(Number(e.target.value))}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Orden</label>
-            <input
+            <Label htmlFor="cat-orden">Orden</Label>
+            <Input
+              id="cat-orden"
               type="number"
               min="0"
               value={orden}
               onChange={(e) => setOrden(Number(e.target.value))}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full"
             />
           </div>
         </div>
 
         <div className="mb-3 grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Edad mínima</label>
-            <input
+            <Label htmlFor="cat-edad-min">Edad mínima</Label>
+            <Input
+              id="cat-edad-min"
               type="number"
               min="0"
               max="120"
               value={edadMinima}
               onChange={(e) => setEdadMinima(Number(e.target.value))}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Edad máxima</label>
-            <input
+            <Label htmlFor="cat-edad-max">Edad máxima</Label>
+            <Input
+              id="cat-edad-max"
               type="number"
               min="0"
               max="120"
               value={edadMaxima}
               onChange={(e) => setEdadMaxima(Number(e.target.value))}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full"
             />
           </div>
         </div>
@@ -110,22 +119,14 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
         {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
+          <Button type="button" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" variant="primary" disabled={submitting}>
             {submitting ? 'Guardando...' : 'Guardar'}
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </Modal>
   )
 }

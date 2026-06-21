@@ -1,6 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import type { ResultDto } from '../../api/types'
 import { updateResult } from '../../api/endpoints'
+import { Modal } from '../../components/Modal'
+import { Button } from '../../components/Button'
+import { Label } from '../../components/form/Label'
+import { Input } from '../../components/form/Input'
+import { Textarea } from '../../components/form/Textarea'
 
 interface EditResultModalProps {
   raceId: number
@@ -41,65 +46,57 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg"
-      >
-        <h2 className="mb-4 text-base font-semibold text-gray-900">
+    <Modal onClose={onClose} labelledBy="edit-result-title">
+      <form onSubmit={handleSubmit}>
+        <h2 id="edit-result-title" className="mb-4 text-base font-semibold text-gray-900">
           Editar resultado #{result.id}
         </h2>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Dorsal</label>
-        <input
+        <Label htmlFor="result-dorsal">Dorsal</Label>
+        <Input
+          id="result-dorsal"
           value={dorsal}
           onChange={(e) => setDorsal(e.target.value)}
           required
           maxLength={20}
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Tiempo de llegada</label>
-        <input
+        <Label htmlFor="result-tiempo">Tiempo de llegada</Label>
+        <Input
+          id="result-tiempo"
           type="datetime-local"
           step="1"
           value={tiempoLlegada}
           onChange={(e) => setTiempoLlegada(e.target.value)}
           required
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Razón del cambio</label>
-        <textarea
+        <Label htmlFor="result-razon">Razón del cambio</Label>
+        <Textarea
+          id="result-razon"
           value={razon}
           onChange={(e) => setRazon(e.target.value)}
           required
           minLength={3}
           maxLength={300}
           rows={3}
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
           placeholder="Ej: corrección por error de dorsal en captura"
         />
 
         {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
+          <Button type="button" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" variant="primary" disabled={submitting}>
             {submitting ? 'Guardando...' : 'Guardar'}
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </Modal>
   )
 }

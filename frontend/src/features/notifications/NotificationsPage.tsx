@@ -3,6 +3,7 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { notifyAll } from '../../api/endpoints'
 import type { NotifyAllSummaryDto } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
+import { Button } from '../../components/Button'
 
 export function NotificationsPage() {
   const { user } = useAuth()
@@ -46,13 +47,9 @@ export function NotificationsPage() {
         )}
 
         {canNotify && (
-          <button
-            onClick={handleNotifyAll}
-            disabled={!raceId || sending}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          <Button variant="primary" onClick={handleNotifyAll} disabled={!raceId || sending}>
             {sending ? 'Enviando...' : 'Notificar a todos'}
-          </button>
+          </Button>
         )}
 
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}

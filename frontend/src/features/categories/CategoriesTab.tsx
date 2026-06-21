@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { deleteCategory, getCategories } from '../../api/endpoints'
 import type { RaceCategoryDto } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
+import { Button } from '../../components/Button'
 import { CategoryFormModal } from './CategoryFormModal'
 
 export function CategoriesTab({ raceId }: { raceId: number }) {
@@ -32,12 +33,9 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-end">
         {canManage && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
+          <Button variant="primary" onClick={() => setShowCreate(true)}>
             Nueva categoría
-          </button>
+          </Button>
         )}
       </div>
 
@@ -72,18 +70,12 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
                   <td className="flex gap-2 py-2">
                     {canManage && (
                       <>
-                        <button
-                          onClick={() => setEditing(cat)}
-                          className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"
-                        >
+                        <Button size="sm" onClick={() => setEditing(cat)}>
                           Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(cat)}
-                          className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
-                        >
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(cat)}>
                           Eliminar
-                        </button>
+                        </Button>
                       </>
                     )}
                   </td>

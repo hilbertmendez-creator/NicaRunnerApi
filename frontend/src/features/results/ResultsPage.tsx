@@ -3,6 +3,7 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { getResults, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
+import { Button } from '../../components/Button'
 import { EditResultModal } from './EditResultModal'
 import { AuditHistory } from './AuditHistory'
 
@@ -69,27 +70,22 @@ export function ResultsPage() {
                   <td className="py-1.5">{new Date(result.tiempoLlegada).toLocaleString('es-NI')}</td>
                   <td className="py-1.5">{new Date(result.updatedAt).toLocaleString('es-NI')}</td>
                   <td className="flex gap-2 py-1.5">
-                    <button
-                      onClick={() => setAuditingId(result.id)}
-                      className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"
-                    >
+                    <Button size="sm" onClick={() => setAuditingId(result.id)}>
                       Auditoría
-                    </button>
+                    </Button>
                     {canEdit && (
                       <>
-                        <button
-                          onClick={() => setEditing(result)}
-                          className="rounded border border-blue-300 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50"
-                        >
+                        <Button size="sm" onClick={() => setEditing(result)}>
                           Editar
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="info"
                           onClick={() => handleNotify(result.id)}
                           disabled={notifyingId === result.id}
-                          className="rounded border border-teal-300 px-2 py-1 text-xs text-teal-700 hover:bg-teal-50 disabled:opacity-60"
                         >
                           {notifyingId === result.id ? 'Enviando...' : 'Notificar'}
-                        </button>
+                        </Button>
                       </>
                     )}
                   </td>
