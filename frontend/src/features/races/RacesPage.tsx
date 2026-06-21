@@ -4,6 +4,7 @@ import { deleteRace, getRaces } from '../../api/endpoints'
 import type { RaceDto } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
 import { StatusBadge } from '../../components/StatusBadge'
+import { Button } from '../../components/Button'
 import { RaceFormModal } from './RaceFormModal'
 
 export function RacesPage() {
@@ -35,12 +36,9 @@ export function RacesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-gray-900">Carreras</h1>
         {canManage && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
+          <Button variant="primary" onClick={() => setShowCreate(true)}>
             Nueva carrera
-          </button>
+          </Button>
         )}
       </div>
 
@@ -76,18 +74,12 @@ export function RacesPage() {
                   <td className="flex gap-2 py-2">
                     {canManage && (
                       <>
-                        <button
-                          onClick={() => setEditing(race)}
-                          className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"
-                        >
+                        <Button size="sm" onClick={() => setEditing(race)}>
                           Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(race)}
-                          className="rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
-                        >
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(race)}>
                           Eliminar
-                        </button>
+                        </Button>
                       </>
                     )}
                   </td>

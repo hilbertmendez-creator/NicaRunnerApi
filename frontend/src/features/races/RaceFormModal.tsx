@@ -1,6 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import type { RaceDto, RaceStatus } from '../../api/types'
 import { createRace, updateRace } from '../../api/endpoints'
+import { Modal } from '../../components/Modal'
+import { Button } from '../../components/Button'
+import { Label } from '../../components/form/Label'
+import { Input } from '../../components/form/Input'
+import { Textarea } from '../../components/form/Textarea'
+import { Select } from '../../components/form/Select'
 
 interface RaceFormModalProps {
   race: RaceDto | null
@@ -44,74 +50,70 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30">
-      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">
+    <Modal onClose={onClose} labelledBy="race-form-title">
+      <form onSubmit={handleSubmit}>
+        <h2 id="race-form-title" className="mb-4 text-base font-semibold text-gray-900">
           {race ? 'Editar carrera' : 'Nueva carrera'}
         </h2>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
-        <input
+        <Label htmlFor="race-nombre">Nombre</Label>
+        <Input
+          id="race-nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
           maxLength={150}
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Descripción</label>
-        <textarea
+        <Label htmlFor="race-descripcion">Descripción</Label>
+        <Textarea
+          id="race-descripcion"
           value={descripcion ?? ''}
           onChange={(e) => setDescripcion(e.target.value)}
           rows={2}
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Fecha de la carrera</label>
-        <input
+        <Label htmlFor="race-fecha">Fecha de la carrera</Label>
+        <Input
+          id="race-fecha"
           type="date"
           value={fechaCarrera}
           onChange={(e) => setFechaCarrera(e.target.value)}
           required
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
         {race && (
           <>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Estado</label>
-            <select
+            <Label htmlFor="race-estado">Estado</Label>
+            <Select
+              id="race-estado"
               value={estado}
               onChange={(e) => setEstado(e.target.value as RaceStatus)}
-              className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="mb-3 w-full"
             >
               {ESTADOS.map((e) => (
                 <option key={e} value={e}>
                   {e}
                 </option>
               ))}
-            </select>
+            </Select>
           </>
         )}
 
         {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
+          <Button type="button" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" variant="primary" disabled={submitting}>
             {submitting ? 'Guardando...' : 'Guardar'}
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </Modal>
   )
 }

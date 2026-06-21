@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { Button } from './Button'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard' },
@@ -48,12 +49,7 @@ export function AppLayout() {
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-xs font-medium text-orange-800">
               {initials}
             </div>
-            <button
-              onClick={logout}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Salir
-            </button>
+            <Button onClick={logout}>Salir</Button>
           </div>
         </div>
       </header>

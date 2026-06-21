@@ -3,6 +3,9 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { createPublicToken, getPublicTokens } from '../../api/endpoints'
 import type { PublicTokenDto } from '../../api/types'
 import { useAuth } from '../../auth/AuthContext'
+import { Button } from '../../components/Button'
+import { Label } from '../../components/form/Label'
+import { Input } from '../../components/form/Input'
 
 function publicUrl(token: string) {
   return `${window.location.origin}/resultados/${token}`
@@ -56,23 +59,20 @@ export function PublicLinksPage() {
       {canCreate && (
         <section className="flex items-end gap-3 rounded-lg bg-white p-4 shadow-sm">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Días de expiración</label>
-            <input
+            <Label htmlFor="dias-expiracion">Días de expiración</Label>
+            <Input
+              id="dias-expiracion"
               type="number"
               min="1"
               max="365"
               value={diasExpiracion}
               onChange={(e) => setDiasExpiracion(Number(e.target.value))}
-              className="w-32 rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-32"
             />
           </div>
-          <button
-            onClick={handleCreate}
-            disabled={!raceId || creating}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          <Button variant="primary" onClick={handleCreate} disabled={!raceId || creating}>
             {creating ? 'Generando...' : 'Generar enlace'}
-          </button>
+          </Button>
         </section>
       )}
 
@@ -106,12 +106,9 @@ export function PublicLinksPage() {
                     </td>
                     <td className="py-2">{new Date(token.createdAt).toLocaleDateString('es-NI')}</td>
                     <td className="py-2">
-                      <button
-                        onClick={() => handleCopy(token)}
-                        className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"
-                      >
+                      <Button size="sm" onClick={() => handleCopy(token)}>
                         {copiedId === token.id ? 'Copiado' : 'Copiar'}
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 )

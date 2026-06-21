@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getRaces } from '../api/endpoints'
 import type { RaceDto } from '../api/types'
+import { Select } from './form/Select'
 
 interface RaceSelectorProps {
   value: number | null
@@ -35,16 +36,12 @@ export function RaceSelector({ value, onChange }: RaceSelectorProps) {
   }
 
   return (
-    <select
-      value={value ?? ''}
-      onChange={(e) => onChange(Number(e.target.value))}
-      className="rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-    >
+    <Select value={value ?? ''} onChange={(e) => onChange(Number(e.target.value))}>
       {races.map((race) => (
         <option key={race.id} value={race.id}>
           {race.nombre} — {race.estado}
         </option>
       ))}
-    </select>
+    </Select>
   )
 }

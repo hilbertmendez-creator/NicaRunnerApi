@@ -1,6 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import type { RaceCategoryDto, RunnerDto } from '../../api/types'
 import { createRunner, updateRunner } from '../../api/endpoints'
+import { Modal } from '../../components/Modal'
+import { Button } from '../../components/Button'
+import { Label } from '../../components/form/Label'
+import { Input } from '../../components/form/Input'
+import { Select } from '../../components/form/Select'
 
 interface RunnerFormModalProps {
   raceId: number
@@ -40,95 +45,93 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30">
-      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-        <h2 className="mb-4 text-base font-semibold text-gray-900">
+    <Modal onClose={onClose} labelledBy="runner-form-title">
+      <form onSubmit={handleSubmit}>
+        <h2 id="runner-form-title" className="mb-4 text-base font-semibold text-gray-900">
           {runner ? 'Editar corredor' : 'Nuevo corredor'}
         </h2>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
-        <input
+        <Label htmlFor="runner-nombre">Nombre</Label>
+        <Input
+          id="runner-nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
           maxLength={150}
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
         <div className="mb-3 grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Dorsal</label>
-            <input
+            <Label htmlFor="runner-dorsal">Dorsal</Label>
+            <Input
+              id="runner-dorsal"
               value={dorsal}
               onChange={(e) => setDorsal(e.target.value)}
               required
               maxLength={20}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Edad</label>
-            <input
+            <Label htmlFor="runner-edad">Edad</Label>
+            <Input
+              id="runner-edad"
               type="number"
               min="0"
               max="120"
               value={edad}
               onChange={(e) => setEdad(Number(e.target.value))}
               required
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full"
             />
           </div>
         </div>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Categoría</label>
-        <select
+        <Label htmlFor="runner-categoria">Categoría</Label>
+        <Select
+          id="runner-categoria"
           value={categoryId}
           onChange={(e) => setCategoryId(Number(e.target.value))}
           required
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         >
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.nombreCategoria}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Teléfono</label>
-        <input
+        <Label htmlFor="runner-telefono">Teléfono</Label>
+        <Input
+          id="runner-telefono"
           value={telefono ?? ''}
           onChange={(e) => setTelefono(e.target.value)}
           maxLength={20}
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
-        <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-        <input
+        <Label htmlFor="runner-email">Email</Label>
+        <Input
+          id="runner-email"
           type="email"
           value={email ?? ''}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-3 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full"
         />
 
         {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
+          <Button type="button" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={submitting || categories.length === 0}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" variant="primary" disabled={submitting || categories.length === 0}>
             {submitting ? 'Guardando...' : 'Guardar'}
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </Modal>
   )
 }
