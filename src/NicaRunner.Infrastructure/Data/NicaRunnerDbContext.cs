@@ -17,6 +17,7 @@ public class NicaRunnerDbContext : DbContext
     public DbSet<Result> Results => Set<Result>();
     public DbSet<ResultAudit> ResultAudits => Set<ResultAudit>();
     public DbSet<PublicResultToken> PublicResultTokens => Set<PublicResultToken>();
+    public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,6 +55,24 @@ public class NicaRunnerDbContext : DbContext
             .HasOne(a => a.Result)
             .WithMany(r => r.AuditEntries)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // El historial de notificaciones no debe perderse por cascada si se borra
+        // la carrera/corredor/resultado relacionado (no hay endpoints de borrado hoy,
+        // pero se deja explícito para no depender del comportamiento por defecto de EF).
+        modelBuilder.Entity<NotificationLog>()
+            .HasOne(n => n.Race)
+            .WithMany()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<NotificationLog>()
+            .HasOne(n => n.Runner)
+            .WithMany()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<NotificationLog>()
+            .HasOne(n => n.Result)
+            .WithMany()
+            .OnDelete(DeleteBehavior.Restrict);
 
         base.OnModelCreating(modelBuilder);
     }

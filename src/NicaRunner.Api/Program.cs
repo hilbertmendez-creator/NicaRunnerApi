@@ -8,12 +8,14 @@ using NicaRunner.Application.Auth;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Dashboard;
+using NicaRunner.Application.Notifications;
 using NicaRunner.Application.PublicResults;
 using NicaRunner.Application.Races;
 using NicaRunner.Application.Results;
 using NicaRunner.Application.Runners;
 using NicaRunner.Infrastructure.Data;
 using NicaRunner.Infrastructure.Excel;
+using NicaRunner.Infrastructure.Notifications;
 using NicaRunner.Infrastructure.Repositories;
 using NicaRunner.Infrastructure.Security;
 
@@ -53,6 +55,9 @@ builder.Services.AddScoped<IResultRepository, ResultRepository>();
 builder.Services.AddScoped<IResultAuditRepository, ResultAuditRepository>();
 builder.Services.AddScoped<IExcelRunnerParser, ExcelRunnerParser>();
 builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenRepository>();
+builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
+builder.Services.AddScoped<INotificationSender, StubEmailSender>();
+builder.Services.AddScoped<INotificationSender, StubWhatsAppSender>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -62,6 +67,7 @@ builder.Services.AddScoped<IRunnerService, RunnerService>();
 builder.Services.AddScoped<IResultService, ResultService>();
 builder.Services.AddScoped<IPublicResultService, PublicResultService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services
