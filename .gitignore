@@ -17,3 +17,15 @@ obj/
 ## Secrets locales
 appsettings.*.local.json
 .env
+
+## Build/deploy artifacts
+publish/
+
+## Tooling local (Claude Code / Ruflo)
+.claude/settings.local.json
+.claude/agents/
+.claude/commands/
+.claude/helpers/
+.claude/skills/
+.claude-flow/
+.agent/
