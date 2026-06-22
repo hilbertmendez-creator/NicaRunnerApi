@@ -21,4 +21,11 @@ public class AuthController(IAuthService authService) : ControllerBase
         var result = await authService.LoginAsync(request, ct);
         return Ok(result);
     }
+
+    [HttpPost("google-login")]
+    public async Task<ActionResult<AuthResponse>> GoogleLogin(GoogleLoginRequest request, CancellationToken ct)
+    {
+        var result = await authService.GoogleLoginAsync(request, ct);
+        return Ok(result);
+    }
 }

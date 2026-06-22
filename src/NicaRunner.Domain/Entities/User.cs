@@ -7,11 +7,20 @@ public enum UserRole
     Lector
 }
 
+public enum AuthProvider
+{
+    Local,
+    Google,
+    LocalAndGoogle
+}
+
 public class User
 {
     public int Id { get; set; }
     public string Email { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty;
+    public string? PasswordHash { get; set; }
+    public string? GoogleId { get; set; }
+    public AuthProvider Provider { get; set; } = AuthProvider.Local;
     public string Nombre { get; set; } = string.Empty;
     public UserRole Role { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
