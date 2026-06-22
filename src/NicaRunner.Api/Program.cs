@@ -47,6 +47,7 @@ builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
+builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
@@ -65,6 +66,7 @@ builder.Services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<Rese
 builder.Services.AddScoped<INotificationSender, StubWhatsAppSender>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IRaceCategoryService, RaceCategoryService>();

@@ -24,6 +24,10 @@ public class ExceptionHandlingMiddleware(RequestDelegate next)
         {
             await WriteProblemAsync(context, HttpStatusCode.Unauthorized, ex.Message);
         }
+        catch (ForbiddenException ex)
+        {
+            await WriteProblemAsync(context, HttpStatusCode.Forbidden, ex.Message);
+        }
     }
 
     private static Task WriteProblemAsync(HttpContext context, HttpStatusCode statusCode, string detail)

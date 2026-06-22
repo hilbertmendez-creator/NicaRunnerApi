@@ -10,6 +10,9 @@ public class UserRepository(NicaRunnerDbContext context) : IUserRepository
     public Task<User?> GetByEmailAsync(string email, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
 
+    public Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken ct = default) =>
+        context.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId, ct);
+
     public Task<bool> EmailExistsAsync(string email, CancellationToken ct = default) =>
         context.Users.AnyAsync(u => u.Email == email, ct);
 

@@ -45,6 +45,13 @@ public class NicaRunnerDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
+        // GoogleId único, pero solo aplica a usuarios con cuenta de Google vinculada.
+        // Sin corchetes T-SQL: este modelo corre sobre Sqlite (dev) y Postgres (prod).
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.GoogleId)
+            .IsUnique()
+            .HasFilter("\"GoogleId\" IS NOT NULL");
+
         // Evitar cascade delete accidental en relaciones sensibles (auditoría, resultados)
         modelBuilder.Entity<Result>()
             .HasOne(r => r.Runner)

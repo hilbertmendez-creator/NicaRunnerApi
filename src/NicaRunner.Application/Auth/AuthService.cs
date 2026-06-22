@@ -8,7 +8,8 @@ namespace NicaRunner.Application.Auth;
 public class AuthService(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
-    IJwtTokenGenerator jwtTokenGenerator) : IAuthService
+    IJwtTokenGenerator jwtTokenGenerator,
+    IGoogleAuthService googleAuthService) : IAuthService
 {
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
     {
@@ -32,8 +33,45 @@ public class AuthService(
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
         var user = await userRepository.GetByEmailAsync(request.Email, ct);
-        if (user is null || !user.IsActive || !passwordHasher.Verify(request.Password, user.PasswordHash))
+        if (user is null || !user.IsActive || user.PasswordHash is null ||
+            !passwordHasher.Verify(request.Password, user.PasswordHash))
             throw new InvalidCredentialsException("Email o contraseña incorrectos.");
+
+        return BuildAuthResponse(user);
+    }
+
+    public async Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken ct = default)
+    {
+        var google = await googleAuthService.ValidateIdTokenAsync(request.IdToken, ct);
+        if (google is null)
+            throw new InvalidCredentialsException("Token de Google inválido o expirado.");
+
+        var user = await userRepository.GetByGoogleIdAsync(google.Sub, ct);
+        if (user is null)
+        {
+            user = await userRepository.GetByEmailAsync(google.Email, ct);
+            if (user is null)
+            {
+                user = new User
+                {
+                    Email = google.Email,
+                    Nombre = google.Nombre,
+                    GoogleId = google.Sub,
+                    Provider = AuthProvider.Google
+                };
+                await userRepository.AddAsync(user, ct);
+            }
+            else
+            {
+                user.GoogleId = google.Sub;
+                user.Provider = user.PasswordHash is null ? AuthProvider.Google : AuthProvider.LocalAndGoogle;
+            }
+        }
+
+        if (!user.IsActive)
+            throw new ForbiddenException("Esta cuenta está desactivada.");
+
+        await userRepository.SaveChangesAsync(ct);
 
         return BuildAuthResponse(user);
     }
