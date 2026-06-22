@@ -5,6 +5,7 @@ import type { RaceDto } from '../../api/types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { CategoriesTab } from '../categories/CategoriesTab'
 import { RunnersTab } from '../runners/RunnersTab'
+import { Tabs } from '@nicarunner/ui'
 
 type Tab = 'categorias' | 'corredores'
 
@@ -39,6 +40,11 @@ export function RaceDetailPage() {
     )
   }
 
+  const tabItems = [
+    { id: 'categorias', label: 'Categorías' },
+    { id: 'corredores', label: 'Corredores' },
+  ]
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -48,34 +54,13 @@ export function RaceDetailPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-gray-900">{race?.nombre ?? 'Cargando...'}</h1>
+        <h1 className="text-lg font-semibold text-zinc-900">{race?.nombre ?? 'Cargando...'}</h1>
         {race && <StatusBadge status={race.estado} />}
       </div>
 
-      <div className="flex gap-1 border-b border-gray-200">
-        <button
-          onClick={() => setTab('categorias')}
-          className={`px-4 py-2 text-sm font-medium ${
-            tab === 'categorias'
-              ? 'border-b-2 border-blue-600 text-blue-700'
-              : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          Categorías
-        </button>
-        <button
-          onClick={() => setTab('corredores')}
-          className={`px-4 py-2 text-sm font-medium ${
-            tab === 'corredores'
-              ? 'border-b-2 border-blue-600 text-blue-700'
-              : 'text-gray-500 hover:text-gray-800'
-          }`}
-        >
-          Corredores
-        </button>
-      </div>
+      <Tabs tabs={tabItems} activeTab={tab} onChange={(val) => setTab(val as Tab)} />
 
-      <section className="rounded-lg bg-white p-4 shadow-sm">
+      <section className="border border-zinc-200 bg-white p-4">
         {tab === 'categorias' ? <CategoriesTab raceId={id} /> : <RunnersTab raceId={id} />}
       </section>
     </div>

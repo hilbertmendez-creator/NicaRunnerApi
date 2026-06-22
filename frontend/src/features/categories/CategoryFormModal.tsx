@@ -41,7 +41,7 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
   return (
     <Modal onClose={onClose} labelledBy="category-form-title">
       <form onSubmit={handleSubmit}>
-        <h2 id="category-form-title" className="mb-4 text-base font-semibold text-gray-900">
+        <h2 id="category-form-title" className="mb-4 text-base font-semibold text-zinc-900">
           {category ? 'Editar categoría' : 'Nueva categoría'}
         </h2>
 
@@ -113,7 +113,7 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
           </div>
         </div>
 
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
 
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>

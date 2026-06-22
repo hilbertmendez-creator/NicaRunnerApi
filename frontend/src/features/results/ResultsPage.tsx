@@ -3,7 +3,8 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { getResults, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button } from '@nicarunner/ui'
+import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import type { Column } from '@nicarunner/ui'
 import { EditResultModal } from './EditResultModal'
 import { AuditHistory } from './AuditHistory'
 
@@ -39,63 +40,70 @@ export function ResultsPage() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(reload, [raceId])
 
+  const columns: Column<ResultDto>[] = [
+    {
+      header: 'Posición',
+      render: (result) => result.posicion,
+      className: 'font-mono tabular-nums',
+    },
+    {
+      header: 'Dorsal',
+      render: (result) => result.dorsal,
+      className: 'font-mono tabular-nums',
+    },
+    {
+      header: 'Hora de llegada',
+      render: (result) => new Date(result.tiempoLlegada).toLocaleString('es-NI'),
+      className: 'font-mono tabular-nums',
+    },
+    {
+      header: 'Última edición',
+      render: (result) => new Date(result.updatedAt).toLocaleString('es-NI'),
+      className: 'font-mono tabular-nums',
+    },
+    {
+      header: '',
+      render: (result) => (
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => setAuditingId(result.id)}>
+            Auditoría
+          </Button>
+          {canEdit && (
+            <>
+              <Button size="sm" onClick={() => setEditing(result)}>
+                Editar
+              </Button>
+              <Button
+                size="sm"
+                variant="info"
+                onClick={() => handleNotify(result.id)}
+                disabled={notifyingId === result.id}
+              >
+                {notifyingId === result.id ? 'Enviando...' : 'Notificar'}
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-gray-900">Resultados</h1>
+        <h1 className="text-lg font-semibold text-zinc-900">Resultados</h1>
         <RaceSelector value={raceId} onChange={setRaceId} />
       </div>
 
-      {loading && <p className="text-sm text-gray-500">Cargando resultados...</p>}
+      {loading && <LoadingText message="Cargando resultados..." />}
 
-      {!loading && raceId && results.length === 0 && (
-        <p className="text-sm text-gray-500">Esta carrera no tiene resultados capturados todavía.</p>
-      )}
-
-      {results.length > 0 && (
-        <section className="overflow-x-auto rounded-lg bg-white p-4 shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-gray-500">
-                <th className="py-1">Posición</th>
-                <th className="py-1">Dorsal</th>
-                <th className="py-1">Hora de llegada</th>
-                <th className="py-1">Última edición</th>
-                <th className="py-1"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((result) => (
-                <tr key={result.id} className="border-t border-gray-100">
-                  <td className="py-1.5">{result.posicion}</td>
-                  <td className="py-1.5">{result.dorsal}</td>
-                  <td className="py-1.5">{new Date(result.tiempoLlegada).toLocaleString('es-NI')}</td>
-                  <td className="py-1.5">{new Date(result.updatedAt).toLocaleString('es-NI')}</td>
-                  <td className="flex gap-2 py-1.5">
-                    <Button size="sm" onClick={() => setAuditingId(result.id)}>
-                      Auditoría
-                    </Button>
-                    {canEdit && (
-                      <>
-                        <Button size="sm" onClick={() => setEditing(result)}>
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="info"
-                          onClick={() => handleNotify(result.id)}
-                          disabled={notifyingId === result.id}
-                        >
-                          {notifyingId === result.id ? 'Enviando...' : 'Notificar'}
-                        </Button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+      {!loading && raceId && (
+        <DataTable
+          columns={columns}
+          data={results}
+          rowKey={(result) => result.id}
+          emptyState={<EmptyState message="Esta carrera no tiene resultados capturados todavía." />}
+        />
       )}
 
       {editing && raceId && (

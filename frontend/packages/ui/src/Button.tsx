@@ -8,15 +8,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 border border-transparent',
-  secondary: 'border border-gray-300 text-gray-700 hover:bg-gray-100',
-  destructive: 'border border-red-300 text-red-700 hover:bg-red-50',
-  info: 'border border-teal-300 text-teal-700 hover:bg-teal-50',
+  primary: 'bg-blue-700 text-white border border-blue-700 hover:bg-blue-800',
+  secondary: 'border border-zinc-200 text-zinc-700 hover:bg-zinc-50',
+  destructive: 'border border-critical-200 bg-critical-50 text-critical-600 hover:border-critical-600',
+  info: 'border border-official-200 bg-official-50 text-official-600 hover:border-official-600',
 }
 
 const SIZE_CLASSES = {
-  sm: 'px-2 py-1 text-xs',
-  md: 'px-4 py-2 text-sm',
+  sm: 'h-6 px-2 text-xs',
+  md: 'h-8 px-3 text-sm',
 }
 
 export function Button({
@@ -29,7 +29,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`rounded font-medium disabled:opacity-60 ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
+      className={`font-medium disabled:opacity-60 ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`}
       {...rest}
     />
   )

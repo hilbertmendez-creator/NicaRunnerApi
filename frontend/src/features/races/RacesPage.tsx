@@ -4,7 +4,8 @@ import { deleteRace, getRaces } from '../../api/endpoints'
 import type { RaceDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { StatusBadge } from '../../components/StatusBadge'
-import { Button } from '@nicarunner/ui'
+import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import type { Column } from '@nicarunner/ui'
 import { RaceFormModal } from './RaceFormModal'
 
 export function RacesPage() {
@@ -33,10 +34,46 @@ export function RacesPage() {
     reload()
   }
 
+  const columns: Column<RaceDto>[] = [
+    {
+      header: 'Nombre',
+      render: (race) => (
+        <Link to={`/carreras/${race.id}`} className="font-medium text-blue-700 hover:underline">
+          {race.nombre}
+        </Link>
+      ),
+    },
+    {
+      header: 'Fecha',
+      render: (race) => new Date(race.fechaCarrera).toLocaleDateString('es-NI'),
+    },
+    {
+      header: 'Estado',
+      render: (race) => <StatusBadge status={race.estado} />,
+    },
+    {
+      header: '',
+      render: (race) => (
+        <div className="flex gap-2">
+          {canManage && (
+            <>
+              <Button size="sm" onClick={() => setEditing(race)}>
+                Editar
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => handleDelete(race)}>
+                Eliminar
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">Carreras</h1>
+        <h1 className="text-lg font-semibold text-zinc-900">Carreras</h1>
         {canManage && (
           <Button variant="primary" onClick={() => setShowCreate(true)}>
             Nueva carrera
@@ -44,52 +81,15 @@ export function RacesPage() {
         )}
       </div>
 
-      {loading && <p className="text-sm text-gray-500">Cargando carreras...</p>}
+      {loading && <LoadingText message="Cargando carreras..." />}
 
-      {!loading && races.length === 0 && (
-        <p className="text-sm text-gray-500">No hay carreras creadas todavía.</p>
-      )}
-
-      {races.length > 0 && (
-        <section className="overflow-x-auto rounded-lg bg-white p-4 shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-gray-500">
-                <th className="py-1">Nombre</th>
-                <th className="py-1">Fecha</th>
-                <th className="py-1">Estado</th>
-                <th className="py-1"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {races.map((race) => (
-                <tr key={race.id} className="border-t border-gray-100">
-                  <td className="py-2">
-                    <Link to={`/carreras/${race.id}`} className="font-medium text-blue-700 hover:underline">
-                      {race.nombre}
-                    </Link>
-                  </td>
-                  <td className="py-2">{new Date(race.fechaCarrera).toLocaleDateString('es-NI')}</td>
-                  <td className="py-2">
-                    <StatusBadge status={race.estado} />
-                  </td>
-                  <td className="flex gap-2 py-2">
-                    {canManage && (
-                      <>
-                        <Button size="sm" onClick={() => setEditing(race)}>
-                          Editar
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(race)}>
-                          Eliminar
-                        </Button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+      {!loading && (
+        <DataTable
+          columns={columns}
+          data={races}
+          rowKey={(race) => race.id}
+          emptyState={<EmptyState message="No hay carreras creadas todavía." />}
+        />
       )}
 
       {showCreate && (

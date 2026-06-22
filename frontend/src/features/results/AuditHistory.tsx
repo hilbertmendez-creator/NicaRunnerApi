@@ -25,25 +25,25 @@ export function AuditHistory({ raceId, resultId, onClose }: AuditHistoryProps) {
 
   return (
     <Modal onClose={onClose} maxWidth="lg" labelledBy="audit-history-title">
-      <h2 id="audit-history-title" className="mb-4 text-base font-semibold text-gray-900">
+      <h2 id="audit-history-title" className="mb-4 text-base font-semibold text-zinc-900">
         Auditoría — resultado #{resultId}
       </h2>
 
-      {loading && <p className="text-sm text-gray-500">Cargando historial...</p>}
+      {loading && <p className="text-sm text-zinc-500">Cargando historial...</p>}
 
       {!loading && entries.length === 0 && (
-        <p className="text-sm text-gray-500">Sin cambios registrados todavía.</p>
+        <p className="text-sm text-zinc-500">Sin cambios registrados todavía.</p>
       )}
 
       <ul className="flex flex-col gap-3">
         {entries.map((entry) => (
-          <li key={entry.id} className="rounded border border-gray-200 p-3 text-sm">
-            <p className="font-medium text-gray-900">{entry.campoModificado}</p>
-            <p className="text-gray-600">
+          <li key={entry.id} className="border border-zinc-200 p-3 text-sm">
+            <p className="font-medium text-zinc-900">{entry.campoModificado}</p>
+            <p className="font-mono tabular-nums text-zinc-600">
               {entry.valorAnterior} → {entry.valorNuevo}
             </p>
-            {entry.razon && <p className="mt-1 text-gray-500">Razón: {entry.razon}</p>}
-            <p className="mt-1 text-xs text-gray-400">
+            {entry.razon && <p className="mt-1 text-zinc-500">Razón: {entry.razon}</p>}
+            <p className="mt-1 font-mono text-xs tabular-nums text-zinc-400">
               {new Date(entry.createdAt).toLocaleString('es-NI')}
             </p>
           </li>
