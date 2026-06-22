@@ -36,27 +36,27 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
 
   return (
     <Modal onClose={onClose} maxWidth="lg" labelledBy="import-excel-title">
-      <h2 id="import-excel-title" className="mb-4 text-base font-semibold text-gray-900">
+      <h2 id="import-excel-title" className="mb-4 text-base font-semibold text-zinc-900">
         Importar corredores desde Excel
       </h2>
 
-      <p className="mb-3 text-sm text-gray-500">
+      <p className="mb-3 text-sm text-zinc-500">
         Columnas esperadas: Nombre, Dorsal, Teléfono, Email, Edad, Categoría, Distancia.
       </p>
 
       <input ref={fileInputRef} type="file" accept=".xlsx" className="mb-3 w-full text-sm" />
 
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
 
       {result && (
-        <div className="mb-3 rounded border border-gray-200 p-3 text-sm">
+        <div className="mb-3 border border-zinc-200 p-3 text-sm">
           <p>
-            Total filas: <strong>{result.totalFilas}</strong> — Importados:{' '}
-            <strong className="text-teal-700">{result.importados}</strong> — Errores:{' '}
-            <strong className="text-red-700">{result.errores.length}</strong>
+            Total filas: <strong className="font-mono tabular-nums">{result.totalFilas}</strong> — Importados:{' '}
+            <strong className="font-mono tabular-nums text-official-600">{result.importados}</strong> — Errores:{' '}
+            <strong className="font-mono tabular-nums text-critical-600">{result.errores.length}</strong>
           </p>
           {result.errores.length > 0 && (
-            <ul className="mt-2 max-h-40 list-disc overflow-y-auto pl-5 text-gray-600">
+            <ul className="mt-2 max-h-40 list-disc overflow-y-auto pl-5 text-zinc-600">
               {result.errores.map((err) => (
                 <li key={err.fila}>
                   Fila {err.fila}: {err.motivo}

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { deleteCategory, getCategories } from '../../api/endpoints'
 import type { RaceCategoryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button } from '@nicarunner/ui'
+import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import type { Column } from '@nicarunner/ui'
 import { CategoryFormModal } from './CategoryFormModal'
 
 export function CategoriesTab({ raceId }: { raceId: number }) {
@@ -31,6 +32,47 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
     reload()
   }
 
+  const columns: Column<RaceCategoryDto>[] = [
+    {
+      header: 'Nombre',
+      render: (cat) => cat.nombreCategoria,
+    },
+    {
+      header: 'Distancia',
+      render: (cat) => `${cat.distancia} km`,
+      className: 'font-mono tabular-nums',
+    },
+    {
+      header: 'Edad',
+      render: (cat) => `${cat.edadMinima}–${cat.edadMaxima}`,
+      className: 'font-mono tabular-nums',
+    },
+    {
+      header: 'Orden',
+      render: (cat) => cat.orden,
+      className: 'font-mono tabular-nums',
+    },
+    {
+      header: '',
+      render: (cat) => (
+        <div className="flex gap-2">
+          {canManage && (
+            <>
+              <Button size="sm" onClick={() => setEditing(cat)}>
+                Editar
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => handleDelete(cat)}>
+                Eliminar
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ]
+
+  const sortedCategories = [...categories].sort((a, b) => a.orden - b.orden)
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-end">
@@ -41,50 +83,15 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
         )}
       </div>
 
-      {loading && <p className="text-sm text-gray-500">Cargando categorías...</p>}
+      {loading && <LoadingText message="Cargando categorías..." />}
 
-      {!loading && categories.length === 0 && (
-        <p className="text-sm text-gray-500">Esta carrera no tiene categorías todavía.</p>
-      )}
-
-      {categories.length > 0 && (
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="text-gray-500">
-              <th className="py-1">Nombre</th>
-              <th className="py-1">Distancia</th>
-              <th className="py-1">Edad</th>
-              <th className="py-1">Orden</th>
-              <th className="py-1"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...categories]
-              .sort((a, b) => a.orden - b.orden)
-              .map((cat) => (
-                <tr key={cat.id} className="border-t border-gray-100">
-                  <td className="py-2">{cat.nombreCategoria}</td>
-                  <td className="py-2">{cat.distancia} km</td>
-                  <td className="py-2">
-                    {cat.edadMinima}–{cat.edadMaxima}
-                  </td>
-                  <td className="py-2">{cat.orden}</td>
-                  <td className="flex gap-2 py-2">
-                    {canManage && (
-                      <>
-                        <Button size="sm" onClick={() => setEditing(cat)}>
-                          Editar
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(cat)}>
-                          Eliminar
-                        </Button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+      {!loading && (
+        <DataTable
+          columns={columns}
+          data={sortedCategories}
+          rowKey={(cat) => cat.id}
+          emptyState={<EmptyState message="Esta carrera no tiene categorías todavía." />}
+        />
       )}
 
       {showCreate && (

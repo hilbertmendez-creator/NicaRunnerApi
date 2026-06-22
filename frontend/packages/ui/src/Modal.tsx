@@ -44,7 +44,7 @@ export function Modal({ onClose, children, maxWidth = 'md', labelledBy }: ModalP
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className={`w-full ${MAX_WIDTH_CLASSES[maxWidth]} rounded-lg bg-white p-6 shadow-lg`}
+        className={`w-full ${MAX_WIDTH_CLASSES[maxWidth]} border border-zinc-200 bg-white p-6`}
       >
         {children}
       </div>

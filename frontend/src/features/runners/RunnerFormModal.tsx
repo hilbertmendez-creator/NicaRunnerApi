@@ -43,7 +43,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
   return (
     <Modal onClose={onClose} labelledBy="runner-form-title">
       <form onSubmit={handleSubmit}>
-        <h2 id="runner-form-title" className="mb-4 text-base font-semibold text-gray-900">
+        <h2 id="runner-form-title" className="mb-4 text-base font-semibold text-zinc-900">
           {runner ? 'Editar corredor' : 'Nuevo corredor'}
         </h2>
 
@@ -117,7 +117,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
           className="mb-3 w-full"
         />
 
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
 
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>
