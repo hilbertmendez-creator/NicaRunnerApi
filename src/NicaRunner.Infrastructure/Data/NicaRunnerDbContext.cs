@@ -18,6 +18,7 @@ public class NicaRunnerDbContext : DbContext
     public DbSet<ResultAudit> ResultAudits => Set<ResultAudit>();
     public DbSet<PublicResultToken> PublicResultTokens => Set<PublicResultToken>();
     public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
+    public DbSet<RaceJudge> RaceJudges => Set<RaceJudge>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +26,26 @@ public class NicaRunnerDbContext : DbContext
         modelBuilder.Entity<Runner>()
             .HasIndex(r => new { r.RaceId, r.Dorsal })
             .IsUnique();
+
+        // JoinCode único para que /api/races/join pueda resolver una sola carrera
+        modelBuilder.Entity<Race>()
+            .HasIndex(r => r.JoinCode)
+            .IsUnique();
+
+        // Un juez no puede unirse dos veces a la misma carrera
+        modelBuilder.Entity<RaceJudge>()
+            .HasIndex(j => new { j.RaceId, j.UserId })
+            .IsUnique();
+        modelBuilder.Entity<RaceJudge>()
+            .HasOne(j => j.Race)
+            .WithMany(r => r.Judges)
+            .HasForeignKey(j => j.RaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<RaceJudge>()
+            .HasOne(j => j.User)
+            .WithMany()
+            .HasForeignKey(j => j.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Token público único
         modelBuilder.Entity<PublicResultToken>()

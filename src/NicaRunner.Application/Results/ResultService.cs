@@ -36,7 +36,10 @@ public class ResultService(
 
         await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
 
-        return ToDto(result);
+        // Recargar con Include para que los campos derivados (runnerNombre,
+        // categoriaNombre, capturistaNombre) lleguen poblados al cliente.
+        var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
+        return ToDto(saved ?? result);
     }
 
     public async Task<List<ResultDto>> GetAllByRaceAsync(int raceId, CancellationToken ct = default)
@@ -80,7 +83,8 @@ public class ResultService(
         if (runner.CategoryId != oldCategoryId)
             await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
 
-        return ToDto(result);
+        var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
+        return ToDto(saved ?? result);
     }
 
     public async Task<List<ResultAuditDto>> GetAuditAsync(int raceId, int resultId, CancellationToken ct = default)
@@ -136,11 +140,14 @@ public class ResultService(
         result.Id,
         result.RaceId,
         result.RunnerId,
+        result.Runner?.Nombre ?? string.Empty,
         result.Dorsal,
         result.TiempoLlegada,
         result.Posicion,
         result.CategoryId,
+        result.Category?.NombreCategoria ?? string.Empty,
         result.CapturistaId,
+        result.Capturista?.Nombre ?? string.Empty,
         result.CreatedAt,
         result.UpdatedAt);
 

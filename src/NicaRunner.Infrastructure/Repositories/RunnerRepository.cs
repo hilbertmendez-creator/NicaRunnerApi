@@ -8,13 +8,18 @@ namespace NicaRunner.Infrastructure.Repositories;
 public class RunnerRepository(NicaRunnerDbContext context) : IRunnerRepository
 {
     public Task<Runner?> GetByIdAsync(int raceId, int runnerId, CancellationToken ct = default) =>
-        context.Runners.FirstOrDefaultAsync(r => r.RaceId == raceId && r.Id == runnerId, ct);
+        context.Runners
+            .Include(r => r.Category)
+            .FirstOrDefaultAsync(r => r.RaceId == raceId && r.Id == runnerId, ct);
 
     public Task<Runner?> GetByDorsalAsync(int raceId, string dorsal, CancellationToken ct = default) =>
-        context.Runners.FirstOrDefaultAsync(r => r.RaceId == raceId && r.Dorsal == dorsal, ct);
+        context.Runners
+            .Include(r => r.Category)
+            .FirstOrDefaultAsync(r => r.RaceId == raceId && r.Dorsal == dorsal, ct);
 
     public Task<List<Runner>> GetAllByRaceAsync(int raceId, CancellationToken ct = default) =>
         context.Runners
+            .Include(r => r.Category)
             .Where(r => r.RaceId == raceId)
             .OrderBy(r => r.Dorsal)
             .ToListAsync(ct);

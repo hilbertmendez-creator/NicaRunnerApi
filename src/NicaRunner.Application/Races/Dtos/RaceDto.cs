@@ -8,6 +8,8 @@ public record RaceDto(
     string? Descripcion,
     DateTime FechaCarrera,
     RaceStatus Estado,
+    string JoinCode,
+    DateTime? RaceStartUtc,
     int AdminId,
     DateTime CreatedAt,
     DateTime UpdatedAt);

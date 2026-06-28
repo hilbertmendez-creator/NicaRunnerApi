@@ -9,4 +9,6 @@ public interface IRaceService
     Task<RaceDto> GetByIdAsync(int raceId, CancellationToken ct = default);
     Task<RaceDto> UpdateAsync(int raceId, UpdateRaceRequest request, CancellationToken ct = default);
     Task DeleteAsync(int raceId, CancellationToken ct = default);
+    Task<RaceDto> StartAsync(int raceId, CancellationToken ct = default);
+    Task<RaceDto> JoinByCodeAsync(JoinByCodeRequest request, int userId, CancellationToken ct = default);
 }
