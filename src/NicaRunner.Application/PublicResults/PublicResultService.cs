@@ -53,12 +53,12 @@ public class PublicResultService(
                 category.NombreCategoria,
                 category.Distancia,
                 results
-                    .Where(r => r.CategoryId == category.Id)
+                    .Where(r => r.CategoryId == category.Id && r.RunnerId is not null)
                     .OrderBy(r => r.Posicion)
                     .Select(r => new PublicRunnerResultDto(
-                        r.RunnerId,
-                        runnersById.TryGetValue(r.RunnerId, out var runner) ? runner.Nombre : "(desconocido)",
-                        r.Dorsal,
+                        r.RunnerId!.Value,
+                        runnersById.TryGetValue(r.RunnerId.Value, out var runner) ? runner.Nombre : "(desconocido)",
+                        r.Dorsal ?? string.Empty,
                         r.Posicion,
                         r.TiempoLlegada))
                     .ToList()))
@@ -75,7 +75,9 @@ public class PublicResultService(
         var result = results.FirstOrDefault(r => r.RunnerId == runnerId)
             ?? throw new NotFoundException($"No hay resultado registrado para el corredor {runnerId} en esta carrera.");
 
-        var category = await categoryRepository.GetByIdAsync(race.Id, result.CategoryId, ct)
+        var categoryId = result.CategoryId
+            ?? throw new NotFoundException("Este resultado todavía no tiene un dorsal/categoría asignado.");
+        var category = await categoryRepository.GetByIdAsync(race.Id, categoryId, ct)
             ?? throw new NotFoundException("No se encontró la categoría del resultado.");
 
         var runner = await runnerRepository.GetByIdAsync(race.Id, runnerId, ct)
@@ -87,7 +89,7 @@ public class PublicResultService(
             category.Distancia,
             runner.Id,
             runner.Nombre,
-            result.Dorsal,
+            result.Dorsal ?? string.Empty,
             result.Posicion,
             result.TiempoLlegada);
     }

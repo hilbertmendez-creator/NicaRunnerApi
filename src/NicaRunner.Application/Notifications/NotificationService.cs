@@ -40,7 +40,7 @@ public class NotificationService(
 
         foreach (var result in results)
         {
-            if (!runnersById.TryGetValue(result.RunnerId, out var runner))
+            if (result.RunnerId is not { } runnerId || !runnersById.TryGetValue(runnerId, out var runner))
                 continue;
 
             var logs = await SendForResultAsync(race, runner, result, ct);
@@ -65,8 +65,10 @@ public class NotificationService(
         var race = await raceRepository.GetByIdAsync(result.RaceId, ct)
             ?? throw new NotFoundException($"No existe la carrera con id {result.RaceId}.");
 
-        var runner = await runnerRepository.GetByIdAsync(result.RaceId, result.RunnerId, ct)
-            ?? throw new NotFoundException($"No existe el corredor con id {result.RunnerId}.");
+        var runnerId = result.RunnerId
+            ?? throw new ConflictException("Este resultado todavía no tiene un dorsal asignado; no se puede notificar.");
+        var runner = await runnerRepository.GetByIdAsync(result.RaceId, runnerId, ct)
+            ?? throw new NotFoundException($"No existe el corredor con id {runnerId}.");
 
         return (race, runner);
     }

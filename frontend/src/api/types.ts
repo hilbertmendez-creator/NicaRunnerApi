@@ -75,12 +75,12 @@ export interface CategoryStandingsDto {
 export interface ResultDto {
   id: number
   raceId: number
-  runnerId: number
+  runnerId: number | null
   runnerNombre: string
-  dorsal: string
+  dorsal: string | null
   tiempoLlegada: string
   posicion: number
-  categoryId: number
+  categoryId: number | null
   categoriaNombre: string
   capturistaId: number
   capturistaNombre: string
