@@ -17,7 +17,7 @@ function toLocalInputValue(iso: string) {
 }
 
 export function EditResultModal({ raceId, result, onClose, onSaved }: EditResultModalProps) {
-  const [dorsal, setDorsal] = useState(result.dorsal)
+  const [dorsal, setDorsal] = useState(result.dorsal ?? '')
   const [tiempoLlegada, setTiempoLlegada] = useState(toLocalInputValue(result.tiempoLlegada))
   const [razon, setRazon] = useState('')
   const [error, setError] = useState<string | null>(null)
