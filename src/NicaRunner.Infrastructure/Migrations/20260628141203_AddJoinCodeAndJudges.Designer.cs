@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NicaRunner.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using NicaRunner.Infrastructure.Data;
 namespace NicaRunner.Infrastructure.Migrations
 {
     [DbContext(typeof(NicaRunnerDbContext))]
-    partial class NicaRunnerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260628141203_AddJoinCodeAndJudges")]
+    partial class AddJoinCodeAndJudges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.28");
@@ -210,13 +213,14 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.Property<int>("CapturistaId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("CategoryId")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Dorsal")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Posicion")
@@ -225,7 +229,7 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.Property<int>("RaceId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("RunnerId")
+                    b.Property<int>("RunnerId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("TiempoLlegada")
@@ -469,7 +473,9 @@ namespace NicaRunner.Infrastructure.Migrations
 
                     b.HasOne("NicaRunner.Domain.Entities.RaceCategory", "Category")
                         .WithMany()
-                        .HasForeignKey("CategoryId");
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("NicaRunner.Domain.Entities.Race", "Race")
                         .WithMany("Results")
@@ -480,7 +486,8 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.HasOne("NicaRunner.Domain.Entities.Runner", "Runner")
                         .WithMany("Results")
                         .HasForeignKey("RunnerId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Capturista");
 

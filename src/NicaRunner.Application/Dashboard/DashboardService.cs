@@ -36,11 +36,11 @@ public class DashboardService(
             .Take(10)
             .Select(r => new RecentResultDto(
                 r.Id,
-                r.Dorsal,
-                runnersById.TryGetValue(r.RunnerId, out var runner) ? runner.Nombre : "(desconocido)",
+                r.Dorsal ?? "(sin asignar)",
+                r.RunnerId is { } rid && runnersById.TryGetValue(rid, out var runner) ? runner.Nombre : "(sin asignar)",
                 r.TiempoLlegada,
                 r.Posicion,
-                categoriesById.TryGetValue(r.CategoryId, out var category) ? category.NombreCategoria : "(desconocida)",
+                r.CategoryId is { } cid && categoriesById.TryGetValue(cid, out var category) ? category.NombreCategoria : "(sin asignar)",
                 r.CapturistaId))
             .ToList();
 
@@ -70,12 +70,12 @@ public class DashboardService(
                 category.NombreCategoria,
                 category.Distancia,
                 results
-                    .Where(r => r.CategoryId == category.Id)
+                    .Where(r => r.CategoryId == category.Id && r.RunnerId is not null)
                     .OrderBy(r => r.Posicion)
                     .Select(r => new RunnerStandingDto(
-                        r.RunnerId,
-                        runnersById.TryGetValue(r.RunnerId, out var runner) ? runner.Nombre : "(desconocido)",
-                        r.Dorsal,
+                        r.RunnerId!.Value,
+                        runnersById.TryGetValue(r.RunnerId.Value, out var runner) ? runner.Nombre : "(desconocido)",
+                        r.Dorsal ?? string.Empty,
                         r.Posicion,
                         r.TiempoLlegada))
                     .ToList()))

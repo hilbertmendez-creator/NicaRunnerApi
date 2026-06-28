@@ -9,4 +9,6 @@ public record RunnerDto(
     string? Email,
     int Edad,
     int CategoryId,
+    string CategoriaNombre,
+    decimal Distancia,
     DateTime CreatedAt);

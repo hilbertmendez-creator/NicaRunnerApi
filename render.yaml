@@ -1,0 +1,41 @@
+databases:
+  - name: nicarunner-db
+    plan: free
+    region: oregon
+    databaseName: nicarunner
+    user: nicarunner
+
+services:
+  - type: web
+    name: nicarunner-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__PostgresConnection
+        fromDatabase:
+          name: nicarunner-db
+          property: connectionString
+      - key: Jwt__Key
+        generateValue: true
+      - key: Jwt__Issuer
+        value: NicaRunner.Api
+      - key: Jwt__Audience
+        value: NicaRunner.Clients
+      - key: Jwt__ExpiryMinutes
+        value: "60"
+      - key: Resend__ApiKey
+        sync: false
+      - key: Resend__FromEmail
+        value: "NicaRunner <onboarding@resend.dev>"
+      - key: Resend__Subject
+        value: "Tu resultado en NicaRunner"
+      - key: GoogleAuth__ClientId
+        value: "450796447742-hi3dpbuo0i6k5jua6u31rqpgf7dpm06b.apps.googleusercontent.com"
+      - key: Cors__AllowedOrigins__0
+        sync: false

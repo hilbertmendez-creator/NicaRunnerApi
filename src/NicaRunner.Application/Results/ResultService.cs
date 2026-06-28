@@ -15,28 +15,34 @@ public class ResultService(
     {
         await EnsureRaceExistsAsync(raceId, ct);
 
-        var runner = await runnerRepository.GetByDorsalAsync(raceId, request.Dorsal, ct)
-            ?? throw new NotFoundException($"No existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
+        Runner? runner = null;
+        if (!string.IsNullOrWhiteSpace(request.Dorsal))
+        {
+            runner = await runnerRepository.GetByDorsalAsync(raceId, request.Dorsal, ct)
+                ?? throw new NotFoundException($"No existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
 
-        if (await resultRepository.ExistsByRunnerAsync(raceId, runner.Id, ct: ct))
-            throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
+            if (await resultRepository.ExistsByRunnerAsync(raceId, runner.Id, ct: ct))
+                throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
+        }
 
         var result = new Result
         {
             RaceId = raceId,
-            RunnerId = runner.Id,
-            Dorsal = request.Dorsal,
+            RunnerId = runner?.Id,
+            Dorsal = runner?.Dorsal,
             TiempoLlegada = request.TiempoLlegada,
-            CategoryId = runner.CategoryId,
+            CategoryId = runner?.CategoryId,
             CapturistaId = capturistaId
         };
 
         await resultRepository.AddAsync(result, ct);
         await resultRepository.SaveChangesAsync(ct);
 
-        await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
+        if (runner is not null)
+            await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
 
-        return ToDto(result);
+        var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
+        return ToDto(saved ?? result);
     }
 
     public async Task<List<ResultDto>> GetAllByRaceAsync(int raceId, CancellationToken ct = default)
@@ -65,7 +71,7 @@ public class ResultService(
 
         var oldCategoryId = result.CategoryId;
 
-        await RegisterAuditIfChangedAsync(result.Id, editorId, "Dorsal", result.Dorsal, request.Dorsal, request.Razon, ct);
+        await RegisterAuditIfChangedAsync(result.Id, editorId, "Dorsal", result.Dorsal ?? "(sin asignar)", request.Dorsal, request.Razon, ct);
         await RegisterAuditIfChangedAsync(result.Id, editorId, "TiempoLlegada", result.TiempoLlegada.ToString("O"), request.TiempoLlegada.ToString("O"), request.Razon, ct);
 
         result.Dorsal = request.Dorsal;
@@ -76,11 +82,13 @@ public class ResultService(
 
         await resultRepository.SaveChangesAsync(ct);
 
-        await RecalculatePositionsAsync(raceId, oldCategoryId, ct);
+        if (oldCategoryId is not null)
+            await RecalculatePositionsAsync(raceId, oldCategoryId.Value, ct);
         if (runner.CategoryId != oldCategoryId)
             await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
 
-        return ToDto(result);
+        var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
+        return ToDto(saved ?? result);
     }
 
     public async Task<List<ResultAuditDto>> GetAuditAsync(int raceId, int resultId, CancellationToken ct = default)
@@ -136,11 +144,14 @@ public class ResultService(
         result.Id,
         result.RaceId,
         result.RunnerId,
+        result.Runner?.Nombre ?? string.Empty,
         result.Dorsal,
         result.TiempoLlegada,
         result.Posicion,
         result.CategoryId,
+        result.Category?.NombreCategoria ?? string.Empty,
         result.CapturistaId,
+        result.Capturista?.Nombre ?? string.Empty,
         result.CreatedAt,
         result.UpdatedAt);
 

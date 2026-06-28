@@ -1,0 +1,30 @@
+name: API CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'frontend/**'
+  pull_request:
+    paths-ignore:
+      - 'frontend/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore NicaRunner.sln
+
+      - name: Build
+        run: dotnet build NicaRunner.sln --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"

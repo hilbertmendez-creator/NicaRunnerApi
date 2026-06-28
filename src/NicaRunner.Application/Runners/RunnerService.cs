@@ -33,7 +33,8 @@ public class RunnerService(
         await runnerRepository.AddAsync(runner, ct);
         await runnerRepository.SaveChangesAsync(ct);
 
-        return ToDto(runner);
+        var saved = await runnerRepository.GetByIdAsync(raceId, runner.Id, ct);
+        return ToDto(saved ?? runner);
     }
 
     public async Task<List<RunnerDto>> GetAllByRaceAsync(int raceId, CancellationToken ct = default)
@@ -66,7 +67,9 @@ public class RunnerService(
         runner.CategoryId = request.CategoryId;
 
         await runnerRepository.SaveChangesAsync(ct);
-        return ToDto(runner);
+
+        var saved = await runnerRepository.GetByIdAsync(raceId, runnerId, ct);
+        return ToDto(saved ?? runner);
     }
 
     public async Task DeleteAsync(int raceId, int runnerId, CancellationToken ct = default)
@@ -172,5 +175,7 @@ public class RunnerService(
         runner.Email,
         runner.Edad,
         runner.CategoryId,
+        runner.Category?.NombreCategoria ?? string.Empty,
+        runner.Category?.Distancia ?? 0m,
         runner.CreatedAt);
 }

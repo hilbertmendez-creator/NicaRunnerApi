@@ -7,6 +7,7 @@ import type {
   CreateRaceRequest,
   CreateRunnerRequest,
   ImportRunnersResultDto,
+  JoinByCodeRequest,
   NotificationDto,
   NotifyAllSummaryDto,
   PublicRaceResultsDto,
@@ -80,6 +81,16 @@ export async function updateRace(raceId: number, request: UpdateRaceRequest): Pr
 
 export async function deleteRace(raceId: number): Promise<void> {
   await apiClient.delete(`/races/${raceId}`)
+}
+
+export async function startRace(raceId: number): Promise<RaceDto> {
+  const { data } = await apiClient.post<RaceDto>(`/races/${raceId}/start`)
+  return data
+}
+
+export async function joinRaceByCode(request: JoinByCodeRequest): Promise<RaceDto> {
+  const { data } = await apiClient.post<RaceDto>('/races/join', request)
+  return data
 }
 
 export async function getCategories(raceId: number): Promise<RaceCategoryDto[]> {

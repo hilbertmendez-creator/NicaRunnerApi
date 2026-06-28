@@ -17,9 +17,15 @@ export interface RaceDto {
   descripcion?: string | null
   fechaCarrera: string
   estado: RaceStatus
+  joinCode: string
+  raceStartUtc?: string | null
   adminId: number
   createdAt: string
   updatedAt: string
+}
+
+export interface JoinByCodeRequest {
+  code: string
 }
 
 export interface CategoryProgressDto {
@@ -69,12 +75,15 @@ export interface CategoryStandingsDto {
 export interface ResultDto {
   id: number
   raceId: number
-  runnerId: number
-  dorsal: string
+  runnerId: number | null
+  runnerNombre: string
+  dorsal: string | null
   tiempoLlegada: string
   posicion: number
-  categoryId: number
+  categoryId: number | null
+  categoriaNombre: string
   capturistaId: number
+  capturistaNombre: string
   createdAt: string
   updatedAt: string
 }
@@ -138,6 +147,8 @@ export interface RunnerDto {
   email?: string | null
   edad: number
   categoryId: number
+  categoriaNombre: string
+  distancia: number
   createdAt: string
 }
 

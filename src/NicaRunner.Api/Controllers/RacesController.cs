@@ -41,5 +41,14 @@ public class RacesController(IRaceService raceService) : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{raceId:int}/start")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<ActionResult<RaceDto>> Start(int raceId, CancellationToken ct) =>
+        Ok(await raceService.StartAsync(raceId, ct));
+
+    [HttpPost("join")]
+    public async Task<ActionResult<RaceDto>> Join(JoinByCodeRequest request, CancellationToken ct) =>
+        Ok(await raceService.JoinByCodeAsync(request, GetUserId(), ct));
+
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

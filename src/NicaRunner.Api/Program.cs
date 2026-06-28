@@ -112,6 +112,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Auto-aplica migraciones pendientes al arrancar en producción (Render no da
+// acceso a shell fácil para correr `dotnet ef database update` antes de cada
+// deploy). En desarrollo se sigue usando `dotnet ef database update` manual
+// contra sqlite. Verificado contra un Postgres real antes de habilitar esto.
+if (!app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
+    db.Database.Migrate();
+}
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
@@ -129,5 +140,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Sin auth, sin tocar la BD: usado por Render (y cualquier monitor externo)
+// para el health check del servicio.
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
