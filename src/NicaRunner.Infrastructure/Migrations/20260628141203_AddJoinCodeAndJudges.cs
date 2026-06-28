@@ -25,11 +25,20 @@ namespace NicaRunner.Infrastructure.Migrations
                 nullable: true);
 
             // Asignar JoinCodes únicos a las filas existentes antes de crear el
-            // índice único. Usa hex(randomblob(3)) = 6 chars hex únicos por fila.
-            // Sqlite-only: la sintaxis equivalente para Postgres se generará en
-            // una migración aparte cuando se mueva a prod (la BD de prod arranca
-            // vacía, por lo que no rompe).
-            migrationBuilder.Sql("UPDATE Races SET JoinCode = upper(hex(randomblob(3))) WHERE JoinCode = '';");
+            // índice único. La función para generar 6 chars hex aleatorios es
+            // distinta por motor: Sqlite usa hex(randomblob(3)), Postgres usa
+            // md5(random()::text). Detectado en duro: la primera versión de esta
+            // migración solo tenía la rama Sqlite y rompía el deploy a Postgres
+            // (relation/función inexistente) — verificado corriendo esta
+            // migración contra un Postgres real antes de desplegar.
+            if (migrationBuilder.ActiveProvider == "Npgsql.EntityFrameworkCore.PostgreSQL")
+            {
+                migrationBuilder.Sql("UPDATE \"Races\" SET \"JoinCode\" = upper(substr(md5(random()::text), 1, 6)) WHERE \"JoinCode\" = '';");
+            }
+            else
+            {
+                migrationBuilder.Sql("UPDATE Races SET JoinCode = upper(hex(randomblob(3))) WHERE JoinCode = '';");
+            }
 
             migrationBuilder.CreateTable(
                 name: "RaceJudges",
