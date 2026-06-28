@@ -41,7 +41,7 @@ builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
     {
         var pgConn = builder.Configuration.GetConnectionString("PostgresConnection")
             ?? throw new InvalidOperationException("Falta PostgresConnection en producción");
-        options.UseNpgsql(pgConn);
+        options.UseNpgsql(NormalizePostgresConnectionString(pgConn));
     }
 });
 
@@ -146,3 +146,33 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
+
+/// <summary>
+/// Render expone la connection string de su Postgres administrado en formato
+/// URI (postgres://usuario:password@host:puerto/db), pero Npgsql solo
+/// entiende el formato keyword=value (Host=...;Username=...;...). Sin esto,
+/// NpgsqlConnectionStringBuilder lanza ArgumentException apenas arranca el
+/// contenedor ("Format of the initialization string does not conform to
+/// specification starting at index 0") — verificado en el primer deploy real
+/// a Render. Si la cadena ya viene en formato keyword=value (como en dev
+/// contra un Postgres local), se devuelve sin tocar.
+/// </summary>
+static string NormalizePostgresConnectionString(string connectionString)
+{
+    if (!connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
+        !connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        return connectionString;
+    }
+
+    var uri = new Uri(connectionString);
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = Uri.UnescapeDataString(userInfo[0]);
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+    var database = uri.AbsolutePath.TrimStart('/');
+    var port = uri.Port == -1 ? 5432 : uri.Port;
+
+    // Prefer (no Require): Render expone Postgres con SSL, pero exigirlo
+    // rompería contra un Postgres local sin SSL (ej. Docker en dev/test).
+    return $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
+}
