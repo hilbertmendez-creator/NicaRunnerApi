@@ -15,9 +15,11 @@ public class AuthServiceChangePasswordTests
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
     private readonly Mock<IJwtTokenGenerator> _jwt = new();
     private readonly Mock<IGoogleAuthService> _google = new();
+    private readonly Mock<IRefreshTokenService> _refresh = new();
 
     private AuthService BuildService() =>
-        new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object, [], Options.Create(new FrontendOptions()));
+        new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
+            _refresh.Object, [], Options.Create(new FrontendOptions()));
 
     [Fact]
     public async Task ChangePassword_CurrentPasswordCorrecta_ActualizaHashYLimpiaFlag()
