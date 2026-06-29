@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NicaRunner.Application\NicaRunner.Application.csproj" />
     <ProjectReference Include="..\..\src\NicaRunner.Domain\NicaRunner.Domain.csproj" />
+    <ProjectReference Include="..\..\src\NicaRunner.Infrastructure\NicaRunner.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
