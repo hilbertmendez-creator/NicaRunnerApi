@@ -13,9 +13,14 @@ public class AuthServiceGoogleLoginTests
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
     private readonly Mock<IJwtTokenGenerator> _jwt = new();
     private readonly Mock<IGoogleAuthService> _google = new();
+    private readonly Mock<IRefreshTokenService> _refresh = new();
 
-    private AuthService BuildService() =>
-        new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object);
+    private AuthService BuildService()
+    {
+        _refresh.Setup(r => r.IssueAsync(It.IsAny<User>(), null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IssuedRefreshToken("fake-refresh", DateTime.UtcNow.AddDays(30), Guid.NewGuid()));
+        return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object, _refresh.Object);
+    }
 
     private void SetupTokenGenerator() =>
         _jwt.Setup(j => j.GenerateToken(It.IsAny<User>()))
@@ -58,7 +63,10 @@ public class AuthServiceGoogleLoginTests
         Assert.Equal(AuthProvider.Google, created!.Provider);
         Assert.Null(created.PasswordHash);
         Assert.Equal("sub-1", created.GoogleId);
-        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // AtLeastOnce: BuildAuthResponseAsync persiste el refresh token vía
+        // un segundo SaveChanges para reusar la misma unidad de trabajo del
+        // user repository (no es un commit doble — son dos flushes EF).
+        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     // AC-2: email existente con password local -> vincula GoogleId, no duplica usuario.
