@@ -79,6 +79,19 @@ public class NicaRunnerDbContext : DbContext
             .WithMany(ru => ru.Results)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Idempotency-Key opcional por carrera: si el cliente envía el header,
+        // dos POSTs con el mismo key contra la misma carrera son la misma
+        // captura. Índice filtrado para no chocar entre los miles de Results
+        // legacy que tienen IdempotencyKey = NULL (Postgres y Sqlite ambos
+        // respetan WHERE en índices únicos — mismo patrón que el de User.GoogleId).
+        modelBuilder.Entity<Result>()
+            .HasIndex(r => new { r.RaceId, r.IdempotencyKey })
+            .IsUnique()
+            .HasFilter("\"IdempotencyKey\" IS NOT NULL");
+        modelBuilder.Entity<Result>()
+            .Property(r => r.IdempotencyKey)
+            .HasMaxLength(64);
+
         modelBuilder.Entity<ResultAudit>()
             .HasOne(a => a.Result)
             .WithMany(r => r.AuditEntries)
