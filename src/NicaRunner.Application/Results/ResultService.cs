@@ -11,9 +11,19 @@ public class ResultService(
     IRaceRepository raceRepository,
     IRunnerRepository runnerRepository) : IResultService
 {
-    public async Task<ResultDto> CreateAsync(int raceId, CreateResultRequest request, int capturistaId, CancellationToken ct = default)
+    public async Task<ResultDto> CreateAsync(int raceId, CreateResultRequest request, int capturistaId, string? idempotencyKey = null, CancellationToken ct = default)
     {
         await EnsureRaceExistsAsync(raceId, ct);
+
+        // Lookup temprano: si ya hay un Result con este key, devolverlo sin
+        // hacer ninguna validación adicional. El cliente que reintenta no
+        // espera que validemos de nuevo: espera saber "qué pasó con MI POST".
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            var existing = await resultRepository.GetByIdempotencyKeyAsync(raceId, idempotencyKey, ct);
+            if (existing is not null)
+                return ToDto(existing);
+        }
 
         Runner? runner = null;
         if (!string.IsNullOrWhiteSpace(request.Dorsal))
@@ -32,11 +42,26 @@ public class ResultService(
             Dorsal = runner?.Dorsal,
             TiempoLlegada = request.TiempoLlegada,
             CategoryId = runner?.CategoryId,
-            CapturistaId = capturistaId
+            CapturistaId = capturistaId,
+            IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey
         };
 
         await resultRepository.AddAsync(result, ct);
-        await resultRepository.SaveChangesAsync(ct);
+        try
+        {
+            await resultRepository.SaveNewResultAsync(ct);
+        }
+        catch (IdempotencyConflictException) when (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            // Race: dos POSTs concurrentes con el mismo key. El primero ya
+            // commiteó; el segundo perdió contra el UK. Re-leemos el ganador
+            // y devolvemos esa respuesta (idempotente). Si por alguna razón
+            // el ganador no aparece en la BD, dejamos burbujear la excepción
+            // — es un estado imposible que merece visibilidad.
+            var winner = await resultRepository.GetByIdempotencyKeyAsync(raceId, idempotencyKey, ct);
+            if (winner is null) throw;
+            return ToDto(winner);
+        }
 
         if (runner is not null)
             await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);

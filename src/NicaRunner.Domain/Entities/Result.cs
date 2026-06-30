@@ -13,6 +13,16 @@ public class Result
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// Opcional. Si el cliente (típico: app móvil del capturista en zona con
+    /// señal mala) envía el header Idempotency-Key, se persiste acá y se
+    /// usa como UK junto con RaceId. Reintentos del mismo POST con el mismo
+    /// key devuelven el Result existente en vez de crear uno nuevo, evitando
+    /// capturas duplicadas cuando el response original se perdió en la red.
+    /// Null para POSTs legacy sin el header — comportamiento backward compat.
+    /// </summary>
+    public string? IdempotencyKey { get; set; }
+
     public Race Race { get; set; } = null!;
     public Runner? Runner { get; set; }
     public RaceCategory? Category { get; set; }
