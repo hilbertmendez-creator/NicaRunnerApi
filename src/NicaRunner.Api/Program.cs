@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using NicaRunner.Api.Middleware;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Categories;
+using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Dashboard;
 using NicaRunner.Application.Notifications;
@@ -48,6 +49,7 @@ builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
+builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();

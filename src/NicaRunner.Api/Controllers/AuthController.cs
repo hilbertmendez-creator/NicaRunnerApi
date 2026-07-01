@@ -39,5 +39,19 @@ public class AuthController(IAuthService authService) : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken ct)
+    {
+        await authService.ForgotPasswordAsync(request, ct);
+        return Ok();
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken ct)
+    {
+        await authService.ResetPasswordAsync(request, ct);
+        return NoContent();
+    }
+
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

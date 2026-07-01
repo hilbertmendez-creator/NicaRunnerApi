@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Options;
 using Moq;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Auth.Dtos;
+using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Domain.Entities;
@@ -15,7 +17,7 @@ public class AuthServiceChangePasswordTests
     private readonly Mock<IGoogleAuthService> _google = new();
 
     private AuthService BuildService() =>
-        new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object);
+        new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object, [], Options.Create(new FrontendOptions()));
 
     [Fact]
     public async Task ChangePassword_CurrentPasswordCorrecta_ActualizaHashYLimpiaFlag()
