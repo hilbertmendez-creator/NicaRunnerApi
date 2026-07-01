@@ -79,6 +79,6 @@ public class AuthService(
     private AuthResponse BuildAuthResponse(User user)
     {
         var generated = jwtTokenGenerator.GenerateToken(user);
-        return new AuthResponse(generated.Token, generated.ExpiresAtUtc, user.Id, user.Email, user.Nombre, user.Role);
+        return new AuthResponse(generated.Token, generated.ExpiresAtUtc, user.Id, user.Email, user.Nombre, user.Role, user.MustChangePassword);
     }
 }

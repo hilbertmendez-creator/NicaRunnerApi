@@ -59,6 +59,7 @@ public class AuthServiceGoogleLoginTests
         Assert.Null(created.PasswordHash);
         Assert.Equal("sub-1", created.GoogleId);
         _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.True(result.MustChangePassword);
     }
 
     // AC-2: email existente con password local -> vincula GoogleId, no duplica usuario.
