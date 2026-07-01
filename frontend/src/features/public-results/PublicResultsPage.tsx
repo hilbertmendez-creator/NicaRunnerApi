@@ -32,42 +32,45 @@ export function PublicResultsPage() {
   }, [token])
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="border-b border-gray-200 bg-white px-6 py-3">
-        <span className="text-base font-semibold text-orange-700">nicaRunner</span>
-        <span className="ml-2 text-sm text-gray-400">Resultados</span>
+    <div className="min-h-screen" style={{ background: 'var(--bg-app)' }}>
+      <header
+        className="px-6 py-3"
+        style={{ background: 'var(--bg-topbar)', borderBottom: '1px solid var(--bd)' }}
+      >
+        <span className="text-base font-semibold" style={{ color: 'var(--accent)' }}>nicaRunner</span>
+        <span className="ml-2 text-sm" style={{ color: 'var(--text-xs)' }}>Resultados</span>
       </header>
 
       <main className="mx-auto max-w-3xl p-6">
-        {loading && <p className="text-sm text-gray-500">Cargando resultados...</p>}
+        {loading && <p className="text-sm" style={{ color: 'var(--text-lo)' }}>Cargando resultados...</p>}
 
         {error && (
-          <div className="rounded-lg bg-white p-6 text-center shadow-sm">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="p-6 text-center" style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)' }}>
+            <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>
           </div>
         )}
 
         {data && (
           <div className="flex flex-col gap-5">
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">{data.raceName}</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>{data.raceName}</h1>
+              <p className="text-sm" style={{ color: 'var(--text-lo)' }}>
                 {new Date(data.fechaCarrera).toLocaleDateString('es-NI')}
               </p>
             </div>
 
             {data.categorias.length === 0 && (
-              <p className="text-sm text-gray-500">Todavía no hay resultados publicados.</p>
+              <p className="text-sm" style={{ color: 'var(--text-lo)' }}>Todavía no hay resultados publicados.</p>
             )}
 
             {data.categorias.map((cat) => (
-              <section key={cat.nombreCategoria} className="rounded-lg bg-white p-4 shadow-sm">
-                <h2 className="mb-3 text-sm font-semibold text-gray-900">
+              <section key={cat.nombreCategoria} className="p-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)' }}>
+                <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--text-hi)' }}>
                   {cat.nombreCategoria} ({cat.distancia} km)
                 </h2>
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="text-gray-500">
+                    <tr style={{ color: 'var(--text-th)' }}>
                       <th className="py-1">Pos.</th>
                       <th className="py-1">Dorsal</th>
                       <th className="py-1">Nombre</th>
@@ -76,7 +79,7 @@ export function PublicResultsPage() {
                   </thead>
                   <tbody>
                     {cat.resultados.map((res) => (
-                      <tr key={res.runnerId} className="border-t border-gray-100">
+                      <tr key={res.runnerId} style={{ borderTop: '1px solid var(--bd-row)', color: 'var(--text-hi)' }}>
                         <td className="py-1.5">{res.posicion}</td>
                         <td className="py-1.5">{res.dorsal}</td>
                         <td className="py-1.5">{res.nombre}</td>

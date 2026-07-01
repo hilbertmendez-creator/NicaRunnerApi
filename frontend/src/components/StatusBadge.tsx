@@ -1,9 +1,22 @@
+import type { CSSProperties } from 'react'
 import type { RaceStatus } from '../api/types'
 
-const STYLES: Record<RaceStatus, string> = {
-  Planeada: 'border-zinc-200 bg-zinc-50 text-zinc-600',
-  EnCurso: 'border-official-200 bg-official-50 text-official-600',
-  Terminada: 'border-blue-200 bg-blue-50 text-blue-700',
+const STYLES: Record<RaceStatus, CSSProperties> = {
+  Planeada: {
+    background: 'var(--badge-cl-bg)',
+    color: 'var(--badge-cl-text)',
+    border: '1px solid var(--bd)',
+  },
+  EnCurso: {
+    background: 'var(--badge-ok-bg)',
+    color: 'var(--badge-ok-text)',
+    border: '1px solid var(--badge-ok-bd)',
+  },
+  Terminada: {
+    background: 'var(--badge-pr-bg)',
+    color: 'var(--badge-pr-text)',
+    border: '1px solid var(--badge-pr-bd)',
+  },
 }
 
 const LABELS: Record<RaceStatus, string> = {
@@ -14,9 +27,12 @@ const LABELS: Record<RaceStatus, string> = {
 
 export function StatusBadge({ status }: { status: RaceStatus }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-xs font-medium ${STYLES[status]}`}>
+    <span
+      className="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium"
+      style={{ ...STYLES[status], borderRadius: 'var(--radius-badge)' }}
+    >
       {status === 'EnCurso' && (
-        <span className="h-1.5 w-1.5 rounded-full bg-official-600 motion-safe:animate-pulse" />
+        <span className="dot-live" />
       )}
       {LABELS[status]}
     </span>

@@ -15,11 +15,14 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-gray-100 text-center">
-        <p className="text-sm text-gray-700">
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-3 text-center"
+        style={{ background: 'var(--bg-app)' }}
+      >
+        <p className="text-sm" style={{ color: 'var(--text-lo)' }}>
           Tu rol ({user.role}) no tiene acceso al back office. Usa la app móvil de captura.
         </p>
-        <button onClick={logout} className="text-sm text-blue-700 hover:underline">
+        <button onClick={logout} className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>
           Cerrar sesión
         </button>
       </div>

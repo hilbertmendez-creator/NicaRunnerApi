@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
 import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
@@ -10,6 +11,14 @@ import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '..
 
 const POLL_INTERVAL_MS = 5000
 const MONO = 'font-mono tabular-nums'
+
+const cardStyle: CSSProperties = {
+  background: 'var(--bg-card)',
+  border: '1px solid var(--bd-card)',
+  borderRadius: 'var(--radius-card)',
+  padding: 14,
+}
+const cardTitleStyle: CSSProperties = { color: 'var(--text-hi)' }
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-NI', { hour12: false })
@@ -61,7 +70,7 @@ export function DashboardPage() {
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-zinc-900">
+          <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>
             {dashboard.data?.raceName ?? 'Dashboard en vivo'}
           </h1>
           {dashboard.data && <StatusBadge status={dashboard.data.estado} />}
@@ -89,8 +98,8 @@ export function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
-            <section className="flex flex-col gap-2 border border-zinc-200 bg-white p-3">
-              <h2 className="text-sm font-semibold text-zinc-900">Últimos resultados capturados</h2>
+            <section className="flex flex-col gap-2" style={cardStyle}>
+              <h2 className="text-sm font-semibold" style={cardTitleStyle}>Últimos resultados capturados</h2>
               <DataTable
                 columns={ultimosResultadosColumns}
                 data={dashboard.data.ultimosResultados}
@@ -99,8 +108,8 @@ export function DashboardPage() {
               />
             </section>
 
-            <section className="flex flex-col gap-2 border border-zinc-200 bg-white p-3">
-              <h2 className="text-sm font-semibold text-zinc-900">Progreso por categoría</h2>
+            <section className="flex flex-col gap-2" style={cardStyle}>
+              <h2 className="text-sm font-semibold" style={cardTitleStyle}>Progreso por categoría</h2>
               <DataTable
                 columns={categoriasColumns}
                 data={dashboard.data.categorias}
@@ -114,8 +123,8 @@ export function DashboardPage() {
       {standings.data && standings.data.length > 0 && (
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {standings.data.map((cat) => (
-            <div key={cat.categoryId} className="flex flex-col gap-2 border border-zinc-200 bg-white p-3">
-              <h3 className="text-sm font-semibold text-zinc-900">
+            <div key={cat.categoryId} className="flex flex-col gap-2" style={cardStyle}>
+              <h3 className="text-sm font-semibold" style={cardTitleStyle}>
                 {cat.nombreCategoria} ({cat.distancia} km)
               </h3>
               <DataTable

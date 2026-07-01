@@ -29,10 +29,10 @@ export function RaceSelector({ value, onChange }: RaceSelectorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (loading) return <p className="text-sm text-zinc-500">Cargando carreras...</p>
+  if (loading) return <p className="text-sm" style={{ color: 'var(--text-lo)' }}>Cargando carreras...</p>
 
   if (races.length === 0) {
-    return <p className="text-sm text-zinc-500">No hay carreras creadas todavía.</p>
+    return <p className="text-sm" style={{ color: 'var(--text-lo)' }}>No hay carreras creadas todavía.</p>
   }
 
   return (
