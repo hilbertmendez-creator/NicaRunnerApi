@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Auth.Dtos;
@@ -28,4 +30,14 @@ public class AuthController(IAuthService authService) : ControllerBase
         var result = await authService.GoogleLoginAsync(request, ct);
         return Ok(result);
     }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken ct)
+    {
+        await authService.ChangePasswordAsync(GetUserId(), request, ct);
+        return NoContent();
+    }
+
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

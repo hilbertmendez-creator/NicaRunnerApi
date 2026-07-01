@@ -76,6 +76,20 @@ public class AuthService(
         return BuildAuthResponse(user);
     }
 
+    public async Task ChangePasswordAsync(int userId, ChangePasswordRequest request, CancellationToken ct = default)
+    {
+        var user = await userRepository.GetByIdAsync(userId, ct)
+            ?? throw new NotFoundException($"No existe el usuario con id {userId}.");
+
+        if (user.PasswordHash is null || !passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            throw new InvalidCredentialsException("La contraseña actual no es correcta.");
+
+        user.PasswordHash = passwordHasher.Hash(request.NewPassword);
+        user.MustChangePassword = false;
+
+        await userRepository.SaveChangesAsync(ct);
+    }
+
     private AuthResponse BuildAuthResponse(User user)
     {
         var generated = jwtTokenGenerator.GenerateToken(user);
