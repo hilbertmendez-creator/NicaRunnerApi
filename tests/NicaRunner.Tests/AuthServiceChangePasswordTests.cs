@@ -53,4 +53,16 @@ public class AuthServiceChangePasswordTests
         await Assert.ThrowsAsync<NotFoundException>(
             () => BuildService().ChangePasswordAsync(99, new ChangePasswordRequest("x", "y")));
     }
+
+    [Fact]
+    public async Task ChangePassword_UsuarioInactivo_LanzaForbidden()
+    {
+        var user = new User { Id = 1, Email = "a@b.com", PasswordHash = "hash-vieja", IsActive = false };
+        _users.Setup(u => u.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => BuildService().ChangePasswordAsync(1, new ChangePasswordRequest("actual", "nueva-segura")));
+
+        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

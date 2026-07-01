@@ -81,6 +81,9 @@ public class AuthService(
         var user = await userRepository.GetByIdAsync(userId, ct)
             ?? throw new NotFoundException($"No existe el usuario con id {userId}.");
 
+        if (!user.IsActive)
+            throw new ForbiddenException("Esta cuenta está desactivada.");
+
         if (user.PasswordHash is null || !passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
             throw new InvalidCredentialsException("La contraseña actual no es correcta.");
 
