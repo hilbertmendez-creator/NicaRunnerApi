@@ -26,7 +26,7 @@ Se decide **no** crear tabla separada de tokens de reset: solo hay un puñado de
 ## 2. Seed de usuarios administradores
 
 - Seeder idempotente ejecutado en el arranque de la app (junto al bloque de migración automática en `Program.cs`), **no** vía `HasData()` de migración (la BD de prod ya existe).
-- Correos del seed: `hilbert.mendez@gmail.com`, `evr86.skip@gmail.com`.
+- Correos del seed: `hilbert.mendez@gmail.com`, `evr86.skip@gmail.com`, `edufisica@ymail.com`.
 - Por cada correo: si no existe un `User` con ese email, se crea con `Role = Administrador`, `Provider = Local`, `IsActive = true`, `MustChangePassword = true`, y password temporal fija (misma para ambos) hasheada con el `PasswordHasher` existente.
 - La password temporal fija se lee de configuración (`Seed:DefaultAdminPassword`, env var / appsettings / user-secrets) — **nunca hardcodeada en el código ni committeada**. Se comunica a los 2 administradores por un canal seguro fuera del repo.
 - El seeder es seguro de re-ejecutar en cada deploy: solo crea lo que falta, nunca sobreescribe usuarios existentes.
