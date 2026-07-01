@@ -41,7 +41,7 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
   return (
     <Modal onClose={onClose} labelledBy="category-form-title">
       <form onSubmit={handleSubmit}>
-        <h2 id="category-form-title" className="mb-4 text-base font-semibold text-zinc-900">
+        <h2 id="category-form-title" className="mb-4 text-base font-semibold" style={{ color: 'var(--text-hi)' }}>
           {category ? 'Editar categoría' : 'Nueva categoría'}
         </h2>
 

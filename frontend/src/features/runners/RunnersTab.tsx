@@ -64,7 +64,7 @@ export function RunnersTab({ raceId }: { raceId: number }) {
     {
       header: 'Contacto',
       render: (runner) => (
-        <span className="text-zinc-500">{runner.email ?? runner.telefono ?? '—'}</span>
+        <span style={{ color: 'var(--text-lo)' }}>{runner.email ?? runner.telefono ?? '—'}</span>
       ),
     },
     {

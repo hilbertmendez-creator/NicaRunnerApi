@@ -1,9 +1,9 @@
 export type ConnectionState = 'online' | 'syncing' | 'offline'
 
 const CONFIG: Record<ConnectionState, { label: string; dot: string; pulse?: boolean }> = {
-  online: { label: 'En línea', dot: 'bg-official-600' },
-  syncing: { label: 'Sincronizando…', dot: 'bg-blue-700', pulse: true },
-  offline: { label: 'Sin conexión · datos en caché', dot: 'bg-critical-600' },
+  online: { label: 'En línea', dot: 'var(--badge-ok-text)' },
+  syncing: { label: 'Sincronizando…', dot: 'var(--accent)', pulse: true },
+  offline: { label: 'Sin conexión · datos en caché', dot: 'var(--conflict-bd)' },
 }
 
 interface ConnectionStatusBadgeProps {
@@ -17,9 +17,13 @@ export function ConnectionStatusBadge({ state, onClick }: ConnectionStatusBadgeP
     <span
       onClick={onClick}
       title={onClick ? 'Simular cambio de estado de conexión' : undefined}
-      className={`inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 ${onClick ? 'cursor-pointer' : ''}`}
+      className={`inline-flex items-center gap-1.5 text-xs font-medium ${onClick ? 'cursor-pointer' : ''}`}
+      style={{ color: 'var(--text-lo)' }}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot} ${cfg.pulse ? 'motion-safe:animate-pulse' : ''}`} />
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${cfg.pulse ? 'motion-safe:animate-pulse' : ''}`}
+        style={{ background: cfg.dot }}
+      />
       {cfg.label}
     </span>
   )

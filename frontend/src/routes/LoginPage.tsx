@@ -26,9 +26,13 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-xl font-semibold text-gray-900">nicaRunner — Back Office</h1>
+    <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-app)' }}>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm p-8"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)' }}
+      >
+        <h1 className="mb-6 text-xl font-semibold" style={{ color: 'var(--text-hi)' }}>nicaRunner — Back Office</h1>
 
         <Label htmlFor="email">Email</Label>
         <Input
@@ -50,7 +54,7 @@ export function LoginPage() {
           className="mb-4 w-full"
         />
 
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+        {error && <p className="mb-4 text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
 
         <Button type="submit" variant="primary" disabled={submitting} className="w-full">
           {submitting ? 'Ingresando...' : 'Ingresar'}

@@ -32,8 +32,8 @@ export function RaceDetailPage() {
   if (notFound) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-gray-700">No se encontró la carrera solicitada.</p>
-        <Link to="/carreras" className="text-sm text-blue-700 hover:underline">
+        <p className="text-sm" style={{ color: 'var(--text-lo)' }}>No se encontró la carrera solicitada.</p>
+        <Link to="/carreras" className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>
           ← Volver a carreras
         </Link>
       </div>
@@ -48,19 +48,19 @@ export function RaceDetailPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <Link to="/carreras" className="text-sm text-blue-700 hover:underline">
+        <Link to="/carreras" className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>
           ← Carreras
         </Link>
       </div>
 
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-zinc-900">{race?.nombre ?? 'Cargando...'}</h1>
+        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>{race?.nombre ?? 'Cargando...'}</h1>
         {race && <StatusBadge status={race.estado} />}
       </div>
 
       <Tabs tabs={tabItems} activeTab={tab} onChange={(val) => setTab(val as Tab)} />
 
-      <section className="border border-zinc-200 bg-white p-4">
+      <section style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)', padding: 16 }}>
         {tab === 'categorias' ? <CategoriesTab raceId={id} /> : <RunnersTab raceId={id} />}
       </section>
     </div>
