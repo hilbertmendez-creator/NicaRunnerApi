@@ -5,7 +5,7 @@
 
 ## Contexto
 
-El backoffice (`/src/NicaRunner.Api`, `/frontend`) no tiene ningún usuario administrador con el que hacer login por primera vez, ni forma de resetear una contraseña olvidada, ni una pantalla para gestionar usuarios/roles. Este documento cubre las cuatro piezas necesarias para resolverlo.
+El backoffice (`/src/NicaRunner.Api`, `/frontend`) no tiene ningún usuario administrador con el que hacer login por primera vez, ni forma de resetear una contraseña olvidada, ni una pantalla para gestionar usuarios/roles, ni una pantalla de login que refleje la marca. Este documento cubre las seis piezas necesarias para resolverlo.
 
 Estado actual relevante (ver exploración del repo):
 - `User` (`/src/NicaRunner.Domain/Entities/User.cs`): `Id, Email, PasswordHash, GoogleId, Provider, Nombre, Role (UserRole: Capturista/Administrador/Lector), CreatedAt, IsActive`.
@@ -27,8 +27,8 @@ Se decide **no** crear tabla separada de tokens de reset: solo hay un puñado de
 
 - Seeder idempotente ejecutado en el arranque de la app (junto al bloque de migración automática en `Program.cs`), **no** vía `HasData()` de migración (la BD de prod ya existe).
 - Correos del seed: `hilbert.mendez@gmail.com`, `evr86.skip@gmail.com`, `edufisica@ymail.com`.
-- Por cada correo: si no existe un `User` con ese email, se crea con `Role = Administrador`, `Provider = Local`, `IsActive = true`, `MustChangePassword = true`, y password temporal fija (misma para ambos) hasheada con el `PasswordHasher` existente.
-- La password temporal fija se lee de configuración (`Seed:DefaultAdminPassword`, env var / appsettings / user-secrets) — **nunca hardcodeada en el código ni committeada**. Se comunica a los 2 administradores por un canal seguro fuera del repo.
+- Por cada correo: si no existe un `User` con ese email, se crea con `Role = Administrador`, `Provider = Local`, `IsActive = true`, `MustChangePassword = true`, y password temporal fija (misma para los tres) hasheada con el `PasswordHasher` existente.
+- La password temporal fija se lee de configuración (`Seed:DefaultAdminPassword`, env var / appsettings / user-secrets) — **nunca hardcodeada en el código ni committeada**. Se comunica a los 3 administradores por un canal seguro fuera del repo.
 - El seeder es seguro de re-ejecutar en cada deploy: solo crea lo que falta, nunca sobreescribe usuarios existentes.
 
 ## 3. Forzar cambio de password en primer login
@@ -67,6 +67,15 @@ Se decide **no** crear tabla separada de tokens de reset: solo hay un puñado de
 - Botón "Nuevo usuario" → modal/formulario: email, nombre, rol (select de `Capturista`/`Administrador`/`Lector`).
 - Por fila: selector de rol inline y toggle activar/desactivar (deshabilitados sobre la fila del usuario actualmente logueado, según reglas de negocio del backend).
 - Entrada de navegación "Usuarios" visible solo si el usuario logueado tiene `Role = Administrador`.
+
+## 6. Rediseño de la pantalla de login (con logo)
+
+- **Layout**: pantalla dividida en desktop (≥1024px) — panel izquierdo de marca (fondo `slate-blue-900`, igual que el header del `AppLayout`) con el logo de NicaRunner (`frontend/public/favicon.svg`, el blob morado/azul) a tamaño grande (~140px) centrado, más el nombre "nicaRunner" y un halo radial sutil en `#7e14ff` al 10-15% de opacidad detrás del logo; panel derecho blanco con el formulario. En mobile (<1024px) se colapsa a una sola columna: el logo (más pequeño, ~64px) centrado arriba del formulario, sin el panel oscuro completo.
+- **Paleta**: se reutiliza la que ya existe en el backoffice — `slate-blue-900/800/700` para el panel de marca, `amber-400` como acento (coherente con el nav activo de `AppLayout`), blanco/`zinc` para el panel del formulario. No se introduce una paleta nueva.
+- **Tipografía**: se mantiene la fuente actual del proyecto, solo se ajusta jerarquía (tamaños/pesos) del título y del link de recuperar contraseña.
+- **Componentes**: se sigue usando `Button`, `Label`, `Input` de `@nicarunner/ui` sin cambios de API — solo cambia el layout/contenedor alrededor del `<form>` existente.
+- **Nuevo elemento**: link "¿Olvidaste tu contraseña?" bajo el campo de password, alineado a la derecha, que navega a `/forgot-password` (la página de la sección 4).
+- **Accesibilidad**: contraste verificado (texto blanco sobre `slate-blue-900`, texto oscuro sobre blanco), estados de foco visibles (ya provistos por `@nicarunner/ui`), responsive en 375/768/1024/1440px.
 
 ## Fuera de alcance
 
