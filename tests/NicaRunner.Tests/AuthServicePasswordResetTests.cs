@@ -109,4 +109,18 @@ public class AuthServicePasswordResetTests
         await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => BuildService().ResetPasswordAsync(new ResetPasswordRequest("no-existe", "nueva-segura")));
     }
+
+    [Fact]
+    public async Task ForgotPassword_SinSenderDeEmailRegistrado_NoLanzaExcepcion()
+    {
+        var user = new User { Id = 1, Email = "a@b.com", Provider = AuthProvider.Local, PasswordHash = "hash" };
+        _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+
+        var service = new AuthService(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object, [], _frontendOptions);
+
+        await service.ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
+
+        Assert.NotNull(user.PasswordResetToken);
+        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

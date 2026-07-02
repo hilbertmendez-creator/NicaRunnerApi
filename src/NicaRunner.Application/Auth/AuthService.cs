@@ -113,11 +113,14 @@ public class AuthService(
         user.PasswordResetTokenExpiry = DateTime.UtcNow.Add(ResetTokenLifetime);
         await userRepository.SaveChangesAsync(ct);
 
+        var emailSender = notificationSenders.FirstOrDefault(s => s.Channel == NotificationChannel.Email);
+        if (emailSender is null)
+            return;
+
         var resetLink = $"{frontendOptions.Value.BaseUrl}/reset-password?token={user.PasswordResetToken}";
         var mensaje = $"Hola {user.Nombre}, recibimos una solicitud para restablecer tu contraseña de NicaRunner Backoffice. " +
             $"Este link es válido por 30 minutos: {resetLink}\n\nSi no solicitaste esto, ignora este correo.";
 
-        var emailSender = notificationSenders.First(s => s.Channel == NotificationChannel.Email);
         await emailSender.SendAsync(user.Email, mensaje, "Restablece tu contraseña de NicaRunner", ct);
     }
 
