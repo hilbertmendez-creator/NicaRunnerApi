@@ -5,6 +5,7 @@ import { RequirePasswordChanged } from './auth/RequirePasswordChanged'
 import { AppLayout } from './components/AppLayout'
 import { LoginPage } from './routes/LoginPage'
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage'
+import { ResetPasswordPage } from './routes/ResetPasswordPage'
 import { ChangePasswordPage } from './routes/ChangePasswordPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { ResultsPage } from './features/results/ResultsPage'
@@ -21,6 +22,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/resultados/:token" element={<PublicResultsPage />} />
 
           <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Lector']} />}>
