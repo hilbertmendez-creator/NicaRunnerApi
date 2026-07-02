@@ -14,6 +14,7 @@ import { RaceDetailPage } from './features/races/RaceDetailPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { PublicLinksPage } from './features/public-links/PublicLinksPage'
 import { PublicResultsPage } from './features/public-results/PublicResultsPage'
+import { UsersPage } from './features/users/UsersPage'
 
 function App() {
   return (
@@ -36,6 +37,10 @@ function App() {
                 <Route path="/resultados" element={<ResultsPage />} />
                 <Route path="/notificaciones" element={<NotificationsPage />} />
                 <Route path="/enlaces" element={<PublicLinksPage />} />
+
+                <Route element={<ProtectedRoute allowedRoles={['Administrador']} />}>
+                  <Route path="/usuarios" element={<UsersPage />} />
+                </Route>
               </Route>
             </Route>
           </Route>

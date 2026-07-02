@@ -9,6 +9,8 @@ const NAV_ITEMS = [
   { to: '/enlaces', label: 'Enlaces públicos' },
 ] as const
 
+const ADMIN_ONLY_NAV_ITEMS = [{ to: '/usuarios', label: 'Usuarios' }] as const
+
 export function AppLayout() {
   const { user, logout } = useAuth()
   const initials = (user?.nombre ?? '?')
@@ -41,6 +43,20 @@ export function AppLayout() {
                   {item.label}
                 </NavLink>
               ))}
+              {user?.role === 'Administrador' &&
+                ADMIN_ONLY_NAV_ITEMS.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `px-3 py-1.5 text-sm font-medium ${
+                        isActive ? 'bg-slate-blue-800 text-white' : 'text-zinc-400 hover:text-white'
+                      }`
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
             </nav>
           </div>
           <div className="flex items-center gap-3">
