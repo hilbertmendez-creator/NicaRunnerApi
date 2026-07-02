@@ -19,6 +19,7 @@ using NicaRunner.Infrastructure.Excel;
 using NicaRunner.Infrastructure.Notifications;
 using NicaRunner.Infrastructure.Repositories;
 using NicaRunner.Infrastructure.Security;
+using NicaRunner.Infrastructure.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -123,6 +124,17 @@ if (!app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
     db.Database.Migrate();
+}
+
+// Seed idempotente de administradores de backoffice — corre en ambos entornos:
+// en prod para poblar la BD real (una sola vez), en dev para poder probar el
+// login localmente. Sin Seed:DefaultAdminPassword configurada, no hace nada.
+using (var seedScope = app.Services.CreateScope())
+{
+    var seedDb = seedScope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
+    var seedPasswordHasher = seedScope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    var defaultAdminPassword = builder.Configuration["Seed:DefaultAdminPassword"];
+    await AdminUserSeeder.SeedAsync(seedDb, seedPasswordHasher, defaultAdminPassword);
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
