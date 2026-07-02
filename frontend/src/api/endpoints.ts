@@ -2,10 +2,13 @@ import { apiClient } from './client'
 import type {
   AuthResponse,
   CategoryStandingsDto,
+  ChangePasswordRequest,
   CreatePublicTokenRequest,
   CreateRaceCategoryRequest,
   CreateRaceRequest,
   CreateRunnerRequest,
+  CreateUserRequest,
+  ForgotPasswordRequest,
   ImportRunnersResultDto,
   JoinByCodeRequest,
   NotificationDto,
@@ -16,6 +19,7 @@ import type {
   RaceCategoryDto,
   RaceDashboardDto,
   RaceDto,
+  ResetPasswordRequest,
   ResultAuditDto,
   ResultDto,
   RunnerDto,
@@ -23,6 +27,8 @@ import type {
   UpdateRaceRequest,
   UpdateResultRequest,
   UpdateRunnerRequest,
+  UpdateUserRequest,
+  UserDto,
 } from './types'
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
@@ -191,5 +197,32 @@ export async function getPublicRunnerResult(
   runnerId: number,
 ): Promise<PublicRunnerDetailDto> {
   const { data } = await apiClient.get<PublicRunnerDetailDto>(`/public/runner/${token}/${runnerId}`)
+  return data
+}
+
+export async function changePassword(request: ChangePasswordRequest): Promise<void> {
+  await apiClient.post('/auth/change-password', request)
+}
+
+export async function forgotPassword(request: ForgotPasswordRequest): Promise<void> {
+  await apiClient.post('/auth/forgot-password', request)
+}
+
+export async function resetPassword(request: ResetPasswordRequest): Promise<void> {
+  await apiClient.post('/auth/reset-password', request)
+}
+
+export async function getUsers(): Promise<UserDto[]> {
+  const { data } = await apiClient.get<UserDto[]>('/users')
+  return data
+}
+
+export async function createUser(request: CreateUserRequest): Promise<UserDto> {
+  const { data } = await apiClient.post<UserDto>('/users', request)
+  return data
+}
+
+export async function updateUser(id: number, request: UpdateUserRequest): Promise<UserDto> {
+  const { data } = await apiClient.patch<UserDto>(`/users/${id}`, request)
   return data
 }
