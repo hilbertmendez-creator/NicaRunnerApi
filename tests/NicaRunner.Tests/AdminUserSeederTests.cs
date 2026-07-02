@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Data;
+using NicaRunner.Infrastructure.Repositories;
 using NicaRunner.Infrastructure.Security;
 using NicaRunner.Infrastructure.Seed;
 
@@ -25,9 +26,10 @@ public class AdminUserSeederTests
     public async Task SeedAsync_BdVacia_CreaLosTresAdministradores()
     {
         using var db = BuildInMemoryDbContext();
+        IUserRepository users = new UserRepository(db);
         IPasswordHasher hasher = new PasswordHasher();
 
-        await AdminUserSeeder.SeedAsync(db, hasher, "temporal123");
+        await AdminUserSeeder.SeedAsync(users, hasher, "temporal123");
 
         var admins = await db.Users.ToListAsync();
         Assert.Equal(3, admins.Count);
@@ -42,10 +44,11 @@ public class AdminUserSeederTests
     public async Task SeedAsync_EjecutadoDosVeces_NoDuplicaUsuarios()
     {
         using var db = BuildInMemoryDbContext();
+        IUserRepository users = new UserRepository(db);
         IPasswordHasher hasher = new PasswordHasher();
 
-        await AdminUserSeeder.SeedAsync(db, hasher, "temporal123");
-        await AdminUserSeeder.SeedAsync(db, hasher, "temporal123");
+        await AdminUserSeeder.SeedAsync(users, hasher, "temporal123");
+        await AdminUserSeeder.SeedAsync(users, hasher, "temporal123");
 
         Assert.Equal(3, await db.Users.CountAsync());
     }
@@ -54,6 +57,7 @@ public class AdminUserSeederTests
     public async Task SeedAsync_UsuarioYaExiste_NoLoSobreescribe()
     {
         using var db = BuildInMemoryDbContext();
+        IUserRepository users = new UserRepository(db);
         IPasswordHasher hasher = new PasswordHasher();
         db.Users.Add(new User
         {
@@ -65,7 +69,7 @@ public class AdminUserSeederTests
         });
         await db.SaveChangesAsync();
 
-        await AdminUserSeeder.SeedAsync(db, hasher, "temporal123");
+        await AdminUserSeeder.SeedAsync(users, hasher, "temporal123");
 
         var existing = await db.Users.SingleAsync(u => u.Email == "hilbert.mendez@gmail.com");
         Assert.Equal("Hilbert (ya editado)", existing.Nombre);
@@ -77,9 +81,10 @@ public class AdminUserSeederTests
     public async Task SeedAsync_SinPasswordConfigurada_NoCreaUsuarios()
     {
         using var db = BuildInMemoryDbContext();
+        IUserRepository users = new UserRepository(db);
         IPasswordHasher hasher = new PasswordHasher();
 
-        await AdminUserSeeder.SeedAsync(db, hasher, defaultPassword: null);
+        await AdminUserSeeder.SeedAsync(users, hasher, defaultPassword: null);
 
         Assert.Equal(0, await db.Users.CountAsync());
     }

@@ -129,12 +129,22 @@ if (!app.Environment.IsDevelopment())
 // Seed idempotente de administradores de backoffice — corre en ambos entornos:
 // en prod para poblar la BD real (una sola vez), en dev para poder probar el
 // login localmente. Sin Seed:DefaultAdminPassword configurada, no hace nada.
+// Se envuelve en try/catch porque en un checkout de dev fresco (sin migrar
+// todavía con `dotnet ef database update`) la tabla Users no existe aún — no
+// queremos que eso tumbe el arranque completo del servidor.
 using (var seedScope = app.Services.CreateScope())
 {
-    var seedDb = seedScope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
-    var seedPasswordHasher = seedScope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-    var defaultAdminPassword = builder.Configuration["Seed:DefaultAdminPassword"];
-    await AdminUserSeeder.SeedAsync(seedDb, seedPasswordHasher, defaultAdminPassword);
+    try
+    {
+        var seedUserRepository = seedScope.ServiceProvider.GetRequiredService<IUserRepository>();
+        var seedPasswordHasher = seedScope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var defaultAdminPassword = builder.Configuration["Seed:DefaultAdminPassword"];
+        await AdminUserSeeder.SeedAsync(seedUserRepository, seedPasswordHasher, defaultAdminPassword);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "No se pudo ejecutar el seed de administradores (¿faltan migraciones por aplicar?).");
+    }
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

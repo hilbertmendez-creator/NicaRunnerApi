@@ -1,7 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Domain.Entities;
-using NicaRunner.Infrastructure.Data;
 
 namespace NicaRunner.Infrastructure.Seed;
 
@@ -19,20 +17,23 @@ public static class AdminUserSeeder
         "edufisica@ymail.com"
     ];
 
-    public static async Task SeedAsync(NicaRunnerDbContext db, IPasswordHasher passwordHasher, string? defaultPassword, CancellationToken ct = default)
+    public static async Task SeedAsync(IUserRepository userRepository, IPasswordHasher passwordHasher, string? defaultPassword, CancellationToken ct = default)
     {
         // Sin password configurada (Seed:DefaultAdminPassword) no hay nada seguro que
         // hashear — se omite el seed en vez de arrancar con una contraseña conocida.
         if (string.IsNullOrWhiteSpace(defaultPassword))
             return;
 
+        var existingEmails = (await userRepository.GetAllAsync(ct))
+            .Select(u => u.Email)
+            .ToHashSet();
+
         foreach (var email in AdminEmails)
         {
-            var exists = await db.Users.AnyAsync(u => u.Email == email, ct);
-            if (exists)
+            if (existingEmails.Contains(email))
                 continue;
 
-            db.Users.Add(new User
+            await userRepository.AddAsync(new User
             {
                 Email = email,
                 Nombre = email,
@@ -41,9 +42,9 @@ public static class AdminUserSeeder
                 PasswordHash = passwordHasher.Hash(defaultPassword),
                 MustChangePassword = true,
                 IsActive = true
-            });
+            }, ct);
         }
 
-        await db.SaveChangesAsync(ct);
+        await userRepository.SaveChangesAsync(ct);
     }
 }
