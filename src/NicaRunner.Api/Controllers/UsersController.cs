@@ -20,7 +20,7 @@ public class UsersController(IUserManagementService userManagementService) : Con
     public async Task<ActionResult<UserDto>> Create(CreateUserRequest request, CancellationToken ct)
     {
         var user = await userManagementService.CreateAsync(request, ct);
-        return CreatedAtAction(nameof(GetAll), user);
+        return Ok(user);
     }
 
     [HttpPatch("{id:int}")]
