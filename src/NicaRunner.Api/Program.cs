@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using NicaRunner.Api.Middleware;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Categories;
+using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Dashboard;
 using NicaRunner.Application.Notifications;
@@ -13,11 +14,13 @@ using NicaRunner.Application.PublicResults;
 using NicaRunner.Application.Races;
 using NicaRunner.Application.Results;
 using NicaRunner.Application.Runners;
+using NicaRunner.Application.Users;
 using NicaRunner.Infrastructure.Data;
 using NicaRunner.Infrastructure.Excel;
 using NicaRunner.Infrastructure.Notifications;
 using NicaRunner.Infrastructure.Repositories;
 using NicaRunner.Infrastructure.Security;
+using NicaRunner.Infrastructure.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +51,7 @@ builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
+builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
@@ -68,6 +72,7 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IRaceCategoryService, RaceCategoryService>();
 builder.Services.AddScoped<IRunnerService, RunnerService>();
@@ -121,6 +126,27 @@ if (!app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
     db.Database.Migrate();
+}
+
+// Seed idempotente de administradores de backoffice — corre en ambos entornos:
+// en prod para poblar la BD real (una sola vez), en dev para poder probar el
+// login localmente. Sin Seed:DefaultAdminPassword configurada, no hace nada.
+// Se envuelve en try/catch porque en un checkout de dev fresco (sin migrar
+// todavía con `dotnet ef database update`) la tabla Users no existe aún — no
+// queremos que eso tumbe el arranque completo del servidor.
+using (var seedScope = app.Services.CreateScope())
+{
+    try
+    {
+        var seedUserRepository = seedScope.ServiceProvider.GetRequiredService<IUserRepository>();
+        var seedPasswordHasher = seedScope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var defaultAdminPassword = builder.Configuration["Seed:DefaultAdminPassword"];
+        await AdminUserSeeder.SeedAsync(seedUserRepository, seedPasswordHasher, defaultAdminPassword);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "No se pudo ejecutar el seed de administradores (¿faltan migraciones por aplicar?).");
+    }
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();

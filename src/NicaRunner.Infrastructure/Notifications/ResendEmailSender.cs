@@ -17,7 +17,7 @@ public class ResendEmailSender(HttpClient httpClient, IOptions<ResendOptions> op
 
     public NotificationChannel Channel => NotificationChannel.Email;
 
-    public async Task<NotificationSendResult> SendAsync(string destino, string mensaje, CancellationToken ct = default)
+    public async Task<NotificationSendResult> SendAsync(string destino, string mensaje, string? subject = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
         {
@@ -30,7 +30,7 @@ public class ResendEmailSender(HttpClient httpClient, IOptions<ResendOptions> op
         {
             from = _options.FromEmail,
             to = new[] { destino },
-            subject = _options.Subject,
+            subject = subject ?? _options.Subject,
             text = mensaje,
         };
 

@@ -8,4 +8,5 @@ public record AuthResponse(
     int UserId,
     string Email,
     string Nombre,
-    UserRole Role);
+    UserRole Role,
+    bool MustChangePassword);

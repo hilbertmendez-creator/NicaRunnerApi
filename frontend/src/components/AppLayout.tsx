@@ -31,6 +31,8 @@ const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
   },
 ]
 
+const ADMIN_ONLY_NAV_ITEMS = [{ to: '/usuarios', label: 'Usuarios' }] as const
+
 export function AppLayout() {
   const { user, logout } = useAuth()
   const initials = (user?.nombre ?? '?')

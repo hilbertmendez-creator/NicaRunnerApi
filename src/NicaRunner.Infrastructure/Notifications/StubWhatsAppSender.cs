@@ -10,7 +10,7 @@ public class StubWhatsAppSender : INotificationSender
 {
     public NotificationChannel Channel => NotificationChannel.WhatsApp;
 
-    public Task<NotificationSendResult> SendAsync(string destino, string mensaje, CancellationToken ct = default) =>
+    public Task<NotificationSendResult> SendAsync(string destino, string mensaje, string? subject = null, CancellationToken ct = default) =>
         Task.FromResult(new NotificationSendResult(
             false,
             "Integración de WhatsApp pendiente de configurar (proveedor y credenciales)."));

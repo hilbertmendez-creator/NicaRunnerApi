@@ -12,5 +12,5 @@ public record NotificationSendResult(bool Success, string? ErrorMessage);
 public interface INotificationSender
 {
     NotificationChannel Channel { get; }
-    Task<NotificationSendResult> SendAsync(string destino, string mensaje, CancellationToken ct = default);
+    Task<NotificationSendResult> SendAsync(string destino, string mensaje, string? subject = null, CancellationToken ct = default);
 }
