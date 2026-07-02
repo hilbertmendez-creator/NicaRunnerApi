@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -24,6 +25,241 @@
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background: #f3f4f6;
-  color: #111827;
+  background: var(--bg-app, #f3f4f6);
+  color: var(--text-hi, #111827);
+}
+
+/* ────────────────────────────────────────────────────────────
+   Sistema de temas NicaRunner (Fase 1 — IMPLEMENTATION_PLAN)
+   Todos los colores/radios/sombras vienen de estas custom
+   properties. Nunca hardcodear hex fuera de estos bloques.
+   ──────────────────────────────────────────────────────────── */
+
+/* ── Animaciones globales ── */
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(0.68); }
+}
+
+@keyframes prog-in {
+  from { width: 0; }
+  to   { width: var(--prog-width, 72%); }
+}
+
+/* ── TEMA: CONTROL (oscuro) ── */
+[data-theme="dark"] {
+  --bg-app:        #0A1322;
+  --bg-sidebar:    #0F1D32;
+  --bg-topbar:     #0D1928;
+  --bg-card:       #0D1928;
+  --bg-hover:      rgba(255,255,255,.018);
+  --bg-input:      rgba(255,255,255,.04);
+  --bg-th:         #0A1826;
+  --bd:            rgba(66,165,245,.10);
+  --bd-card:       rgba(66,165,245,.13);
+  --bd-row:        rgba(66,165,245,.07);
+  --bd-conflict:   rgba(217,58,58,.22);
+  --text-hi:       #E8F4FF;
+  --text-lo:       #6A8DAB;
+  --text-xs:       #3D5A73;
+  --text-th:       #2E4A66;
+  --accent:        #42A5F5;
+  --accent-bg:     rgba(66,165,245,.12);
+  --accent-dim:    rgba(66,165,245,.20);
+  --sb-text:       #42A5F5;
+  --sb-muted:      #5B7A9A;
+  --sb-active-bg:  rgba(66,165,245,.13);
+  --sb-active-bd:  #42A5F5;
+  --tab-active:    #42A5F5;
+  --mono:          #42A5F5;
+  --pr-bg:         rgba(66,165,245,.13);
+  --pr-bd:         rgba(66,165,245,.22);
+  --pr-text:       #42A5F5;
+  --gh-bd:         rgba(66,165,245,.18);
+  --gh-text:       #6A8DAB;
+  --badge-ok-bg:   rgba(46,158,91,.16);
+  --badge-ok-bd:   rgba(46,158,91,.3);
+  --badge-ok-text: #3DBE6E;
+  --badge-er-bg:   rgba(217,58,58,.2);
+  --badge-er-bd:   rgba(217,58,58,.32);
+  --badge-er-text: #D93A3A;
+  --badge-pr-bg:   rgba(66,165,245,.12);
+  --badge-pr-bd:   rgba(66,165,245,.2);
+  --badge-pr-text: #42A5F5;
+  --badge-cl-bg:   rgba(91,122,154,.12);
+  --badge-cl-text: #5B7A9A;
+  --gold:          #D4AF37;
+  --silver:        #9CA3AF;
+  --bronze:        #B87333;
+  --conflict-bg:   rgba(217,58,58,.07);
+  --conflict-bd:   #D93A3A;
+  --conflict-text: #D93A3A;
+  --chip-a-bg:     rgba(66,165,245,.18);
+  --chip-a-bd:     #42A5F5;
+  --chip-a-text:   #42A5F5;
+  --pb-track:      #0A1826;
+  --pb-fill-from:  #1565FF;
+  --pb-fill-to:    #42A5F5;
+  --radius-card:   8px;
+  --radius-btn:    5px;
+  --radius-badge:  3px;
+}
+
+/* ── TEMA: LIMPIO (claro) ── */
+[data-theme="light"] {
+  --bg-app:        #F7F9FC;
+  --bg-sidebar:    #FFFFFF;
+  --bg-topbar:     #FFFFFF;
+  --bg-card:       #FFFFFF;
+  --bg-hover:      #FAFBFC;
+  --bg-input:      #F7F9FC;
+  --bg-th:         #F7F9FC;
+  --bd:            #E8ECEF;
+  --bd-card:       #E8ECEF;
+  --bd-row:        #F0F2F5;
+  --bd-conflict:   #FECACA;
+  --text-hi:       #11243F;
+  --text-lo:       #5B6B82;
+  --text-xs:       #9AA5B1;
+  --text-th:       #9AA5B1;
+  --accent:        #0D47A1;
+  --accent-bg:     #EEF3FF;
+  --accent-dim:    #BFDBFE;
+  --sb-text:       #0D47A1;
+  --sb-muted:      #5B6B82;
+  --sb-active-bg:  #EEF3FF;
+  --sb-active-bd:  #0D47A1;
+  --tab-active:    #0D47A1;
+  --mono:          #0D47A1;
+  --pr-bg:         #0D47A1;
+  --pr-bd:         #0D47A1;
+  --pr-text:       #FFFFFF;
+  --gh-bd:         #E8ECEF;
+  --gh-text:       #5B6B82;
+  --badge-ok-bg:   #F0FDF4;
+  --badge-ok-bd:   #BBF7D0;
+  --badge-ok-text: #15803D;
+  --badge-er-bg:   #FEF2F2;
+  --badge-er-bd:   #FECACA;
+  --badge-er-text: #DC2626;
+  --badge-pr-bg:   #FFF7ED;
+  --badge-pr-bd:   #FED7AA;
+  --badge-pr-text: #D97706;
+  --badge-cl-bg:   #F7F9FC;
+  --badge-cl-text: #9AA5B1;
+  --gold:          #D97706;
+  --silver:        #6B7280;
+  --bronze:        #B87333;
+  --conflict-bg:   #FFF5F5;
+  --conflict-bd:   #DC2626;
+  --conflict-text: #DC2626;
+  --chip-a-bg:     #EEF3FF;
+  --chip-a-bd:     #93C5FD;
+  --chip-a-text:   #1D4ED8;
+  --pb-track:      #EEF3FF;
+  --pb-fill-from:  #42A5F5;
+  --pb-fill-to:    #0D47A1;
+  --radius-card:   8px;
+  --radius-btn:    6px;
+  --radius-badge:  20px;
+}
+
+/* ── TEMA: MARCA NicaRunner ── */
+[data-theme="brand"] {
+  --bg-app:        #F5F9FF;
+  --bg-sidebar:    #0D47A1;
+  --bg-topbar:     #FFFFFF;
+  --bg-card:       #FFFFFF;
+  --bg-hover:      #FAFCFF;
+  --bg-input:      #FFFFFF;
+  --bg-th:         #F5F9FF;
+  --bd:            #E3F0FF;
+  --bd-card:       #D6EAFF;
+  --bd-row:        #EBF4FF;
+  --bd-conflict:   #FECACA;
+  --text-hi:       #11243F;
+  --text-lo:       #5B6B82;
+  --text-xs:       #9AA5B1;
+  --text-th:       #5B6B82;
+  --accent:        #1565FF;
+  --accent-bg:     #EEF3FF;
+  --accent-dim:    #D6EAFF;
+  --sb-text:       #FFFFFF;
+  --sb-muted:      rgba(255,255,255,.60);
+  --sb-active-bg:  rgba(255,255,255,.15);
+  --sb-active-bd:  rgba(255,255,255,.5);
+  --tab-active:    #1565FF;
+  --mono:          #0D47A1;
+  --pr-bg:         #1565FF;
+  --pr-bd:         transparent;
+  --pr-text:       #FFFFFF;
+  --gh-bd:         #D6EAFF;
+  --gh-text:       #0D47A1;
+  --badge-ok-bg:   #ECFDF5;
+  --badge-ok-bd:   #6EE7B7;
+  --badge-ok-text: #059669;
+  --badge-er-bg:   #FEF2F2;
+  --badge-er-bd:   #FECACA;
+  --badge-er-text: #DC2626;
+  --badge-pr-bg:   #EEF3FF;
+  --badge-pr-bd:   #BFDBFE;
+  --badge-pr-text: #1D4ED8;
+  --badge-cl-bg:   #F5F9FF;
+  --badge-cl-text: #5B6B82;
+  --gold:          #D97706;
+  --silver:        #6B7280;
+  --bronze:        #B87333;
+  --conflict-bg:   #FFF5F5;
+  --conflict-bd:   #DC2626;
+  --conflict-text: #DC2626;
+  --chip-a-bg:     #1565FF;
+  --chip-a-bd:     transparent;
+  --chip-a-text:   #FFFFFF;
+  --pb-track:      #DBEAFE;
+  --pb-fill-from:  #42A5F5;
+  --pb-fill-to:    #1565FF;
+  --radius-card:   14px;
+  --radius-btn:    10px;
+  --radius-badge:  20px;
+}
+
+/* Sidebar gradiente solo en tema brand */
+[data-theme="brand"] .sidebar-inner {
+  background: linear-gradient(160deg, #0D47A1 0%, #08306B 100%) !important;
+}
+
+/* Botón primario con gradiente en tema brand */
+[data-theme="brand"] .btn-primary {
+  background: linear-gradient(90deg, #42A5F5, #1565FF) !important;
+}
+
+/* Progress bar usando custom properties */
+.pb-fill {
+  background: linear-gradient(90deg, var(--pb-fill-from), var(--pb-fill-to));
+}
+
+/* Fila con hover tematizado (para tablas custom) */
+.row-hover:hover {
+  background: var(--bg-hover);
+}
+
+/* Input tematizado */
+.nr-input {
+  background: var(--bg-input);
+  border: 1px solid var(--bd);
+  color: var(--text-hi);
+  border-radius: var(--radius-btn);
+  outline: none;
+}
+.nr-input:focus {
+  border-color: var(--accent);
+}
+
+/* Dot animado "En vivo" */
+.dot-live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22C55E;
+  animation: pulse-live 1.4s ease-in-out infinite;
 }

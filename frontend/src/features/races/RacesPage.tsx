@@ -7,6 +7,7 @@ import { StatusBadge } from '../../components/StatusBadge'
 import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import { RaceFormModal } from './RaceFormModal'
+import { pageTitle } from '../../theme/styles'
 
 export function RacesPage() {
   const { user } = useAuth()
@@ -38,7 +39,11 @@ export function RacesPage() {
     {
       header: 'Nombre',
       render: (race) => (
-        <Link to={`/carreras/${race.id}`} className="font-medium text-blue-700 hover:underline">
+        <Link
+          to={`/carreras/${race.id}`}
+          className="font-medium hover:underline"
+          style={{ color: 'var(--accent)' }}
+        >
           {race.nombre}
         </Link>
       ),
@@ -73,7 +78,7 @@ export function RacesPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-zinc-900">Carreras</h1>
+        <h1 className="text-lg font-semibold" style={pageTitle}>Carreras</h1>
         {canManage && (
           <Button variant="primary" onClick={() => setShowCreate(true)}>
             Nueva carrera
