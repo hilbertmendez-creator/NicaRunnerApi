@@ -109,6 +109,45 @@ export function AppLayout() {
               ))}
             </div>
           ))}
+
+          {user?.role === 'Administrador' && (
+            <div>
+              <div
+                style={{
+                  padding: '5px 8px',
+                  font: '500 9px Inter',
+                  color: 'var(--sb-muted)',
+                  letterSpacing: '.7px',
+                  textTransform: 'uppercase',
+                  margin: '8px 0 2px',
+                }}
+              >
+                Administración
+              </div>
+              {ADMIN_ONLY_NAV_ITEMS.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    padding: isActive ? '6px 9px 6px 7px' : '7px 9px',
+                    borderRadius: 6,
+                    borderLeft: isActive ? '2.5px solid var(--sb-active-bd)' : '2.5px solid transparent',
+                    background: isActive ? 'var(--sb-active-bg)' : 'transparent',
+                    textDecoration: 'none',
+                    marginBottom: 1,
+                    color: isActive ? 'var(--sb-text)' : 'var(--sb-muted)',
+                    font: `${isActive ? 600 : 500} 12.5px Inter`,
+                  })}
+                >
+                  <span style={{ width: 16, textAlign: 'center' }}>⚙</span>
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                </NavLink>
+              ))}
+            </div>
+          )}
         </nav>
 
         {/* User + logout */}
