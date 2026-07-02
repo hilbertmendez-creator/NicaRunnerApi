@@ -38,14 +38,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: response.email,
       nombre: response.nombre,
       role: response.role,
+      mustChangePassword: response.mustChangePassword,
     }
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(currentUser))
     setUser(currentUser)
   }, [])
 
+  const clearMustChangePassword = useCallback(() => {
+    setUser((current) => {
+      if (!current) return current
+      const updated = { ...current, mustChangePassword: false }
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAuthenticated: user !== null, login, logout }),
-    [user, login, logout],
+    () => ({ user, isAuthenticated: user !== null, login, logout, clearMustChangePassword }),
+    [user, login, logout, clearMustChangePassword],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
