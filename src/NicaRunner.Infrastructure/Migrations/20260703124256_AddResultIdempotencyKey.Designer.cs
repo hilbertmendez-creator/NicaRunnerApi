@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NicaRunner.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using NicaRunner.Infrastructure.Data;
 namespace NicaRunner.Infrastructure.Migrations
 {
     [DbContext(typeof(NicaRunnerDbContext))]
-    partial class NicaRunnerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260703124256_AddResultIdempotencyKey")]
+    partial class AddResultIdempotencyKey
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.28");
@@ -199,51 +202,6 @@ namespace NicaRunner.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("RaceJudges");
-                });
-
-            modelBuilder.Entity("NicaRunner.Domain.Entities.RefreshToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("FamilyId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ReplacedByTokenHash")
-                        .HasMaxLength(64)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("RevokedReason")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("TokenHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FamilyId");
-
-                    b.HasIndex("TokenHash")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("NicaRunner.Domain.Entities.Result", b =>
@@ -515,17 +473,6 @@ namespace NicaRunner.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Race");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("NicaRunner.Domain.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("NicaRunner.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });
