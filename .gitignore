@@ -26,6 +26,10 @@ publish/
 .claude/agents/
 .claude/commands/
 .claude/helpers/
-.claude/skills/
+.claude/skills/*
+!.claude/skills/graphify/
 .claude-flow/
 .agent/
+
+## graphify knowledge graph (regenerated via git hook / /graphify --update)
+graphify-out/
