@@ -443,42 +443,42 @@ GET    /api/public/runner/{token}/{runnerId} - Ver resultado individual (opciona
 ## 10. Implementación — Plan por Fases
 
 ### Fase 1: Core API (2-3 semanas)
-- [ ] Estructura de proyecto ASP.NET Core
-- [ ] Modelos de datos y migraciones
-- [ ] Autenticación JWT
-- [ ] Endpoints CRUD base (carreras, corredores, resultados)
-- [ ] Import de Excel
+- [x] Estructura de proyecto ASP.NET Core
+- [x] Modelos de datos y migraciones
+- [x] Autenticación JWT
+- [x] Endpoints CRUD base (carreras, corredores, resultados)
+- [x] Import de Excel
 
 ### Fase 2: Captura de Tiempos (1-2 semanas)
-- [ ] Endpoint de captura de tiempos
-- [ ] WebSocket para actualizaciones en vivo
-- [ ] App móvil básica conectada a API
+- [x] Endpoint de captura de tiempos
+- [ ] WebSocket para actualizaciones en vivo (dashboard actual no tiene live-update; pendiente)
+- [ ] App móvil básica conectada a API (no existe; captura se hace desde el back office web vía join code de jueces)
 
 ### Fase 3: Back Office (2-3 semanas)
-- [ ] Dashboard en tiempo real
-- [ ] Edición manual de tiempos con auditoría
-- [ ] Gestión de roles y permisos
+- [x] Dashboard en tiempo real (sin WebSocket, ver Fase 2)
+- [x] Edición manual de tiempos con auditoría
+- [x] Gestión de roles y permisos (incluye pantalla de mantenimiento de usuarios)
 
 ### Fase 4: Notificaciones (1-2 semanas)
-- [ ] Servicio de notificaciones (Email, WhatsApp, Push)
-- [ ] Background job para envío
+- [x] Servicio de notificaciones — Email vía Resend (spec original decía SendGrid; WhatsApp es un stub sin integración real, Push/Firebase no implementado)
+- [ ] Background job para envío (no hay Hangfire ni hosted service; el envío es síncrono en el request)
 - [ ] Reenvío en caso de fallos
 
 ### Fase 5: Sitio Público (1 semana)
-- [ ] Generación de tokens públicos
-- [ ] Sitio público con resultados
-- [ ] Limpieza automática de tokens expirados
+- [x] Generación de tokens públicos
+- [x] Sitio público con resultados
+- [ ] Limpieza automática de tokens expirados (no hay job en background; hoy solo se valida expiración al consultar)
 
 ### Fase 6: Refinamiento & Testing (1-2 semanas)
-- [ ] Tests unitarios
+- [ ] Tests unitarios (solo cubren Auth/Users — Races, Runners, Results, Dashboard, Notifications sin tests)
 - [ ] Tests de integración
 - [ ] Ajustes de performance
 - [ ] Documentación
 
 ### Fase 7: Diseño Profesional (A futuro)
-- [ ] Cloud design system
-- [ ] Rediseño de UI/UX
-- [ ] Aplicar a app móvil y back office
+- [x] Cloud design system (`@nicarunner/ui`, ver `.design-sync/NOTES.md`)
+- [x] Rediseño de UI/UX (tema + login rediseñado)
+- [ ] Aplicar a app móvil (no existe app móvil, ver Fase 2)
 
 ---
 
