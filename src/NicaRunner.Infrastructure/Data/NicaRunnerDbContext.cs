@@ -19,6 +19,7 @@ public class NicaRunnerDbContext : DbContext
     public DbSet<PublicResultToken> PublicResultTokens => Set<PublicResultToken>();
     public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
     public DbSet<RaceJudge> RaceJudges => Set<RaceJudge>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,6 +66,31 @@ public class NicaRunnerDbContext : DbContext
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
+
+        // RefreshToken: lookup primario por hash (siempre llega el token plano
+        // del cliente, lo hasheamos y buscamos). FamilyId indexado para revocar
+        // toda la familia de una en el caso replay-detected sin scan completo.
+        // Cascade desde User para que dar de baja una cuenta limpie sus tokens.
+        modelBuilder.Entity<RefreshToken>()
+            .HasIndex(t => t.TokenHash)
+            .IsUnique();
+        modelBuilder.Entity<RefreshToken>()
+            .HasIndex(t => t.FamilyId);
+        modelBuilder.Entity<RefreshToken>()
+            .HasOne(t => t.User)
+            .WithMany()
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        // Longitudes explícitas: el hash es SHA-256 hex (64 chars), el
+        // ReplacedByTokenHash apunta a otro hash. Acotar para evitar columnas
+        // "text" gigantes y dejar el contrato claro.
+        modelBuilder.Entity<RefreshToken>()
+            .Property(t => t.TokenHash)
+            .HasMaxLength(64)
+            .IsRequired();
+        modelBuilder.Entity<RefreshToken>()
+            .Property(t => t.ReplacedByTokenHash)
+            .HasMaxLength(64);
 
         // GoogleId único, pero solo aplica a usuarios con cuenta de Google vinculada.
         // Sin corchetes T-SQL: este modelo corre sobre Sqlite (dev) y Postgres (prod).
