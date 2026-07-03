@@ -14,7 +14,7 @@ public class AuthService(
     IJwtTokenGenerator jwtTokenGenerator,
     IGoogleAuthService googleAuthService,
     IRefreshTokenService refreshTokenService,
-    IEnumerable<INotificationSender> notificationSenders,
+    INotificationDispatcher notificationDispatcher,
     IOptions<FrontendOptions> frontendOptions) : IAuthService
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
@@ -114,15 +114,16 @@ public class AuthService(
         user.PasswordResetTokenExpiry = DateTime.UtcNow.Add(ResetTokenLifetime);
         await userRepository.SaveChangesAsync(ct);
 
-        var emailSender = notificationSenders.FirstOrDefault(s => s.Channel == NotificationChannel.Email);
-        if (emailSender is null)
-            return;
-
         var resetLink = $"{frontendOptions.Value.BaseUrl}/reset-password?token={user.PasswordResetToken}";
         var mensaje = $"Hola {user.Nombre}, recibimos una solicitud para restablecer tu contraseña de NicaRunner Backoffice. " +
             $"Este link es válido por 30 minutos: {resetLink}\n\nSi no solicitaste esto, ignora este correo.";
 
-        await emailSender.SendAsync(user.Email, mensaje, "Restablece tu contraseña de NicaRunner", ct);
+        // El dispatcher devuelve success=false si no hay proveedor para el canal
+        // — comportamiento equivalente al viejo "if emailSender is null return".
+        // No fallamos: token queda persistido y el admin puede compartir el link
+        // manualmente si el correo no salió.
+        await notificationDispatcher.SendAsync(
+            NotificationChannel.Email, user.Email, mensaje, "Restablece tu contraseña de NicaRunner", ct);
     }
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default)

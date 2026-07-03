@@ -16,29 +16,26 @@ public class AuthServicePasswordResetTests
     private readonly Mock<IJwtTokenGenerator> _jwt = new();
     private readonly Mock<IGoogleAuthService> _google = new();
     private readonly Mock<IRefreshTokenService> _refresh = new();
-    private readonly Mock<INotificationSender> _emailSender = new();
+    private readonly Mock<INotificationDispatcher> _dispatcher = new();
     private readonly IOptions<FrontendOptions> _frontendOptions = Options.Create(new FrontendOptions { BaseUrl = "https://backoffice.nicarunner.test" });
 
-    private AuthService BuildService()
-    {
-        _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
-        return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
-            _refresh.Object, [_emailSender.Object], _frontendOptions);
-    }
+    private AuthService BuildService() =>
+        new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
+            _refresh.Object, _dispatcher.Object, _frontendOptions);
 
     [Fact]
     public async Task ForgotPassword_EmailExistenteLocal_GeneraTokenYEnviaEmail()
     {
         var user = new User { Id = 1, Email = "a@b.com", Provider = AuthProvider.Local, PasswordHash = "hash" };
         _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        _emailSender.Setup(s => s.SendAsync("a@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _dispatcher.Setup(d => d.SendAsync(NotificationChannel.Email, "a@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NotificationSendResult(true, null));
 
         await BuildService().ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
 
         Assert.NotNull(user.PasswordResetToken);
         Assert.NotNull(user.PasswordResetTokenExpiry);
-        _emailSender.Verify(s => s.SendAsync("a@b.com", It.Is<string>(m => m.Contains("https://backoffice.nicarunner.test")), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _dispatcher.Verify(d => d.SendAsync(NotificationChannel.Email, "a@b.com", It.Is<string>(m => m.Contains("https://backoffice.nicarunner.test")), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
         _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -49,7 +46,7 @@ public class AuthServicePasswordResetTests
 
         await BuildService().ForgotPasswordAsync(new ForgotPasswordRequest("nadie@b.com"));
 
-        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _dispatcher.Verify(d => d.SendAsync(It.IsAny<NotificationChannel>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -61,7 +58,7 @@ public class AuthServicePasswordResetTests
         await BuildService().ForgotPasswordAsync(new ForgotPasswordRequest("g@b.com"));
 
         Assert.Null(user.PasswordResetToken);
-        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _dispatcher.Verify(d => d.SendAsync(It.IsAny<NotificationChannel>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -112,16 +109,18 @@ public class AuthServicePasswordResetTests
             () => BuildService().ResetPasswordAsync(new ResetPasswordRequest("no-existe", "nueva-segura")));
     }
 
+    // Si el canal Email no está configurado, el dispatcher devuelve failure
+    // silencioso — ForgotPassword NO debe lanzar. El token queda persistido y
+    // el admin puede compartir el link manualmente.
     [Fact]
-    public async Task ForgotPassword_SinSenderDeEmailRegistrado_NoLanzaExcepcion()
+    public async Task ForgotPassword_DispatcherFallaCanalNoConfigurado_NoLanzaYPersisteToken()
     {
         var user = new User { Id = 1, Email = "a@b.com", Provider = AuthProvider.Local, PasswordHash = "hash" };
         _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _dispatcher.Setup(d => d.SendAsync(NotificationChannel.Email, "a@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new NotificationSendResult(false, "No hay un proveedor configurado para el canal Email."));
 
-        var service = new AuthService(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
-            _refresh.Object, [], _frontendOptions);
-
-        await service.ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
+        await BuildService().ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
 
         Assert.NotNull(user.PasswordResetToken);
         _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);

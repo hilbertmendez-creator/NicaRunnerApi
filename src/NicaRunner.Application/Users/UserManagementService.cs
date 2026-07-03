@@ -9,7 +9,7 @@ namespace NicaRunner.Application.Users;
 public class UserManagementService(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
-    IEnumerable<INotificationSender> notificationSenders) : IUserManagementService
+    INotificationDispatcher notificationDispatcher) : IUserManagementService
 {
     private const string TempPasswordAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -41,9 +41,12 @@ public class UserManagementService(
 
         var mensaje = $"Hola {user.Nombre}, se creó tu cuenta en NicaRunner Backoffice. " +
             $"Tu contraseña temporal es: {tempPassword}\n\nDeberás cambiarla al iniciar sesión por primera vez.";
-        var emailSender = notificationSenders.FirstOrDefault(s => s.Channel == NotificationChannel.Email);
-        if (emailSender is not null)
-            await emailSender.SendAsync(user.Email, mensaje, "Tu cuenta en NicaRunner Backoffice", ct);
+        // Si el canal Email no está configurado el dispatcher devuelve failure
+        // silencioso — mantenemos el comportamiento previo (no bloqueamos el
+        // CreateAsync por un email que no salió; el admin puede compartir la
+        // password temporal manualmente).
+        await notificationDispatcher.SendAsync(
+            NotificationChannel.Email, user.Email, mensaje, "Tu cuenta en NicaRunner Backoffice", ct);
 
         return ToDto(user);
     }

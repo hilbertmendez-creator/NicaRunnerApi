@@ -10,11 +10,8 @@ public class NotificationService(
     IResultRepository resultRepository,
     IRunnerRepository runnerRepository,
     IRaceRepository raceRepository,
-    IEnumerable<INotificationSender> senders) : INotificationService
+    INotificationDispatcher notificationDispatcher) : INotificationService
 {
-    private readonly Dictionary<NotificationChannel, INotificationSender> _sendersByChannel =
-        senders.ToDictionary(s => s.Channel);
-
     public async Task<List<NotificationDto>> NotifyResultAsync(int resultId, CancellationToken ct = default)
     {
         var result = await resultRepository.GetByIdAsync(resultId, ct)
@@ -113,18 +110,12 @@ public class NotificationService(
             await logRepository.AddAsync(log, ct);
             await logRepository.SaveChangesAsync(ct);
 
-            if (_sendersByChannel.TryGetValue(channel, out var sender))
-            {
-                var sendResult = await sender.SendAsync(destino, mensaje, ct: ct);
-                log.Status = sendResult.Success ? NotificationStatus.Enviada : NotificationStatus.Fallida;
-                log.Error = sendResult.ErrorMessage;
-                log.SentAt = sendResult.Success ? DateTime.UtcNow : null;
-            }
-            else
-            {
-                log.Status = NotificationStatus.Fallida;
-                log.Error = $"No hay un proveedor configurado para el canal {channel}.";
-            }
+            // El dispatcher decide "no hay proveedor" vs "hay proveedor pero
+            // falló" y nos devuelve el ErrorMessage consistente en ambos casos.
+            var sendResult = await notificationDispatcher.SendAsync(channel, destino, mensaje, ct: ct);
+            log.Status = sendResult.Success ? NotificationStatus.Enviada : NotificationStatus.Fallida;
+            log.Error = sendResult.ErrorMessage;
+            log.SentAt = sendResult.Success ? DateTime.UtcNow : null;
 
             await logRepository.SaveChangesAsync(ct);
             logs.Add(log);
