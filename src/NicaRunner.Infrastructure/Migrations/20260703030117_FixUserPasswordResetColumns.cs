@@ -23,8 +23,14 @@ namespace NicaRunner.Infrastructure.Migrations
                 return;
 
             migrationBuilder.Sql(
+                "ALTER TABLE \"Users\" ALTER COLUMN \"MustChangePassword\" DROP DEFAULT;");
+
+            migrationBuilder.Sql(
                 "ALTER TABLE \"Users\" ALTER COLUMN \"MustChangePassword\" TYPE boolean " +
                 "USING CASE WHEN \"MustChangePassword\" = 0 THEN false ELSE true END;");
+
+            migrationBuilder.Sql(
+                "ALTER TABLE \"Users\" ALTER COLUMN \"MustChangePassword\" SET DEFAULT false;");
 
             migrationBuilder.Sql(
                 "ALTER TABLE \"Users\" ALTER COLUMN \"PasswordResetTokenExpiry\" TYPE timestamp without time zone " +
@@ -38,8 +44,14 @@ namespace NicaRunner.Infrastructure.Migrations
                 return;
 
             migrationBuilder.Sql(
+                "ALTER TABLE \"Users\" ALTER COLUMN \"MustChangePassword\" DROP DEFAULT;");
+
+            migrationBuilder.Sql(
                 "ALTER TABLE \"Users\" ALTER COLUMN \"MustChangePassword\" TYPE integer " +
                 "USING CASE WHEN \"MustChangePassword\" THEN 1 ELSE 0 END;");
+
+            migrationBuilder.Sql(
+                "ALTER TABLE \"Users\" ALTER COLUMN \"MustChangePassword\" SET DEFAULT 0;");
 
             migrationBuilder.Sql(
                 "ALTER TABLE \"Users\" ALTER COLUMN \"PasswordResetTokenExpiry\" TYPE text " +
