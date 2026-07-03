@@ -67,8 +67,15 @@ builder.Services.AddHttpClient<ResendEmailSender>(client =>
 {
     client.BaseAddress = new Uri("https://api.resend.com/");
 });
+// Los senders se registran como INotificationSender para que aparezcan en
+// IEnumerable<INotificationSender> — que solo consume el NotificationDispatcher.
+// NUNCA inyectar INotificationSender como singular ni el IEnumerable directamente
+// desde consumers: usar INotificationDispatcher (ver comentario en la interfaz).
+// El singular resolvería al ÚLTIMO registrado (StubWhatsApp gana a Resend), y eso
+// es exactamente el bug latente que motivó introducir el dispatcher.
 builder.Services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<ResendEmailSender>());
 builder.Services.AddScoped<INotificationSender, StubWhatsAppSender>();
+builder.Services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();

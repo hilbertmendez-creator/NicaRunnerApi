@@ -11,13 +11,10 @@ public class UserManagementServiceTests
 {
     private readonly Mock<IUserRepository> _users = new();
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
-    private readonly Mock<INotificationSender> _emailSender = new();
+    private readonly Mock<INotificationDispatcher> _dispatcher = new();
 
-    private UserManagementService BuildService()
-    {
-        _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
-        return new(_users.Object, _passwordHasher.Object, [_emailSender.Object]);
-    }
+    private UserManagementService BuildService() =>
+        new(_users.Object, _passwordHasher.Object, _dispatcher.Object);
 
     [Fact]
     public async Task GetAllAsync_DevuelveTodosMapeadosADto()
@@ -40,7 +37,7 @@ public class UserManagementServiceTests
     {
         _users.Setup(u => u.EmailExistsAsync("nuevo@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _passwordHasher.Setup(p => p.Hash(It.IsAny<string>())).Returns("hash-temporal");
-        _emailSender.Setup(s => s.SendAsync("nuevo@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _dispatcher.Setup(d => d.SendAsync(NotificationChannel.Email, "nuevo@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NotificationSendResult(true, null));
 
         User? created = null;
@@ -55,7 +52,7 @@ public class UserManagementServiceTests
         Assert.True(created.MustChangePassword);
         Assert.Equal(AuthProvider.Local, created.Provider);
         Assert.Equal("nuevo@b.com", dto.Email);
-        _emailSender.Verify(s => s.SendAsync("nuevo@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _dispatcher.Verify(d => d.SendAsync(NotificationChannel.Email, "nuevo@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
