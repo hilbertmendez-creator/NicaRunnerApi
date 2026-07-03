@@ -4,6 +4,7 @@ import { createPublicToken, getPublicTokens } from '../../api/endpoints'
 import type { PublicTokenDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { Button, Label, Input } from '@nicarunner/ui'
+import { pageTitle, card, textLo, tableWrap } from '../../theme/styles'
 
 function publicUrl(token: string) {
   return `${window.location.origin}/resultados/${token}`
@@ -52,12 +53,12 @@ export function PublicLinksPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-gray-900">Enlaces públicos de resultados</h1>
+        <h1 className="text-lg font-semibold" style={pageTitle}>Enlaces públicos de resultados</h1>
         <RaceSelector value={raceId} onChange={setRaceId} />
       </div>
 
       {canCreate && (
-        <section className="flex items-end gap-3 rounded-lg bg-white p-4 shadow-sm">
+        <section className="flex items-end gap-3" style={card}>
           <div>
             <Label htmlFor="dias-expiracion">Días de expiración</Label>
             <Input
@@ -76,17 +77,17 @@ export function PublicLinksPage() {
         </section>
       )}
 
-      {loading && <p className="text-sm text-gray-500">Cargando enlaces...</p>}
+      {loading && <p className="text-sm" style={textLo}>Cargando enlaces...</p>}
 
       {!loading && raceId && tokens.length === 0 && (
-        <p className="text-sm text-gray-500">No hay enlaces públicos generados para esta carrera.</p>
+        <p className="text-sm" style={textLo}>No hay enlaces públicos generados para esta carrera.</p>
       )}
 
       {tokens.length > 0 && (
-        <section className="overflow-x-auto rounded-lg bg-white p-4 shadow-sm">
+        <section style={{ ...tableWrap, padding: 16 }}>
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="text-gray-500">
+              <tr style={{ color: 'var(--text-th)' }}>
                 <th className="py-1">Enlace</th>
                 <th className="py-1">Expira</th>
                 <th className="py-1">Creado</th>
@@ -97,14 +98,14 @@ export function PublicLinksPage() {
               {tokens.map((token) => {
                 const expired = new Date(token.fechaExpiracion) < new Date()
                 return (
-                  <tr key={token.id} className="border-t border-gray-100">
-                    <td className="py-2 font-mono text-xs text-gray-700">{publicUrl(token.token)}</td>
+                  <tr key={token.id} style={{ borderTop: '1px solid var(--bd-row)' }}>
+                    <td className="py-2 font-mono text-xs" style={{ color: 'var(--text-lo)' }}>{publicUrl(token.token)}</td>
                     <td className="py-2">
-                      <span className={expired ? 'text-red-600' : 'text-gray-700'}>
+                      <span style={{ color: expired ? 'var(--badge-er-text)' : 'var(--text-lo)' }}>
                         {new Date(token.fechaExpiracion).toLocaleDateString('es-NI')}
                       </span>
                     </td>
-                    <td className="py-2">{new Date(token.createdAt).toLocaleDateString('es-NI')}</td>
+                    <td className="py-2" style={{ color: 'var(--text-lo)' }}>{new Date(token.createdAt).toLocaleDateString('es-NI')}</td>
                     <td className="py-2">
                       <Button size="sm" onClick={() => handleCopy(token)}>
                         {copiedId === token.id ? 'Copiado' : 'Copiar'}

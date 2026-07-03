@@ -25,25 +25,25 @@ export function AuditHistory({ raceId, resultId, onClose }: AuditHistoryProps) {
 
   return (
     <Modal onClose={onClose} maxWidth="lg" labelledBy="audit-history-title">
-      <h2 id="audit-history-title" className="mb-4 text-base font-semibold text-zinc-900">
+      <h2 id="audit-history-title" className="mb-4 text-base font-semibold" style={{ color: 'var(--text-hi)' }}>
         Auditoría — resultado #{resultId}
       </h2>
 
-      {loading && <p className="text-sm text-zinc-500">Cargando historial...</p>}
+      {loading && <p className="text-sm" style={{ color: 'var(--text-lo)' }}>Cargando historial...</p>}
 
       {!loading && entries.length === 0 && (
-        <p className="text-sm text-zinc-500">Sin cambios registrados todavía.</p>
+        <p className="text-sm" style={{ color: 'var(--text-lo)' }}>Sin cambios registrados todavía.</p>
       )}
 
       <ul className="flex flex-col gap-3">
         {entries.map((entry) => (
-          <li key={entry.id} className="border border-zinc-200 p-3 text-sm">
-            <p className="font-medium text-zinc-900">{entry.campoModificado}</p>
-            <p className="font-mono tabular-nums text-zinc-600">
+          <li key={entry.id} className="p-3 text-sm" style={{ border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)' }}>
+            <p className="font-medium" style={{ color: 'var(--text-hi)' }}>{entry.campoModificado}</p>
+            <p className="font-mono tabular-nums" style={{ color: 'var(--text-lo)' }}>
               {entry.valorAnterior} → {entry.valorNuevo}
             </p>
-            {entry.razon && <p className="mt-1 text-zinc-500">Razón: {entry.razon}</p>}
-            <p className="mt-1 font-mono text-xs tabular-nums text-zinc-400">
+            {entry.razon && <p className="mt-1" style={{ color: 'var(--text-lo)' }}>Razón: {entry.razon}</p>}
+            <p className="mt-1 font-mono text-xs tabular-nums" style={{ color: 'var(--text-xs)' }}>
               {new Date(entry.createdAt).toLocaleString('es-NI')}
             </p>
           </li>

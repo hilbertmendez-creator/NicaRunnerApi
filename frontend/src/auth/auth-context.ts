@@ -6,6 +6,7 @@ export interface CurrentUser {
   email: string
   nombre: string
   role: UserRole
+  mustChangePassword: boolean
 }
 
 export interface AuthContextValue {
@@ -13,6 +14,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => void
+  clearMustChangePassword: () => void
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

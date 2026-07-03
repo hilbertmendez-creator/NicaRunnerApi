@@ -44,7 +44,7 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
   return (
     <Modal onClose={onClose} labelledBy="edit-result-title">
       <form onSubmit={handleSubmit}>
-        <h2 id="edit-result-title" className="mb-4 text-base font-semibold text-zinc-900">
+        <h2 id="edit-result-title" className="mb-4 text-base font-semibold" style={{ color: 'var(--text-hi)' }}>
           Editar resultado #{result.id}
         </h2>
 

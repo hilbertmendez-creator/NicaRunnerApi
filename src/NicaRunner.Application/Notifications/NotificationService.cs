@@ -115,7 +115,7 @@ public class NotificationService(
 
             if (_sendersByChannel.TryGetValue(channel, out var sender))
             {
-                var sendResult = await sender.SendAsync(destino, mensaje, ct);
+                var sendResult = await sender.SendAsync(destino, mensaje, ct: ct);
                 log.Status = sendResult.Success ? NotificationStatus.Enviada : NotificationStatus.Fallida;
                 log.Error = sendResult.ErrorMessage;
                 log.SentAt = sendResult.Success ? DateTime.UtcNow : null;

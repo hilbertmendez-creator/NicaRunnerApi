@@ -47,7 +47,11 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
   return (
     <Modal onClose={onClose} labelledBy="race-form-title">
       <form onSubmit={handleSubmit}>
-        <h2 id="race-form-title" className="mb-4 text-base font-semibold text-zinc-900">
+        <h2
+          id="race-form-title"
+          className="mb-4 text-base font-semibold"
+          style={{ color: 'var(--text-hi)' }}
+        >
           {race ? 'Editar carrera' : 'Nueva carrera'}
         </h2>
 

@@ -13,6 +13,15 @@ public class UserRepository(NicaRunnerDbContext context) : IUserRepository
     public Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId, ct);
 
+    public Task<User?> GetByIdAsync(int id, CancellationToken ct = default) =>
+        context.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
+
+    public Task<User?> GetByResetTokenAsync(string token, CancellationToken ct = default) =>
+        context.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == token, ct);
+
+    public Task<List<User>> GetAllAsync(CancellationToken ct = default) =>
+        context.Users.OrderBy(u => u.Email).ToListAsync(ct);
+
     public Task<bool> EmailExistsAsync(string email, CancellationToken ct = default) =>
         context.Users.AnyAsync(u => u.Email == email, ct);
 

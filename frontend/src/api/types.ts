@@ -7,6 +7,41 @@ export interface AuthResponse {
   email: string
   nombre: string
   role: UserRole
+  mustChangePassword: boolean
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
+  token: string
+  newPassword: string
+}
+
+export interface UserDto {
+  id: number
+  email: string
+  nombre: string
+  role: UserRole
+  isActive: boolean
+  createdAt: string
+}
+
+export interface CreateUserRequest {
+  email: string
+  nombre: string
+  role: UserRole
+}
+
+export interface UpdateUserRequest {
+  role?: UserRole
+  isActive?: boolean
 }
 
 export type RaceStatus = 'Planeada' | 'EnCurso' | 'Terminada'

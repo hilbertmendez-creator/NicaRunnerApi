@@ -91,7 +91,7 @@ export function ResultsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold text-zinc-900">Resultados</h1>
+        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>Resultados</h1>
         <RaceSelector value={raceId} onChange={setRaceId} />
       </div>
 
