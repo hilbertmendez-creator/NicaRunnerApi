@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import type { RaceCategoryDto, RunnerDto, Sexo } from '../../api/types'
 import { createRunner, updateRunner } from '../../api/endpoints'
+import { getApiErrorDetail } from '../../api/client'
 import { Modal, Button, Label, Input, Select } from '@nicarunner/ui'
 
 interface RunnerFormModalProps {
@@ -68,8 +69,11 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
         await createRunner(raceId, payload)
       }
       onSaved()
-    } catch {
-      setError('No se pudo guardar el corredor. Verifica que el dorsal no esté duplicado y que la edad corresponda a la categoría.')
+    } catch (err) {
+      setError(
+        getApiErrorDetail(err) ??
+          'No se pudo guardar el corredor. Verifica que el dorsal no esté duplicado y que la edad corresponda a la categoría.',
+      )
     } finally {
       setSubmitting(false)
     }
