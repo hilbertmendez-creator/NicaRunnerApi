@@ -3,11 +3,21 @@ export type UserRole = 'Capturista' | 'Administrador' | 'Lector'
 export interface AuthResponse {
   token: string
   expiresAtUtc: string
+  refreshToken: string
+  refreshExpiresAtUtc: string
   userId: number
   email: string
   nombre: string
   role: UserRole
   mustChangePassword: boolean
+}
+
+export interface RefreshRequest {
+  refreshToken: string
+}
+
+export interface LogoutRequest {
+  refreshToken: string
 }
 
 export interface ChangePasswordRequest {

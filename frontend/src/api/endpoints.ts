@@ -36,6 +36,20 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return data
 }
 
+// El interceptor de client.ts llama este endpoint SIN pasar por el propio
+// interceptor (usa una instancia axios cruda) para evitar loops si el /refresh
+// devuelve 401. Reutilizamos la misma URL base leyendo import.meta.env.
+export async function refreshTokens(refreshToken: string): Promise<AuthResponse> {
+  const { data } = await apiClient.post<AuthResponse>('/auth/refresh', { refreshToken })
+  return data
+}
+
+// Best-effort: si falla no bloqueamos el logout local (siempre limpiamos
+// tokens del lado del cliente aunque el backend no responda).
+export async function logoutRequest(refreshToken: string): Promise<void> {
+  await apiClient.post('/auth/logout', { refreshToken })
+}
+
 export async function getRaces(): Promise<RaceDto[]> {
   const { data } = await apiClient.get<RaceDto[]>('/races')
   return data
