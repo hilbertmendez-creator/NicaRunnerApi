@@ -19,6 +19,7 @@ namespace NicaRunner.Api.Controllers;
 [AllowAnonymous]
 public class AdminController(
     IRefreshTokenCleanupService refreshTokenCleanup,
+    IPublicTokenCleanupService publicTokenCleanup,
     INotificationService notificationService,
     IConfiguration configuration,
     ILogger<AdminController> logger) : ControllerBase
@@ -34,6 +35,17 @@ public class AdminController(
 
         var result = await refreshTokenCleanup.RunAsync(ct);
         logger.LogInformation("Admin cleanup borró {Deleted} refresh tokens expirados/revocados.", result.Deleted);
+        return Ok(result);
+    }
+
+    [HttpPost("public-tokens/cleanup")]
+    public async Task<ActionResult<CleanupResult>> CleanupPublicTokens(CancellationToken ct)
+    {
+        if (!IsAuthorized("public-tokens/cleanup"))
+            return Unauthorized();
+
+        var result = await publicTokenCleanup.RunAsync(ct);
+        logger.LogInformation("Admin cleanup borró {Deleted} tokens públicos expirados.", result.Deleted);
         return Ok(result);
     }
 
