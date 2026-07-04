@@ -52,7 +52,7 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
           {category ? 'Editar categoría' : 'Nueva categoría'}
         </h2>
 
-        <div className="mb-3 grid grid-cols-2 gap-3">
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="cat-codigo">Código corto</Label>
             <Input
@@ -101,7 +101,7 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
           className="mb-3 w-full"
         />
 
-        <div className="mb-3 grid grid-cols-3 gap-3">
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <Label htmlFor="cat-distancia">Distancia (km)</Label>
             <Input

@@ -82,7 +82,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
           {runner ? 'Editar corredor' : 'Nuevo corredor'}
         </h2>
 
-        <div className="mb-3 grid grid-cols-2 gap-3">
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="runner-nombre">Nombre</Label>
             <Input
@@ -106,7 +106,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
           </div>
         </div>
 
-        <div className="mb-3 grid grid-cols-2 gap-3">
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="runner-dorsal">Dorsal</Label>
             <Input
@@ -133,7 +133,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
           </div>
         </div>
 
-        <div className="mb-3 grid grid-cols-2 gap-3">
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="runner-fecha-nacimiento">Fecha de nacimiento</Label>
             <Input
