@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { changePassword } from '../api/endpoints'
+import { getApiErrorDetail } from '../api/client'
 import { useAuth } from '../auth/auth-context'
 import { Button, Label, Input } from '@nicarunner/ui'
 
@@ -31,8 +32,8 @@ export function ChangePasswordPage() {
       await changePassword({ currentPassword, newPassword })
       clearMustChangePassword()
       navigate('/', { replace: true })
-    } catch {
-      setError('No se pudo cambiar la contraseña. Verifica la contraseña actual.')
+    } catch (err) {
+      setError(getApiErrorDetail(err) ?? 'No se pudo cambiar la contraseña. Verifica la contraseña actual.')
     } finally {
       setSubmitting(false)
     }

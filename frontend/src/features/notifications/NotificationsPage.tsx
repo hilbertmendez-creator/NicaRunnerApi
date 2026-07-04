@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
 import { notifyAll } from '../../api/endpoints'
+import { getApiErrorDetail } from '../../api/client'
 import type { NotifyAllSummaryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { Button } from '@nicarunner/ui'
@@ -23,8 +24,8 @@ export function NotificationsPage() {
     try {
       const result = await notifyAll(raceId)
       setSummary(result)
-    } catch {
-      setError('No se pudieron enviar las notificaciones.')
+    } catch (err) {
+      setError(getApiErrorDetail(err) ?? 'No se pudieron enviar las notificaciones.')
     } finally {
       setSending(false)
     }

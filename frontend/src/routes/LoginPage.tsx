@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/auth-context'
+import { getApiErrorDetail } from '../api/client'
 import { Button, Label, Input } from '@nicarunner/ui'
 import { NicaRunnerLogo } from './NicaRunnerLogo'
 
@@ -19,8 +20,8 @@ export function LoginPage() {
     try {
       await login(email, password)
       navigate('/', { replace: true })
-    } catch {
-      setError('Email o contraseña incorrectos')
+    } catch (err) {
+      setError(getApiErrorDetail(err) ?? 'Email o contraseña incorrectos')
     } finally {
       setSubmitting(false)
     }

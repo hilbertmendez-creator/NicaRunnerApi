@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { CategoryDto, RaceDto, RaceStatus } from '../../api/types'
 import { createRace, getCategoryCatalog, updateRace } from '../../api/endpoints'
+import { getApiErrorDetail } from '../../api/client'
 import { Modal, Button, Label, Input, Textarea, Select } from '@nicarunner/ui'
 
 interface RaceFormModalProps {
@@ -52,8 +53,8 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
         await createRace({ nombre, descripcion, fechaCarrera: fechaIso, categoryIds: selectedCategoryIds })
       }
       onSaved()
-    } catch {
-      setError('No se pudo guardar la carrera. Verifica los datos.')
+    } catch (err) {
+      setError(getApiErrorDetail(err) ?? 'No se pudo guardar la carrera. Verifica los datos.')
     } finally {
       setSubmitting(false)
     }

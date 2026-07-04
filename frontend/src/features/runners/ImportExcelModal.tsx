@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { downloadRunnerImportTemplate, importRunnersExcel } from '../../api/endpoints'
+import { getApiErrorDetail } from '../../api/client'
 import type { ImportRunnersResultDto } from '../../api/types'
 import { Modal, Button } from '@nicarunner/ui'
 
@@ -28,6 +29,8 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
       link.click()
       URL.revokeObjectURL(url)
     } catch {
+      // La respuesta de error viene como blob (responseType: 'blob'), no como JSON,
+      // así que no hay un `detail` de problem+json disponible de forma síncrona aquí.
       setError('No se pudo descargar la plantilla. Asegúrate de que la carrera tenga categorías asignadas.')
     } finally {
       setDownloading(false)
@@ -46,8 +49,8 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
       const data = await importRunnersExcel(raceId, file)
       setResult(data)
       if (data.importados > 0) onImported()
-    } catch {
-      setError('No se pudo procesar el archivo. Verifica el formato.')
+    } catch (err) {
+      setError(getApiErrorDetail(err) ?? 'No se pudo procesar el archivo. Verifica el formato.')
     } finally {
       setSubmitting(false)
     }

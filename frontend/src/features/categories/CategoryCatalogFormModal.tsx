@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { CategoryDto } from '../../api/types'
 import { createCategoryCatalogEntry, updateCategoryCatalogEntry } from '../../api/endpoints'
+import { getApiErrorDetail } from '../../api/client'
 import { Modal, Button, Label, Input, Textarea } from '@nicarunner/ui'
 
 interface CategoryCatalogFormModalProps {
@@ -38,8 +39,10 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
         await createCategoryCatalogEntry(payload)
       }
       onSaved()
-    } catch {
-      setError('No se pudo guardar la categoría. Verifica que el código no esté repetido.')
+    } catch (err) {
+      setError(
+        getApiErrorDetail(err) ?? 'No se pudo guardar la categoría. Verifica que el código no esté repetido.',
+      )
     } finally {
       setSubmitting(false)
     }

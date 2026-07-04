@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { createUser } from '../../api/endpoints'
+import { getApiErrorDetail } from '../../api/client'
 import type { UserRole } from '../../api/types'
 import { Modal, Button, Label, Input, Select } from '@nicarunner/ui'
 
@@ -24,8 +25,10 @@ export function UserFormModal({ onClose, onSaved }: UserFormModalProps) {
     try {
       await createUser({ email, nombre, role })
       onSaved()
-    } catch {
-      setError('No se pudo crear el usuario. Verifica que el email no esté ya registrado.')
+    } catch (err) {
+      setError(
+        getApiErrorDetail(err) ?? 'No se pudo crear el usuario. Verifica que el email no esté ya registrado.',
+      )
     } finally {
       setSubmitting(false)
     }

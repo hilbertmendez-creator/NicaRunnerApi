@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../api/endpoints'
+import { getApiErrorDetail } from '../api/client'
 import { Button, Label, Input } from '@nicarunner/ui'
 
 export function ResetPasswordPage() {
@@ -26,8 +27,8 @@ export function ResetPasswordPage() {
     try {
       await resetPassword({ token, newPassword })
       navigate('/login', { replace: true })
-    } catch {
-      setError('El enlace no es válido o ya expiró. Solicita uno nuevo.')
+    } catch (err) {
+      setError(getApiErrorDetail(err) ?? 'El enlace no es válido o ya expiró. Solicita uno nuevo.')
     } finally {
       setSubmitting(false)
     }

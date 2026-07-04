@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { ResultDto } from '../../api/types'
 import { updateResult } from '../../api/endpoints'
+import { getApiErrorDetail } from '../../api/client'
 import { Modal, Button, Label, Input, Textarea } from '@nicarunner/ui'
 
 interface EditResultModalProps {
@@ -34,8 +35,8 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
         razon,
       })
       onSaved()
-    } catch {
-      setError('No se pudo guardar el cambio. Verifica los datos.')
+    } catch (err) {
+      setError(getApiErrorDetail(err) ?? 'No se pudo guardar el cambio. Verifica los datos.')
     } finally {
       setSubmitting(false)
     }
