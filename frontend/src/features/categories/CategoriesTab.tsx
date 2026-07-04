@@ -14,6 +14,7 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
   const [loading, setLoading] = useState(true)
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
   const [assigning, setAssigning] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function reload() {
     setLoading(true)
@@ -35,11 +36,14 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
 
   async function handleAssign() {
     if (selectedCategoryId === null) return
+    setError(null)
     setAssigning(true)
     try {
       await assignCategory(raceId, { categoryId: selectedCategoryId })
       setSelectedCategoryId(null)
       reload()
+    } catch (err: any) {
+      setError(err.response?.data?.detail ?? 'No se pudo agregar la categoría.')
     } finally {
       setAssigning(false)
     }
@@ -47,8 +51,13 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
 
   async function handleUnassign(category: RaceCategoryDto) {
     if (!confirm(`¿Quitar la categoría "${category.nombreCategoria}" de esta carrera?`)) return
-    await unassignCategory(raceId, category.categoryId)
-    reload()
+    setError(null)
+    try {
+      await unassignCategory(raceId, category.categoryId)
+      reload()
+    } catch (err: any) {
+      setError(err.response?.data?.detail ?? 'No se pudo quitar la categoría.')
+    }
   }
 
   const columns: Column<RaceCategoryDto>[] = [
@@ -101,6 +110,8 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
           </Button>
         </div>
       )}
+
+      {error && <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
 
       {loading && <LoadingText message="Cargando categorías..." />}
 

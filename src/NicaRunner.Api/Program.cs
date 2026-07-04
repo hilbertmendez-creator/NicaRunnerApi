@@ -129,6 +129,7 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupService>();
+builder.Services.AddScoped<IPublicTokenCleanupService, PublicTokenCleanupService>();
 builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
@@ -314,6 +315,17 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 // (rate limiting, HTTPS redirect) para que reflejen al cliente y no al
 // balanceador de Render.
 app.UseForwardedHeaders();
+
+// Headers de seguridad básicos. Sin CSP a propósito: esta API no sirve HTML
+// propio (el frontend es un SPA hospedado aparte); una CSP acá no protege
+// nada real y complicaría Swagger UI en dev sin necesidad.
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    await next();
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

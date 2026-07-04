@@ -15,6 +15,10 @@ public class NotificationService(
     private readonly Dictionary<NotificationChannel, INotificationSender> _sendersByChannel =
         senders.ToDictionary(s => s.Channel);
 
+    // Tope de reintentos para una notificación en Fallida — pasado esto,
+    // ProcessPendingAsync deja de intentarla (ver GetPendingOrRetryableAsync).
+    private const int MaxIntentos = 5;
+
     public async Task<List<NotificationDto>> NotifyResultAsync(int resultId, CancellationToken ct = default)
     {
         var result = await resultRepository.GetByIdAsync(resultId, ct)
@@ -22,7 +26,12 @@ public class NotificationService(
 
         var (race, runner) = await LoadContextAsync(result, ct);
 
-        var logs = await SendForResultAsync(race, runner, result, ct);
+        // Un solo resultado: sigue enviando de inmediato, no tiene el riesgo
+        // de timeout del caso masivo y el admin espera feedback al instante.
+        var logs = await CreatePendingLogsAsync(race, runner, result, ct);
+        foreach (var log in logs.Where(l => l.Status == NotificationStatus.Pendiente))
+            await AttemptSendAsync(log, ct);
+
         return logs.Select(ToDto).ToList();
     }
 
@@ -35,21 +44,39 @@ public class NotificationService(
         var runnersById = (await runnerRepository.GetAllByRaceAsync(raceId, ct)).ToDictionary(r => r.Id);
 
         var creadas = 0;
-        var enviadas = 0;
-        var fallidas = 0;
 
         foreach (var result in results)
         {
             if (result.RunnerId is not { } runnerId || !runnersById.TryGetValue(runnerId, out var runner))
                 continue;
 
-            var logs = await SendForResultAsync(race, runner, result, ct);
+            var logs = await CreatePendingLogsAsync(race, runner, result, ct);
             creadas += logs.Count;
-            enviadas += logs.Count(l => l.Status == NotificationStatus.Enviada);
-            fallidas += logs.Count(l => l.Status == NotificationStatus.Fallida);
         }
 
-        return new NotifyAllSummaryDto(results.Count, creadas, enviadas, fallidas);
+        // El envío real ocurre en ProcessPendingAsync (barrido periódico vía
+        // cron admin) — acá solo se encola, para no bloquear el request con
+        // cientos de llamadas HTTP secuenciales al proveedor de notificaciones.
+        return new NotifyAllSummaryDto(results.Count, creadas, 0, 0);
+    }
+
+    public async Task<NotificationProcessSummaryDto> ProcessPendingAsync(CancellationToken ct = default)
+    {
+        var pending = await logRepository.GetPendingOrRetryableAsync(MaxIntentos, ct);
+
+        var enviadas = 0;
+        var fallidas = 0;
+
+        foreach (var log in pending)
+        {
+            await AttemptSendAsync(log, ct);
+            if (log.Status == NotificationStatus.Enviada)
+                enviadas++;
+            else
+                fallidas++;
+        }
+
+        return new NotificationProcessSummaryDto(pending.Count, enviadas, fallidas);
     }
 
     public async Task<NotificationDto> GetStatusAsync(int notificationId, CancellationToken ct = default)
@@ -73,7 +100,11 @@ public class NotificationService(
         return (race, runner);
     }
 
-    private async Task<List<NotificationLog>> SendForResultAsync(Race race, Runner runner, Result result, CancellationToken ct)
+    // Crea los NotificationLog en Pendiente para un resultado (uno por canal
+    // con contacto disponible) sin enviar nada — el envío real lo hace
+    // AttemptSendAsync, ya sea de inmediato (NotifyResultAsync) o en el
+    // barrido (ProcessPendingAsync).
+    private async Task<List<NotificationLog>> CreatePendingLogsAsync(Race race, Runner runner, Result result, CancellationToken ct)
     {
         var mensaje = BuildMessage(race, runner, result);
         var channels = DetermineChannels(runner);
@@ -85,10 +116,13 @@ public class NotificationService(
                 RaceId = race.Id,
                 RunnerId = runner.Id,
                 ResultId = result.Id,
+                Runner = runner,
                 Channel = NotificationChannel.Email,
                 Status = NotificationStatus.Fallida,
                 Mensaje = mensaje,
-                Error = "El corredor no tiene email ni teléfono registrados."
+                Error = "El corredor no tiene email ni teléfono registrados.",
+                // Agotado a propósito: esta falla no se resuelve reintentando.
+                IntentosEnvio = MaxIntentos
             };
 
             await logRepository.AddAsync(sinContacto, ct);
@@ -98,39 +132,61 @@ public class NotificationService(
 
         var logs = new List<NotificationLog>();
 
-        foreach (var (channel, destino) in channels)
+        foreach (var (channel, _) in channels)
         {
             var log = new NotificationLog
             {
                 RaceId = race.Id,
                 RunnerId = runner.Id,
                 ResultId = result.Id,
+                Runner = runner,
                 Channel = channel,
                 Status = NotificationStatus.Pendiente,
                 Mensaje = mensaje
             };
 
             await logRepository.AddAsync(log, ct);
-            await logRepository.SaveChangesAsync(ct);
-
-            if (_sendersByChannel.TryGetValue(channel, out var sender))
-            {
-                var sendResult = await sender.SendAsync(destino, mensaje, ct: ct);
-                log.Status = sendResult.Success ? NotificationStatus.Enviada : NotificationStatus.Fallida;
-                log.Error = sendResult.ErrorMessage;
-                log.SentAt = sendResult.Success ? DateTime.UtcNow : null;
-            }
-            else
-            {
-                log.Status = NotificationStatus.Fallida;
-                log.Error = $"No hay un proveedor configurado para el canal {channel}.";
-            }
-
-            await logRepository.SaveChangesAsync(ct);
             logs.Add(log);
         }
 
+        await logRepository.SaveChangesAsync(ct);
         return logs;
+    }
+
+    // Intenta enviar un log en Pendiente o Fallida-reintentable. El destino
+    // (email/teléfono) se resuelve del corredor en el momento del envío, no
+    // se guarda en el log — así una carrera vieja no arrastra un contacto
+    // desactualizado si el corredor lo corrigió después de la captura.
+    private async Task AttemptSendAsync(NotificationLog log, CancellationToken ct)
+    {
+        log.IntentosEnvio++;
+
+        var destino = log.Channel switch
+        {
+            NotificationChannel.Email => log.Runner.Email,
+            NotificationChannel.WhatsApp => log.Runner.Telefono,
+            _ => null
+        };
+
+        if (string.IsNullOrWhiteSpace(destino))
+        {
+            log.Status = NotificationStatus.Fallida;
+            log.Error = "El corredor ya no tiene un destino válido para este canal.";
+        }
+        else if (_sendersByChannel.TryGetValue(log.Channel, out var sender))
+        {
+            var sendResult = await sender.SendAsync(destino, log.Mensaje, ct: ct);
+            log.Status = sendResult.Success ? NotificationStatus.Enviada : NotificationStatus.Fallida;
+            log.Error = sendResult.ErrorMessage;
+            log.SentAt = sendResult.Success ? DateTime.UtcNow : null;
+        }
+        else
+        {
+            log.Status = NotificationStatus.Fallida;
+            log.Error = $"No hay un proveedor configurado para el canal {log.Channel}.";
+        }
+
+        await logRepository.SaveChangesAsync(ct);
     }
 
     private static List<(NotificationChannel Channel, string Destino)> DetermineChannels(Runner runner)

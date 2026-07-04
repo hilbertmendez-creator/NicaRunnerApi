@@ -51,7 +51,11 @@ public class ResultsController(IResultService resultService) : ControllerBase
     public async Task<ActionResult<ResultDto>> Update(int raceId, int resultId, UpdateResultRequest request, CancellationToken ct) =>
         Ok(await resultService.UpdateAsync(raceId, resultId, request, GetUserId(), ct));
 
+    // Historial de auditoría: spec sección 6 lo agrupa bajo "Edición de
+    // Resultados (Admin)", no bajo "Dashboard (Admin & Lector)" — a
+    // diferencia de dashboard/standings, acá Lector NO tiene acceso.
     [HttpGet("{resultId:int}/audit")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
     public async Task<ActionResult<List<ResultAuditDto>>> GetAudit(int raceId, int resultId, CancellationToken ct) =>
         Ok(await resultService.GetAuditAsync(raceId, resultId, ct));
 

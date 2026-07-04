@@ -146,6 +146,17 @@ public class NicaRunnerDbContext : DbContext
             .Property(r => r.IdempotencyKey)
             .HasMaxLength(64);
 
+        // Un corredor no puede tener dos resultados en la misma carrera.
+        // ExistsByRunnerAsync (un simple AnyAsync) ya rechaza esto en el caso
+        // común, pero no cierra la ventana de carrera entre dos capturas
+        // casi simultáneas del mismo dorsal (típicamente sin Idempotency-Key).
+        // Índice filtrado — mismo patrón que el de arriba — para no chocar
+        // contra los Results sin corredor asignado todavía (RunnerId NULL).
+        modelBuilder.Entity<Result>()
+            .HasIndex(r => new { r.RaceId, r.RunnerId })
+            .IsUnique()
+            .HasFilter("\"RunnerId\" IS NOT NULL");
+
         modelBuilder.Entity<ResultAudit>()
             .HasOne(a => a.Result)
             .WithMany(r => r.AuditEntries)
@@ -168,6 +179,11 @@ public class NicaRunnerDbContext : DbContext
             .HasOne(n => n.Result)
             .WithMany()
             .OnDelete(DeleteBehavior.Restrict);
+
+        // El barrido de reintentos (ProcessPendingAsync) filtra por Status en
+        // cada corrida del cron — índice para no escanear toda la tabla.
+        modelBuilder.Entity<NotificationLog>()
+            .HasIndex(n => n.Status);
 
         base.OnModelCreating(modelBuilder);
     }
