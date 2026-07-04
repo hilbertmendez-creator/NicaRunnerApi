@@ -4,6 +4,7 @@ interface UsePollingResult<T> {
   data: T | null
   error: unknown
   loading: boolean
+  refetch: () => void
 }
 
 export function usePolling<T>(
@@ -15,6 +16,7 @@ export function usePolling<T>(
   const [error, setError] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
   const fetcherRef = useRef(fetcher)
+  const tickRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     fetcherRef.current = fetcher
@@ -40,6 +42,7 @@ export function usePolling<T>(
         if (!cancelled) setLoading(false)
       }
     }
+    tickRef.current = tick
 
     tick()
     const id = setInterval(tick, intervalMs)
@@ -50,5 +53,5 @@ export function usePolling<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
 
-  return { data, error, loading }
+  return { data, error, loading, refetch: () => tickRef.current() }
 }

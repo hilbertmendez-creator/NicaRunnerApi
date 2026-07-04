@@ -9,7 +9,8 @@ public class ResultService(
     IResultRepository resultRepository,
     IResultAuditRepository auditRepository,
     IRaceRepository raceRepository,
-    IRunnerRepository runnerRepository) : IResultService
+    IRunnerRepository runnerRepository,
+    IRaceDashboardNotifier raceDashboardNotifier) : IResultService
 {
     public async Task<ResultDto> CreateAsync(int raceId, CreateResultRequest request, int capturistaId, string? idempotencyKey = null, CancellationToken ct = default)
     {
@@ -66,6 +67,8 @@ public class ResultService(
         if (runner is not null)
             await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
 
+        await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
+
         var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
         return ToDto(saved ?? result);
     }
@@ -111,6 +114,8 @@ public class ResultService(
             await RecalculatePositionsAsync(raceId, oldCategoryId.Value, ct);
         if (runner.CategoryId != oldCategoryId)
             await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
+
+        await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
 
         var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
         return ToDto(saved ?? result);

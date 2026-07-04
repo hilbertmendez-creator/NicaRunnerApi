@@ -5,6 +5,7 @@ import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
 import { getDashboard, getStandings } from '../../api/endpoints'
 import { usePolling } from '../../hooks/usePolling'
+import { useRaceDashboardHub } from '../../hooks/useRaceDashboardHub'
 import { MetricCard, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
@@ -43,6 +44,11 @@ export function DashboardPage() {
     POLL_INTERVAL_MS,
     [raceId],
   )
+
+  useRaceDashboardHub(raceId, () => {
+    dashboard.refetch()
+    standings.refetch()
+  })
 
   const ultimosResultadosColumns: Column<RecentResultDto>[] = [
     { header: 'Dorsal', render: (r) => r.dorsal, className: MONO },
