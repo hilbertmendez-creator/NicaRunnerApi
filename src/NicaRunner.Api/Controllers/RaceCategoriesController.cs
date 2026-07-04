@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Categories;
@@ -7,7 +8,9 @@ using NicaRunner.Domain.Entities;
 namespace NicaRunner.Api.Controllers;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api/races/{raceId:int}/categories")]
+[Route("api/v{version:apiVersion}/races/{raceId:int}/categories")]
 [Authorize]
 public class RaceCategoriesController(IRaceCategoryService categoryService) : ControllerBase
 {

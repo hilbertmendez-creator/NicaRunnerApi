@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Auth;
@@ -7,7 +8,9 @@ using NicaRunner.Application.Auth.Dtos;
 namespace NicaRunner.Api.Controllers;
 
 [ApiController]
-[Route("api/auth")]
+[ApiVersion("1.0")]
+[Route("api/auth")]                            // Legacy — clientes actuales
+[Route("api/v{version:apiVersion}/auth")]      // Nueva — clientes que optan por versión explícita
 public class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("register")]

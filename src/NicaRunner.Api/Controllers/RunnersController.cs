@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Runners;
@@ -7,7 +8,9 @@ using NicaRunner.Domain.Entities;
 namespace NicaRunner.Api.Controllers;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api/races/{raceId:int}/runners")]
+[Route("api/v{version:apiVersion}/races/{raceId:int}/runners")]
 [Authorize]
 public class RunnersController(IRunnerService runnerService) : ControllerBase
 {
