@@ -12,7 +12,6 @@ import type {
   CreateUserRequest,
   ForgotPasswordRequest,
   ImportRunnersResultDto,
-  JoinByCodeRequest,
   NotificationDto,
   NotifyAllSummaryDto,
   PublicRaceResultsDto,
@@ -93,11 +92,6 @@ export async function deleteRace(raceId: number): Promise<void> {
 
 export async function startRace(raceId: number): Promise<RaceDto> {
   const { data } = await apiClient.post<RaceDto>(`/races/${raceId}/start`)
-  return data
-}
-
-export async function joinRaceByCode(request: JoinByCodeRequest): Promise<RaceDto> {
-  const { data } = await apiClient.post<RaceDto>('/races/join', request)
   return data
 }
 
