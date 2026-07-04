@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { getRace } from '../../api/endpoints'
 import type { RaceDto } from '../../api/types'
 import { StatusBadge } from '../../components/StatusBadge'
@@ -13,9 +13,12 @@ export function RaceDetailPage() {
   const { raceId } = useParams<{ raceId: string }>()
   const id = Number(raceId)
 
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialTab: Tab = searchParams.get('tab') === 'corredores' ? 'corredores' : 'categorias'
+
   const [race, setRace] = useState<RaceDto | null>(null)
   const [notFound, setNotFound] = useState(false)
-  const [tab, setTab] = useState<Tab>('categorias')
+  const [tab, setTab] = useState<Tab>(initialTab)
 
   useEffect(() => {
     if (!Number.isInteger(id)) {
@@ -58,7 +61,14 @@ export function RaceDetailPage() {
         {race && <StatusBadge status={race.estado} />}
       </div>
 
-      <Tabs tabs={tabItems} activeTab={tab} onChange={(val) => setTab(val as Tab)} />
+      <Tabs
+        tabs={tabItems}
+        activeTab={tab}
+        onChange={(val) => {
+          setTab(val as Tab)
+          setSearchParams(val === 'corredores' ? { tab: val } : {}, { replace: true })
+        }}
+      />
 
       <section style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)', padding: 16 }}>
         {tab === 'categorias' ? <CategoriesTab raceId={id} /> : <RunnersTab raceId={id} />}
