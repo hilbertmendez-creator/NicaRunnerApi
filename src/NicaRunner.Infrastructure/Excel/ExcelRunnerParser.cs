@@ -76,12 +76,20 @@ public class ExcelRunnerParser : IExcelRunnerParser
         return stream.ToArray();
     }
 
+    // Kind explícito a Utc: ClosedXML (y DateTime.TryParse de un string plano) devuelven
+    // DateTime con Kind=Unspecified, pero Npgsql mapea DateTime a "timestamp with time
+    // zone" por default y rechaza escribir un Kind distinto de Utc ("Cannot write
+    // DateTime with Kind=Unspecified..."). El alta manual no lo sufre porque el frontend
+    // manda fechas ISO con "Z" (Kind=Utc tras deserializar); la importación por Excel sí,
+    // y sin este fix cada fila con fecha de nacimiento revienta el import con 500.
     private static DateTime? ParseFecha(IXLCell cell)
     {
         if (cell.TryGetValue(out DateTime fecha))
-            return fecha;
+            return DateTime.SpecifyKind(fecha, DateTimeKind.Utc);
 
-        return DateTime.TryParse(cell.GetString().Trim(), out var parsed) ? parsed : null;
+        return DateTime.TryParse(cell.GetString().Trim(), out var parsed)
+            ? DateTime.SpecifyKind(parsed, DateTimeKind.Utc)
+            : null;
     }
 
     private static string? NullIfEmpty(string value) => string.IsNullOrWhiteSpace(value) ? null : value;

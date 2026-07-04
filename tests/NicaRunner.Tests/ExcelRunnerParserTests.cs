@@ -73,6 +73,7 @@ public class ExcelRunnerParserTests
         Assert.Equal("101", first.Dorsal);
         Assert.Equal("F", first.Sexo);
         Assert.Equal(new DateTime(2011, 5, 15), first.FechaNacimiento);
+        Assert.Equal(DateTimeKind.Utc, first.FechaNacimiento!.Value.Kind);
         Assert.Equal("Juvenil", first.Categoria);
 
         var second = rows[1];
@@ -100,5 +101,30 @@ public class ExcelRunnerParserTests
         var rows = _parser.Parse(stream);
 
         Assert.Equal(new DateTime(2011, 5, 15), rows[0].FechaNacimiento);
+        Assert.Equal(DateTimeKind.Utc, rows[0].FechaNacimiento!.Value.Kind);
+    }
+
+    [Fact]
+    public void Parse_Fecha_SiempreTieneKindUtc_ParaQueNpgsqlNoRechaceElInsert()
+    {
+        // Regresión: Npgsql mapea DateTime a "timestamp with time zone" por default y
+        // rechaza escribir un Kind distinto de Utc. ClosedXML devuelve Kind=Unspecified
+        // para celdas de fecha nativas, lo que tumbaba el import completo con un 500 en
+        // producción (Postgres) pese a que los tests con mocks no lo detectaban.
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Corredores");
+        sheet.Cell(1, 1).Value = "Nombre";
+        sheet.Cell(2, 1).Value = "Ana";
+        sheet.Cell(2, 3).Value = "101";
+        sheet.Cell(2, 8).Value = new DateTime(2011, 5, 15, 0, 0, 0, DateTimeKind.Unspecified);
+        sheet.Cell(2, 9).Value = "Juvenil";
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        var rows = _parser.Parse(stream);
+
+        Assert.Equal(DateTimeKind.Utc, rows[0].FechaNacimiento!.Value.Kind);
     }
 }
