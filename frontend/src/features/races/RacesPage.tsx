@@ -60,6 +60,9 @@ export function RacesPage() {
       header: '',
       render: (race) => (
         <div className="flex gap-2">
+          <Link to={`/carreras/${race.id}?tab=corredores`}>
+            <Button size="sm">Corredores</Button>
+          </Link>
           {canManage && (
             <>
               <Button size="sm" onClick={() => setEditing(race)}>
