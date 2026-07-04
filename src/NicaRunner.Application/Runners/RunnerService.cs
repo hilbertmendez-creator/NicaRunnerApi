@@ -106,7 +106,20 @@ public class RunnerService(
     {
         var race = await GetRaceOrThrowAsync(raceId, ct);
 
-        var rows = excelRunnerParser.Parse(excelStream);
+        List<ParsedRunnerRow> rows;
+        try
+        {
+            rows = excelRunnerParser.Parse(excelStream);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // ClosedXML no documenta un tipo de excepción propio para "no es un
+            // OOXML válido" — atrapamos genérico (mismo boundary que ya cruza
+            // ResultRepository con DbUpdateException, acá el origen es una
+            // librería de parseo en vez de EF) y devolvemos un 400 claro en vez
+            // de dejar que se escape como 500 sin manejar.
+            throw new ValidationException("El archivo no es un Excel válido (.xlsx) o está dañado.");
+        }
 
         var categoriesByName = (await categoryRepository.GetAllByRaceAsync(raceId, ct))
             .GroupBy(c => Normalize(c.NombreCategoria))

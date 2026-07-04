@@ -203,4 +203,18 @@ public class RunnerServiceTests
         Assert.Single(result.Errores);
         _runners.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<Runner>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    // Archivo con extensión .xlsx pero contenido corrupto/no-Excel: ClosedXML
+    // lanza al intentar abrirlo. Se traduce a ValidationException (400) en vez
+    // de dejarlo escapar como 500 sin manejar.
+    [Fact]
+    public async Task ImportFromExcelAsync_ArchivoCorrupto_LanzaValidationException()
+    {
+        var race = RaceOn(new DateTime(2026, 6, 1));
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(race);
+        _excelParser.Setup(p => p.Parse(It.IsAny<Stream>())).Throws(new Exception("Not a valid OOXML file."));
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => BuildService().ImportFromExcelAsync(1, Stream.Null));
+    }
 }

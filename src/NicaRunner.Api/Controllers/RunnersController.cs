@@ -43,13 +43,21 @@ public class RunnersController(IRunnerService runnerService) : ControllerBase
         return NoContent();
     }
 
+    private const long MaxExcelFileSizeBytes = 5 * 1024 * 1024;
+
     [HttpPost("/api/races/{raceId:int}/import-excel")]
     [Authorize(Roles = nameof(UserRole.Administrador))]
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<ImportRunnersResultDto>> ImportExcel(int raceId, IFormFile file, CancellationToken ct)
     {
-        if (file.Length == 0)
+        if (file is null || file.Length == 0)
             return BadRequest("Debe adjuntar un archivo Excel (.xlsx) con al menos una fila de datos.");
+
+        if (file.Length > MaxExcelFileSizeBytes)
+            return BadRequest("El archivo excede el tamaño máximo permitido (5 MB).");
+
+        if (!string.Equals(Path.GetExtension(file.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("El archivo debe tener extensión .xlsx.");
 
         await using var stream = file.OpenReadStream();
         var result = await runnerService.ImportFromExcelAsync(raceId, stream, ct);
