@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth/auth-context'
 import { ThemeSwitcher } from './ThemeSwitcher'
@@ -38,6 +39,7 @@ const ADMIN_ONLY_NAV_ITEMS = [
 
 export function AppLayout() {
   const { user, logout } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const initials = (user?.nombre ?? '?')
     .split(' ')
     .map((part) => part[0])
@@ -47,9 +49,20 @@ export function AppLayout() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-app)' }}>
+      {/* ── Overlay (solo móvil/tablet, sidebar abierto) ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* ── Sidebar ── */}
       <aside
-        className="sidebar-inner"
+        className={`sidebar-inner fixed inset-y-0 left-0 z-40 transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
         style={{
           width: 220,
           flexShrink: 0,
@@ -61,9 +74,28 @@ export function AppLayout() {
       >
         {/* Logo */}
         <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--bd)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <img src={logoEmblem} alt="NicaRunner" style={{ width: 24, height: 24, borderRadius: 5 }} />
-            <span style={{ font: '700 13px Inter', color: 'var(--sb-text)' }}>NicaRunner</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src={logoEmblem} alt="NicaRunner" style={{ width: 24, height: 24, borderRadius: 5 }} />
+              <span style={{ font: '700 13px Inter', color: 'var(--sb-text)' }}>NicaRunner</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Cerrar menú"
+              className="lg:hidden"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--sb-muted)',
+                fontSize: 18,
+                lineHeight: 1,
+                cursor: 'pointer',
+                padding: 4,
+              }}
+            >
+              ✕
+            </button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
             <span className="dot-live" />
@@ -92,6 +124,7 @@ export function AppLayout() {
                   key={item.to}
                   to={item.to}
                   end={item.end}
+                  onClick={() => setSidebarOpen(false)}
                   style={({ isActive }) => ({
                     display: 'flex',
                     alignItems: 'center',
@@ -131,6 +164,7 @@ export function AppLayout() {
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  onClick={() => setSidebarOpen(false)}
                   style={({ isActive }) => ({
                     display: 'flex',
                     alignItems: 'center',
@@ -217,9 +251,31 @@ export function AppLayout() {
             flexShrink: 0,
           }}
         >
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Abrir menú"
+            className="lg:hidden"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--gh-bd)',
+              borderRadius: 'var(--radius-btn)',
+              color: 'var(--gh-text)',
+              fontSize: 16,
+              lineHeight: 1,
+              cursor: 'pointer',
+              padding: '6px 10px',
+              flexShrink: 0,
+            }}
+          >
+            ☰
+          </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: '600 14px Inter', color: 'var(--text-hi)' }}>NicaRunner Backoffice</div>
-            <div style={{ font: '400 10.5px Inter', color: 'var(--text-xs)', marginTop: 1 }}>
+            <div
+              className="hidden sm:block"
+              style={{ font: '400 10.5px Inter', color: 'var(--text-xs)', marginTop: 1 }}
+            >
               Gestión de competencias de atletismo
             </div>
           </div>
@@ -227,7 +283,7 @@ export function AppLayout() {
         </div>
 
         {/* Content */}
-        <main style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+        <main style={{ flex: 1, overflow: 'auto' }} className="p-4 sm:p-6">
           <Outlet />
         </main>
       </div>
