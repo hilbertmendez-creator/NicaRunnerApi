@@ -85,6 +85,7 @@ public class AuthServicePasswordResetTests
         Assert.Null(user.PasswordResetToken);
         Assert.Null(user.PasswordResetTokenExpiry);
         Assert.False(user.MustChangePassword);
+        _refresh.Verify(r => r.RevokeAllForUserAsync(1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -101,6 +102,8 @@ public class AuthServicePasswordResetTests
 
         await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => BuildService().ResetPasswordAsync(new ResetPasswordRequest("token-123", "nueva-segura")));
+
+        _refresh.Verify(r => r.RevokeAllForUserAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -110,6 +113,8 @@ public class AuthServicePasswordResetTests
 
         await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => BuildService().ResetPasswordAsync(new ResetPasswordRequest("no-existe", "nueva-segura")));
+
+        _refresh.Verify(r => r.RevokeAllForUserAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -79,6 +79,9 @@ public class AuthService(
         user.PasswordHash = passwordHasher.Hash(request.NewPassword);
         user.MustChangePassword = false;
 
+        // Un refresh token robado no debe seguir sirviendo una vez que el
+        // usuario cambia su contraseña.
+        await refreshTokenService.RevokeAllForUserAsync(user.Id, ct);
         await userRepository.SaveChangesAsync(ct);
     }
 
@@ -117,6 +120,9 @@ public class AuthService(
         user.PasswordResetTokenExpiry = null;
         user.MustChangePassword = false;
 
+        // Un refresh token robado no debe seguir sirviendo una vez que la
+        // víctima recupera su cuenta.
+        await refreshTokenService.RevokeAllForUserAsync(user.Id, ct);
         await userRepository.SaveChangesAsync(ct);
     }
 

@@ -82,6 +82,12 @@ public class RefreshTokenService(
         await repository.SaveChangesAsync(ct);
     }
 
+    public async Task RevokeAllForUserAsync(int userId, CancellationToken ct = default)
+    {
+        await repository.RevokeAllForUserAsync(userId, RefreshTokenRevokedReason.ManualRevoke, ct);
+        await repository.SaveChangesAsync(ct);
+    }
+
     private static string GenerateRawToken()
     {
         var bytes = RandomNumberGenerator.GetBytes(TokenByteLength);

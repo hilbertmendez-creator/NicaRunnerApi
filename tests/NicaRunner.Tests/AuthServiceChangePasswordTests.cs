@@ -34,6 +34,7 @@ public class AuthServiceChangePasswordTests
         Assert.Equal("hash-nueva", user.PasswordHash);
         Assert.False(user.MustChangePassword);
         _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _refresh.Verify(r => r.RevokeAllForUserAsync(1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -47,6 +48,7 @@ public class AuthServiceChangePasswordTests
             () => BuildService().ChangePasswordAsync(1, new ChangePasswordRequest("mala", "nueva-segura")));
 
         _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _refresh.Verify(r => r.RevokeAllForUserAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -68,5 +70,6 @@ public class AuthServiceChangePasswordTests
             () => BuildService().ChangePasswordAsync(1, new ChangePasswordRequest("actual", "nueva-segura")));
 
         _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _refresh.Verify(r => r.RevokeAllForUserAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
