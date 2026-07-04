@@ -5,7 +5,10 @@ using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Races;
 
-public class RaceService(IRaceRepository raceRepository) : IRaceService
+public class RaceService(
+    IRaceRepository raceRepository,
+    IRaceCategoryRepository raceCategoryRepository,
+    ICategoryRepository categoryRepository) : IRaceService
 {
     // Sin I, O, 0, 1 para evitar confusiones visuales al teclear el código en el móvil.
     private const string JoinCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -14,6 +17,9 @@ public class RaceService(IRaceRepository raceRepository) : IRaceService
 
     public async Task<RaceDto> CreateAsync(CreateRaceRequest request, int adminId, CancellationToken ct = default)
     {
+        var categoryIds = request.CategoryIds?.Distinct().ToList() ?? [];
+        await EnsureCategoriesExistAsync(categoryIds, ct);
+
         var race = new Race
         {
             Nombre = request.Nombre,
@@ -26,7 +32,22 @@ public class RaceService(IRaceRepository raceRepository) : IRaceService
         await raceRepository.AddAsync(race, ct);
         await raceRepository.SaveChangesAsync(ct);
 
+        foreach (var categoryId in categoryIds)
+            await raceCategoryRepository.SelectAsync(race.Id, categoryId, ct);
+
+        if (categoryIds.Count > 0)
+            await raceCategoryRepository.SaveChangesAsync(ct);
+
         return ToDto(race);
+    }
+
+    private async Task EnsureCategoriesExistAsync(List<int> categoryIds, CancellationToken ct)
+    {
+        foreach (var categoryId in categoryIds)
+        {
+            if (await categoryRepository.GetByIdAsync(categoryId, ct) is null)
+                throw new NotFoundException($"No existe la categoría con id {categoryId} en el catálogo.");
+        }
     }
 
     public async Task<List<RaceDto>> GetAllAsync(CancellationToken ct = default)

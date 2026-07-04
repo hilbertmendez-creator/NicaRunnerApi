@@ -1,24 +1,27 @@
 import { useEffect, useState } from 'react'
-import { deleteCategory, getCategories } from '../../api/endpoints'
-import type { RaceCategoryDto } from '../../api/types'
+import { assignCategory, getCategories, getCategoryCatalog, unassignCategory } from '../../api/endpoints'
+import type { CategoryDto, RaceCategoryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import { Button, DataTable, LoadingText, EmptyState, Select } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
-import { CategoryFormModal } from './CategoryFormModal'
 
 export function CategoriesTab({ raceId }: { raceId: number }) {
   const { user } = useAuth()
   const canManage = user?.role === 'Administrador'
 
   const [categories, setCategories] = useState<RaceCategoryDto[]>([])
+  const [catalog, setCatalog] = useState<CategoryDto[]>([])
   const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState<RaceCategoryDto | null>(null)
-  const [showCreate, setShowCreate] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+  const [assigning, setAssigning] = useState(false)
 
   function reload() {
     setLoading(true)
-    getCategories(raceId)
-      .then(setCategories)
+    Promise.all([getCategories(raceId), getCategoryCatalog()])
+      .then(([assigned, all]) => {
+        setCategories(assigned)
+        setCatalog(all)
+      })
       .finally(() => setLoading(false))
   }
 
@@ -26,17 +29,31 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(reload, [raceId])
 
-  async function handleDelete(category: RaceCategoryDto) {
-    if (!confirm(`¿Eliminar la categoría "${category.nombreCategoria}"?`)) return
-    await deleteCategory(raceId, category.id)
+  const availableToAssign = catalog
+    .filter((cat) => !categories.some((assigned) => assigned.categoryId === cat.id))
+    .sort((a, b) => a.orden - b.orden)
+
+  async function handleAssign() {
+    if (selectedCategoryId === null) return
+    setAssigning(true)
+    try {
+      await assignCategory(raceId, { categoryId: selectedCategoryId })
+      setSelectedCategoryId(null)
+      reload()
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  async function handleUnassign(category: RaceCategoryDto) {
+    if (!confirm(`¿Quitar la categoría "${category.nombreCategoria}" de esta carrera?`)) return
+    await unassignCategory(raceId, category.categoryId)
     reload()
   }
 
   const columns: Column<RaceCategoryDto>[] = [
-    {
-      header: 'Nombre',
-      render: (cat) => cat.nombreCategoria,
-    },
+    { header: 'Código', render: (cat) => cat.codigo, className: 'font-mono' },
+    { header: 'Nombre', render: (cat) => cat.nombreCategoria },
     {
       header: 'Distancia',
       render: (cat) => `${cat.distancia} km`,
@@ -48,23 +65,13 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
       className: 'font-mono tabular-nums',
     },
     {
-      header: 'Orden',
-      render: (cat) => cat.orden,
-      className: 'font-mono tabular-nums',
-    },
-    {
       header: '',
       render: (cat) => (
         <div className="flex gap-2">
           {canManage && (
-            <>
-              <Button size="sm" onClick={() => setEditing(cat)}>
-                Editar
-              </Button>
-              <Button size="sm" variant="destructive" onClick={() => handleDelete(cat)}>
-                Eliminar
-              </Button>
-            </>
+            <Button size="sm" variant="destructive" onClick={() => handleUnassign(cat)}>
+              Quitar
+            </Button>
           )}
         </div>
       ),
@@ -75,13 +82,25 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
-        {canManage && (
-          <Button variant="primary" onClick={() => setShowCreate(true)}>
-            Nueva categoría
+      {canManage && (
+        <div className="flex items-center justify-end gap-2">
+          <Select
+            value={selectedCategoryId ?? ''}
+            onChange={(e) => setSelectedCategoryId(e.target.value ? Number(e.target.value) : null)}
+            disabled={availableToAssign.length === 0}
+          >
+            <option value="">Selecciona una categoría del catálogo…</option>
+            {availableToAssign.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.codigo} — {cat.nombreCategoria}
+              </option>
+            ))}
+          </Select>
+          <Button variant="primary" onClick={handleAssign} disabled={selectedCategoryId === null || assigning}>
+            {assigning ? 'Agregando...' : 'Agregar a la carrera'}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {loading && <LoadingText message="Cargando categorías..." />}
 
@@ -89,32 +108,8 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
         <DataTable
           columns={columns}
           data={sortedCategories}
-          rowKey={(cat) => cat.id}
-          emptyState={<EmptyState message="Esta carrera no tiene categorías todavía." />}
-        />
-      )}
-
-      {showCreate && (
-        <CategoryFormModal
-          raceId={raceId}
-          category={null}
-          onClose={() => setShowCreate(false)}
-          onSaved={() => {
-            setShowCreate(false)
-            reload()
-          }}
-        />
-      )}
-
-      {editing && (
-        <CategoryFormModal
-          raceId={raceId}
-          category={editing}
-          onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null)
-            reload()
-          }}
+          rowKey={(cat) => cat.categoryId}
+          emptyState={<EmptyState message="Esta carrera no tiene categorías asignadas todavía." />}
         />
       )}
     </div>

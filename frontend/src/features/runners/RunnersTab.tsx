@@ -33,7 +33,7 @@ export function RunnersTab({ raceId }: { raceId: number }) {
   useEffect(reload, [raceId])
 
   function categoryName(categoryId: number) {
-    return categories.find((c) => c.id === categoryId)?.nombreCategoria ?? '—'
+    return categories.find((c) => c.categoryId === categoryId)?.nombreCategoria ?? '—'
   }
 
   async function handleDelete(runner: RunnerDto) {

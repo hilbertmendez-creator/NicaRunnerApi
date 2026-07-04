@@ -16,9 +16,9 @@ public class RaceCategoriesController(IRaceCategoryService categoryService) : Co
 {
     [HttpPost]
     [Authorize(Roles = nameof(UserRole.Administrador))]
-    public async Task<ActionResult<RaceCategoryDto>> Create(int raceId, CreateRaceCategoryRequest request, CancellationToken ct)
+    public async Task<ActionResult<RaceCategoryDto>> Assign(int raceId, AssignCategoryRequest request, CancellationToken ct)
     {
-        var category = await categoryService.CreateAsync(raceId, request, ct);
+        var category = await categoryService.AssignAsync(raceId, request, ct);
         return CreatedAtAction(nameof(GetAll), new { raceId }, category);
     }
 
@@ -26,16 +26,11 @@ public class RaceCategoriesController(IRaceCategoryService categoryService) : Co
     public async Task<ActionResult<List<RaceCategoryDto>>> GetAll(int raceId, CancellationToken ct) =>
         Ok(await categoryService.GetAllByRaceAsync(raceId, ct));
 
-    [HttpPut("{categoryId:int}")]
-    [Authorize(Roles = nameof(UserRole.Administrador))]
-    public async Task<ActionResult<RaceCategoryDto>> Update(int raceId, int categoryId, UpdateRaceCategoryRequest request, CancellationToken ct) =>
-        Ok(await categoryService.UpdateAsync(raceId, categoryId, request, ct));
-
     [HttpDelete("{categoryId:int}")]
     [Authorize(Roles = nameof(UserRole.Administrador))]
-    public async Task<IActionResult> Delete(int raceId, int categoryId, CancellationToken ct)
+    public async Task<IActionResult> Unassign(int raceId, int categoryId, CancellationToken ct)
     {
-        await categoryService.DeleteAsync(raceId, categoryId, ct);
+        await categoryService.UnassignAsync(raceId, categoryId, ct);
         return NoContent();
     }
 }

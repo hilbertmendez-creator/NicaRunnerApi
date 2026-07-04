@@ -29,6 +29,12 @@ public class RunnerRepository(NicaRunnerDbContext context) : IRunnerRepository
             r => r.RaceId == raceId && r.Dorsal == dorsal && r.Id != excludeRunnerId,
             ct);
 
+    public Task<bool> ExistsByCategoryAsync(int categoryId, CancellationToken ct = default) =>
+        context.Runners.AnyAsync(r => r.CategoryId == categoryId, ct);
+
+    public Task<bool> ExistsByCategoryInRaceAsync(int raceId, int categoryId, CancellationToken ct = default) =>
+        context.Runners.AnyAsync(r => r.RaceId == raceId && r.CategoryId == categoryId, ct);
+
     public async Task AddAsync(Runner runner, CancellationToken ct = default) =>
         await context.Runners.AddAsync(runner, ct);
 

@@ -12,6 +12,7 @@ public class NicaRunnerDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Race> Races => Set<Race>();
+    public DbSet<Category> Categories => Set<Category>();
     public DbSet<RaceCategory> RaceCategories => Set<RaceCategory>();
     public DbSet<Runner> Runners => Set<Runner>();
     public DbSet<Result> Results => Set<Result>();
@@ -27,6 +28,33 @@ public class NicaRunnerDbContext : DbContext
         modelBuilder.Entity<Runner>()
             .HasIndex(r => new { r.RaceId, r.Dorsal })
             .IsUnique();
+
+        // Código de categoría único en el catálogo global
+        modelBuilder.Entity<Category>()
+            .HasIndex(c => c.Codigo)
+            .IsUnique();
+
+        // Una categoría solo puede seleccionarse una vez por carrera
+        modelBuilder.Entity<RaceCategory>()
+            .HasIndex(rc => new { rc.RaceId, rc.CategoryId })
+            .IsUnique();
+        modelBuilder.Entity<RaceCategory>()
+            .HasOne(rc => rc.Race)
+            .WithMany(r => r.Categories)
+            .HasForeignKey(rc => rc.RaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<RaceCategory>()
+            .HasOne(rc => rc.Category)
+            .WithMany(c => c.RaceCategories)
+            .HasForeignKey(rc => rc.CategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // No se puede borrar una categoría del catálogo mientras tenga corredores inscritos
+        modelBuilder.Entity<Runner>()
+            .HasOne(r => r.Category)
+            .WithMany(c => c.Runners)
+            .HasForeignKey(r => r.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // JoinCode único para que /api/races/join pueda resolver una sola carrera
         modelBuilder.Entity<Race>()

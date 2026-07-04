@@ -6,25 +6,23 @@ using NicaRunner.Domain.Entities;
 namespace NicaRunner.Application.Categories;
 
 public class RaceCategoryService(
-    IRaceCategoryRepository categoryRepository,
-    IRaceRepository raceRepository) : IRaceCategoryService
+    IRaceCategoryRepository raceCategoryRepository,
+    ICategoryRepository categoryRepository,
+    IRaceRepository raceRepository,
+    IRunnerRepository runnerRepository) : IRaceCategoryService
 {
-    public async Task<RaceCategoryDto> CreateAsync(int raceId, CreateRaceCategoryRequest request, CancellationToken ct = default)
+    public async Task<RaceCategoryDto> AssignAsync(int raceId, AssignCategoryRequest request, CancellationToken ct = default)
     {
         await EnsureRaceExistsAsync(raceId, ct);
 
-        var category = new RaceCategory
-        {
-            RaceId = raceId,
-            NombreCategoria = request.NombreCategoria,
-            Distancia = request.Distancia,
-            EdadMinima = request.EdadMinima,
-            EdadMaxima = request.EdadMaxima,
-            Orden = request.Orden
-        };
+        var category = await categoryRepository.GetByIdAsync(request.CategoryId, ct)
+            ?? throw new NotFoundException($"No existe la categoría con id {request.CategoryId} en el catálogo.");
 
-        await categoryRepository.AddAsync(category, ct);
-        await categoryRepository.SaveChangesAsync(ct);
+        if (await raceCategoryRepository.IsSelectedAsync(raceId, request.CategoryId, ct))
+            throw new ConflictException($"La categoría '{category.NombreCategoria}' ya está asignada a esta carrera.");
+
+        await raceCategoryRepository.SelectAsync(raceId, request.CategoryId, ct);
+        await raceCategoryRepository.SaveChangesAsync(ct);
 
         return ToDto(category);
     }
@@ -33,29 +31,20 @@ public class RaceCategoryService(
     {
         await EnsureRaceExistsAsync(raceId, ct);
 
-        var categories = await categoryRepository.GetAllByRaceAsync(raceId, ct);
+        var categories = await raceCategoryRepository.GetAllByRaceAsync(raceId, ct);
         return categories.Select(ToDto).ToList();
     }
 
-    public async Task<RaceCategoryDto> UpdateAsync(int raceId, int categoryId, UpdateRaceCategoryRequest request, CancellationToken ct = default)
+    public async Task UnassignAsync(int raceId, int categoryId, CancellationToken ct = default)
     {
-        var category = await GetCategoryOrThrowAsync(raceId, categoryId, ct);
+        var association = await raceCategoryRepository.GetAssociationAsync(raceId, categoryId, ct)
+            ?? throw new NotFoundException($"La categoría con id {categoryId} no está asignada a la carrera {raceId}.");
 
-        category.NombreCategoria = request.NombreCategoria;
-        category.Distancia = request.Distancia;
-        category.EdadMinima = request.EdadMinima;
-        category.EdadMaxima = request.EdadMaxima;
-        category.Orden = request.Orden;
+        if (await runnerRepository.ExistsByCategoryInRaceAsync(raceId, categoryId, ct))
+            throw new ConflictException("No se puede quitar esta categoría: ya tiene corredores inscritos en esta carrera.");
 
-        await categoryRepository.SaveChangesAsync(ct);
-        return ToDto(category);
-    }
-
-    public async Task DeleteAsync(int raceId, int categoryId, CancellationToken ct = default)
-    {
-        var category = await GetCategoryOrThrowAsync(raceId, categoryId, ct);
-        categoryRepository.Remove(category);
-        await categoryRepository.SaveChangesAsync(ct);
+        raceCategoryRepository.Remove(association);
+        await raceCategoryRepository.SaveChangesAsync(ct);
     }
 
     private async Task EnsureRaceExistsAsync(int raceId, CancellationToken ct)
@@ -64,14 +53,11 @@ public class RaceCategoryService(
             throw new NotFoundException($"No existe la carrera con id {raceId}.");
     }
 
-    private async Task<RaceCategory> GetCategoryOrThrowAsync(int raceId, int categoryId, CancellationToken ct) =>
-        await categoryRepository.GetByIdAsync(raceId, categoryId, ct)
-            ?? throw new NotFoundException($"No existe la categoría con id {categoryId} en la carrera {raceId}.");
-
-    private static RaceCategoryDto ToDto(RaceCategory category) => new(
+    private static RaceCategoryDto ToDto(Category category) => new(
         category.Id,
-        category.RaceId,
+        category.Codigo,
         category.NombreCategoria,
+        category.Descripcion,
         category.Distancia,
         category.EdadMinima,
         category.EdadMaxima,

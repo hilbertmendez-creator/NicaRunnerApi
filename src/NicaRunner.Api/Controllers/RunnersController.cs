@@ -55,4 +55,15 @@ public class RunnersController(IRunnerService runnerService) : ControllerBase
         var result = await runnerService.ImportFromExcelAsync(raceId, stream, ct);
         return Ok(result);
     }
+
+    [HttpGet("/api/races/{raceId:int}/import-excel/template")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<IActionResult> DownloadTemplate(int raceId, CancellationToken ct)
+    {
+        var content = await runnerService.GenerateImportTemplateAsync(raceId, ct);
+        return File(
+            content,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"plantilla-corredores-carrera-{raceId}.xlsx");
+    }
 }
