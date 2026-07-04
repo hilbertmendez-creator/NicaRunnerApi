@@ -14,6 +14,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@microsoft/signalr": "^8.0.7",
     "@nicarunner/ui": "*",
     "@tanstack/react-query": "^5.101.2",
     "axios": "^1.18.0",

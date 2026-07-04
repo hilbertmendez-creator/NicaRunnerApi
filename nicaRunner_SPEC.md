@@ -451,11 +451,11 @@ GET    /api/public/runner/{token}/{runnerId} - Ver resultado individual (opciona
 
 ### Fase 2: Captura de Tiempos (1-2 semanas)
 - [x] Endpoint de captura de tiempos
-- [ ] WebSocket para actualizaciones en vivo (dashboard actual no tiene live-update; pendiente)
-- [ ] App móvil básica conectada a API (no existe; captura se hace desde el back office web vía join code de jueces)
+- [x] Actualizaciones en vivo del dashboard vía SignalR (hub `/hubs/race-dashboard`; ResultService notifica al grupo de la carrera tras cada creación/edición, el frontend refresca al instante y el polling de 5s queda como respaldo)
+- [x] Captura de tiempos conectada a API — se resolvió sin app móvil nativa: los jueces capturan desde el back office web vía join code (ver Fase 7)
 
 ### Fase 3: Back Office (2-3 semanas)
-- [x] Dashboard en tiempo real (sin WebSocket, ver Fase 2)
+- [x] Dashboard en tiempo real (con SignalR, ver Fase 2)
 - [x] Edición manual de tiempos con auditoría
 - [x] Gestión de roles y permisos (incluye pantalla de mantenimiento de usuarios)
 

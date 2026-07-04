@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Formatting.Compact;
+using NicaRunner.Api.Hubs;
 using NicaRunner.Api.Middleware;
 using NicaRunner.Application.Admin;
 using NicaRunner.Application.Auth;
@@ -55,6 +56,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 
 // URL versioning con dos rutas por controller: la legacy `/api/{resource}` y la
 // nueva `/api/v{version:apiVersion}/{resource}`. Cuando el cliente no especifica
@@ -131,6 +133,7 @@ builder.Services.AddScoped<IResultService, ResultService>();
 builder.Services.AddScoped<IPublicResultService, PublicResultService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IRaceDashboardNotifier, RaceDashboardNotifier>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services
@@ -146,6 +149,24 @@ builder.Services
             ValidIssuer = jwtSection["Issuer"],
             ValidAudience = jwtSection["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
+        };
+
+        // El cliente de SignalR (browser) no puede mandar el header Authorization en
+        // el handshake de WebSocket, así que manda el JWT como query string
+        // "?access_token=...". Solo se acepta ahí, y solo para el path del hub —
+        // el resto de la API sigue exigiendo el header Authorization normal.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -237,6 +258,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<RaceDashboardHub>("/hubs/race-dashboard");
 
 // Sin auth, sin tocar la BD: usado por Render (y cualquier monitor externo)
 // para el health check del servicio.
