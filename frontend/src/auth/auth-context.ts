@@ -13,7 +13,7 @@ export interface AuthContextValue {
   user: CurrentUser | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   clearMustChangePassword: () => void
 }
 
