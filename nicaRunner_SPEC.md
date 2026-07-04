@@ -278,11 +278,11 @@ Notifications
 
 ### Autenticación
 ```
-POST   /api/auth/register          - Registrar nuevo capturista
 POST   /api/auth/login             - Login (genera JWT)
 POST   /api/auth/refresh           - Refresh token
 POST   /api/auth/logout            - Logout
 ```
+*(el `register` público original se retiró: aceptaba un `role` elegido por el cliente sin autenticación, permitiendo auto-registro como Administrador. La creación de cuentas — incluyendo Capturista — quedó centralizada en `POST /api/users`, solo accesible por un Administrador autenticado.)*
 
 ### Gestión de Carreras (Admin)
 ```
@@ -452,7 +452,7 @@ GET    /api/public/runner/{token}/{runnerId} - Ver resultado individual (opciona
 ### Fase 2: Captura de Tiempos (1-2 semanas)
 - [x] Endpoint de captura de tiempos
 - [x] Actualizaciones en vivo del dashboard vía SignalR (hub `/hubs/race-dashboard`; ResultService notifica al grupo de la carrera tras cada creación/edición, el frontend refresca al instante y el polling de 5s queda como respaldo)
-- [x] Captura de tiempos conectada a API — se resolvió sin app móvil nativa: los jueces capturan desde el back office web vía join code (ver Fase 7)
+- [x] Captura de tiempos conectada a API — se resuelve vía app móvil nativa para jueces capturistas (repo separado: `hilbertmendez-creator/NicaRunner`), no desde el back office web. El back office web es exclusivamente Admin/Lector; el rol Capturista solo existe para autenticación/autorización contra la API desde esa app.
 
 ### Fase 3: Back Office (2-3 semanas)
 - [x] Dashboard en tiempo real (con SignalR, ver Fase 2)
@@ -478,7 +478,7 @@ GET    /api/public/runner/{token}/{runnerId} - Ver resultado individual (opciona
 ### Fase 7: Diseño Profesional (A futuro)
 - [x] Cloud design system (`@nicarunner/ui`, ver `.design-sync/NOTES.md`)
 - [x] Rediseño de UI/UX (tema + login rediseñado)
-- [ ] Aplicar a app móvil (no existe app móvil, ver Fase 2)
+- [ ] Aplicar a app móvil (ver Fase 2 — app móvil vive en repo separado, fuera del alcance de este rediseño)
 
 ---
 

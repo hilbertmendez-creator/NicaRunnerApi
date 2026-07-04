@@ -9,6 +9,13 @@ public interface IRefreshTokenRepository
     Task<int> RevokeFamilyAsync(Guid familyId, RefreshTokenRevokedReason reason, CancellationToken ct = default);
 
     /// <summary>
+    /// Revoca TODAS las familias activas de un usuario (todas sus sesiones,
+    /// no solo una). Se usa al cambiar/resetear password para invalidar
+    /// cualquier refresh token existente, incluido uno robado.
+    /// </summary>
+    Task<int> RevokeAllForUserAsync(int userId, RefreshTokenRevokedReason reason, CancellationToken ct = default);
+
+    /// <summary>
     /// Borra tokens ya inservibles: los que expiraron por TTL y los que
     /// fueron revocados hace más que <paramref name="revokedRetention"/>.
     /// La ventana de retención sobre revocados sirve para auditar replays

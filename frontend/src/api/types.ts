@@ -59,10 +59,6 @@ export interface RaceDto {
   updatedAt: string
 }
 
-export interface JoinByCodeRequest {
-  code: string
-}
-
 export interface CategoryProgressDto {
   categoryId: number
   nombreCategoria: string

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Auth.Dtos;
 
@@ -13,14 +14,8 @@ namespace NicaRunner.Api.Controllers;
 [Route("api/v{version:apiVersion}/auth")]      // Nueva — clientes que optan por versión explícita
 public class AuthController(IAuthService authService) : ControllerBase
 {
-    [HttpPost("register")]
-    public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request, CancellationToken ct)
-    {
-        var result = await authService.RegisterAsync(request, ct);
-        return Ok(result);
-    }
-
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken ct)
     {
         var result = await authService.LoginAsync(request, ct);
@@ -43,6 +38,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken ct)
     {
         await authService.ForgotPasswordAsync(request, ct);

@@ -1,7 +1,12 @@
+using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -189,6 +194,66 @@ builder.Services.AddCors(options =>
     });
 });
 
+// En Render (ver render.yaml) esta API corre detrás de su balanceador: la IP
+// que ve Kestrel (RemoteIpAddress) es siempre la del proxy de Render, no la
+// del cliente real. Sin esto, el particionado por IP del rate limiter de
+// abajo agruparía a TODOS los usuarios bajo una sola IP y un solo abusivo
+// bloquearía a todos los demás. Render es el único punto de entrada de este
+// servicio (no es alcanzable saltándose su borde), así que confiar en
+// X-Forwarded-For de cualquier proxy es seguro acá.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Rate limiting para los endpoints sin autenticación más expuestos a abuso:
+// login/forgot-password (fuerza bruta, agotar cuota de envío de Resend) y
+// resultados públicos (fuerza bruta del token). Particionado por IP del
+// cliente, fixed window, sin cola — de nada sirve encolar un login.
+builder.Services.AddRateLimiter(options =>
+{
+    options.OnRejected = async (context, ct) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/problem+json";
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers["Retry-After"] = ((int)retryAfter.TotalSeconds).ToString();
+
+        var problem = new
+        {
+            status = StatusCodes.Status429TooManyRequests,
+            title = HttpStatusCode.TooManyRequests.ToString(),
+            detail = "Demasiadas solicitudes. Intenta de nuevo en unos momentos.",
+        };
+        await context.HttpContext.Response.WriteAsync(JsonSerializer.Serialize(problem), ct);
+    };
+
+    string PartitionByIp(HttpContext httpContext) =>
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    var authSection = builder.Configuration.GetSection("RateLimiting:Auth");
+    options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        PartitionByIp(httpContext),
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = authSection.GetValue("PermitLimit", 8),
+            Window = TimeSpan.FromSeconds(authSection.GetValue("WindowSeconds", 60)),
+            QueueLimit = 0,
+        }));
+
+    var publicResultsSection = builder.Configuration.GetSection("RateLimiting:PublicResults");
+    options.AddPolicy("public-results", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        PartitionByIp(httpContext),
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = publicResultsSection.GetValue("PermitLimit", 30),
+            Window = TimeSpan.FromSeconds(publicResultsSection.GetValue("WindowSeconds", 60)),
+            QueueLimit = 0,
+        }));
+});
+
 var app = builder.Build();
 
 // Auto-aplica migraciones pendientes al arrancar en producción (Render no da
@@ -245,6 +310,11 @@ app.UseSerilogRequestLogging(options =>
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// Debe ir antes que cualquier middleware que dependa de la IP/esquema real
+// (rate limiting, HTTPS redirect) para que reflejen al cliente y no al
+// balanceador de Render.
+app.UseForwardedHeaders();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -258,6 +328,8 @@ app.UseCors(FrontendCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapHub<RaceDashboardHub>("/hubs/race-dashboard");

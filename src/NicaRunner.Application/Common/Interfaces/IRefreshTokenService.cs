@@ -33,4 +33,11 @@ public interface IRefreshTokenService
     /// token inválido es no-op idempotente.
     /// </summary>
     Task LogoutAsync(string rawToken, CancellationToken ct = default);
+
+    /// <summary>
+    /// Revoca todas las sesiones (todas las familias) del usuario. Se llama
+    /// al cambiar o resetear la contraseña, para que un refresh token robado
+    /// deje de servir apenas la víctima recupera su cuenta.
+    /// </summary>
+    Task RevokeAllForUserAsync(int userId, CancellationToken ct = default);
 }

@@ -19,25 +19,6 @@ public class AuthService(
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
 
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
-    {
-        if (await userRepository.EmailExistsAsync(request.Email, ct))
-            throw new ConflictException($"Ya existe un usuario registrado con el email '{request.Email}'.");
-
-        var user = new User
-        {
-            Email = request.Email,
-            Nombre = request.Nombre,
-            Role = request.Role,
-            PasswordHash = passwordHasher.Hash(request.Password)
-        };
-
-        await userRepository.AddAsync(user, ct);
-        await userRepository.SaveChangesAsync(ct);
-
-        return await BuildAuthResponseAsync(user, ct);
-    }
-
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
         var user = await userRepository.GetByEmailAsync(request.Email, ct);
@@ -98,6 +79,9 @@ public class AuthService(
         user.PasswordHash = passwordHasher.Hash(request.NewPassword);
         user.MustChangePassword = false;
 
+        // Un refresh token robado no debe seguir sirviendo una vez que el
+        // usuario cambia su contraseña.
+        await refreshTokenService.RevokeAllForUserAsync(user.Id, ct);
         await userRepository.SaveChangesAsync(ct);
     }
 
@@ -136,6 +120,9 @@ public class AuthService(
         user.PasswordResetTokenExpiry = null;
         user.MustChangePassword = false;
 
+        // Un refresh token robado no debe seguir sirviendo una vez que la
+        // víctima recupera su cuenta.
+        await refreshTokenService.RevokeAllForUserAsync(user.Id, ct);
         await userRepository.SaveChangesAsync(ct);
     }
 

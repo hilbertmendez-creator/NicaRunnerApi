@@ -28,6 +28,16 @@ public class RefreshTokenRepository(NicaRunnerDbContext db) : IRefreshTokenRepos
                 .SetProperty(t => t.RevokedReason, reason), ct);
     }
 
+    public async Task<int> RevokeAllForUserAsync(int userId, RefreshTokenRevokedReason reason, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        return await db.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(t => t.RevokedAt, now)
+                .SetProperty(t => t.RevokedReason, reason), ct);
+    }
+
     public async Task<int> DeleteExpiredAsync(DateTime now, TimeSpan revokedRetention, CancellationToken ct = default)
     {
         // ExecuteDeleteAsync: SQL DELETE plano, no materializa filas. Ideal
