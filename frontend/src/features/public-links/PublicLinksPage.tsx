@@ -20,6 +20,7 @@ export function PublicLinksPage() {
   const [diasExpiracion, setDiasExpiracion] = useState(30)
   const [creating, setCreating] = useState(false)
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   function reload() {
     if (!raceId) return
@@ -35,10 +36,13 @@ export function PublicLinksPage() {
 
   async function handleCreate() {
     if (!raceId) return
+    setError(null)
     setCreating(true)
     try {
       await createPublicToken(raceId, { diasExpiracion })
       reload()
+    } catch (err: any) {
+      setError(err.response?.data?.detail ?? 'No se pudo generar el enlace público.')
     } finally {
       setCreating(false)
     }
@@ -76,6 +80,8 @@ export function PublicLinksPage() {
           </Button>
         </section>
       )}
+
+      {error && <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
 
       {loading && <p className="text-sm" style={textLo}>Cargando enlaces...</p>}
 
