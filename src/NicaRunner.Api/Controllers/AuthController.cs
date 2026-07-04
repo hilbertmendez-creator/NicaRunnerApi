@@ -13,13 +13,6 @@ namespace NicaRunner.Api.Controllers;
 [Route("api/v{version:apiVersion}/auth")]      // Nueva — clientes que optan por versión explícita
 public class AuthController(IAuthService authService) : ControllerBase
 {
-    [HttpPost("register")]
-    public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request, CancellationToken ct)
-    {
-        var result = await authService.RegisterAsync(request, ct);
-        return Ok(result);
-    }
-
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken ct)
     {

@@ -19,25 +19,6 @@ public class AuthService(
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
 
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
-    {
-        if (await userRepository.EmailExistsAsync(request.Email, ct))
-            throw new ConflictException($"Ya existe un usuario registrado con el email '{request.Email}'.");
-
-        var user = new User
-        {
-            Email = request.Email,
-            Nombre = request.Nombre,
-            Role = request.Role,
-            PasswordHash = passwordHasher.Hash(request.Password)
-        };
-
-        await userRepository.AddAsync(user, ct);
-        await userRepository.SaveChangesAsync(ct);
-
-        return await BuildAuthResponseAsync(user, ct);
-    }
-
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
         var user = await userRepository.GetByEmailAsync(request.Email, ct);

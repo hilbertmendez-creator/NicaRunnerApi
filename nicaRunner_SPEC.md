@@ -278,11 +278,11 @@ Notifications
 
 ### Autenticación
 ```
-POST   /api/auth/register          - Registrar nuevo capturista
 POST   /api/auth/login             - Login (genera JWT)
 POST   /api/auth/refresh           - Refresh token
 POST   /api/auth/logout            - Logout
 ```
+*(el `register` público original se retiró: aceptaba un `role` elegido por el cliente sin autenticación, permitiendo auto-registro como Administrador. La creación de cuentas — incluyendo Capturista — quedó centralizada en `POST /api/users`, solo accesible por un Administrador autenticado.)*
 
 ### Gestión de Carreras (Admin)
 ```
