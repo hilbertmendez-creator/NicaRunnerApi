@@ -159,6 +159,29 @@ public class ResultServiceIdempotencyTests
             () => BuildService().CreateAsync(1, MakeRequest(), capturistaId: 5, idempotencyKey: "key-fantasma"));
     }
 
+    // Condición de carrera sin Idempotency-Key: dos capturas casi simultáneas
+    // del mismo dorsal pasan el ExistsByRunnerAsync antes de que la otra
+    // comitee. La constraint de BD (RaceId, RunnerId) la atrapa en
+    // SaveNewResultAsync — a diferencia del conflicto de idempotencia, acá no
+    // hay ganador que re-leer: el perdedor debe recibir el mismo 409 que ya
+    // usa el chequeo previo.
+    [Fact]
+    public async Task Create_DorsalConcurrente_LanzaConflictException()
+    {
+        RaceExists();
+        var runner = new Runner { Id = 3, RaceId = 1, Dorsal = "101", CategoryId = 2, Nombre = "Juan" };
+        _runners.Setup(r => r.GetByDorsalAsync(1, "101", It.IsAny<CancellationToken>())).ReturnsAsync(runner);
+        _results.Setup(r => r.ExistsByRunnerAsync(1, 3, null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _results.Setup(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _results.Setup(r => r.SaveNewResultAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new RunnerResultConflictException());
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(
+            () => BuildService().CreateAsync(1, MakeRequest(dorsal: "101"), capturistaId: 5));
+
+        Assert.Contains("101", ex.Message);
+    }
+
     // Sanity: sin key, una DbUpdateException (bug real, no idempotency)
     // NO se atrapa. La constraint `when (!string.IsNullOrWhiteSpace(idempotencyKey))`
     // deja pasar cualquier problema cuando no hay key.

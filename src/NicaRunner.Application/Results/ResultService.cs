@@ -63,6 +63,14 @@ public class ResultService(
             if (winner is null) throw;
             return ToDto(winner);
         }
+        catch (RunnerResultConflictException)
+        {
+            // A diferencia del conflicto de Idempotency-Key, acá no hay
+            // "ganador" que devolver: dos capturas distintas del mismo dorsal
+            // es un error real, y el perdedor debe enterarse igual que en el
+            // chequeo previo (ExistsByRunnerAsync) — mismo mensaje.
+            throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
+        }
 
         if (runner is not null)
             await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);

@@ -16,8 +16,10 @@ public interface IResultRepository
     /// Persiste un Result recién agregado a esta unidad de trabajo. Si choca
     /// con la UK (RaceId, IdempotencyKey) — caso de POSTs concurrentes con
     /// el mismo key — lanza IdempotencyConflictException para que el service
-    /// re-lea el ganador. Cualquier otra DbUpdateException se re-lanza tal
-    /// cual (errores reales).
+    /// re-lea el ganador. Si choca con la UK (RaceId, RunnerId) — dos capturas
+    /// concurrentes del mismo corredor — lanza RunnerResultConflictException,
+    /// que el service traduce a un conflicto real (no hay ganador que re-leer).
+    /// Cualquier otra DbUpdateException se re-lanza tal cual (errores reales).
     /// </summary>
     Task SaveNewResultAsync(CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);

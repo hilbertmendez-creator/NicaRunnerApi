@@ -62,6 +62,10 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
         {
             throw new IdempotencyConflictException();
         }
+        catch (DbUpdateException ex) when (IsRunnerResultViolation(ex))
+        {
+            throw new RunnerResultConflictException();
+        }
     }
 
     public Task SaveChangesAsync(CancellationToken ct = default) =>
@@ -75,4 +79,10 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
     // tipar contra Npgsql/Sqlite específicamente.
     private static bool IsIdempotencyKeyViolation(DbUpdateException ex) =>
         ex.InnerException?.Message.Contains("IdempotencyKey", StringComparison.OrdinalIgnoreCase) == true;
+
+    // Mismo truco portable que IsIdempotencyKeyViolation: tanto el nombre de
+    // índice que genera Postgres (IX_Results_RaceId_RunnerId) como el mensaje
+    // nativo de Sqlite (que lista los nombres de columna) contienen "RunnerId".
+    private static bool IsRunnerResultViolation(DbUpdateException ex) =>
+        ex.InnerException?.Message.Contains("RunnerId", StringComparison.OrdinalIgnoreCase) == true;
 }
