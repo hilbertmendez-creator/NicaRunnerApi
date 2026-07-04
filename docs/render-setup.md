@@ -1,7 +1,7 @@
 # Render — setup manual post-deploy
 
 El blueprint `render.yaml` aprovisiona el servicio y la base de datos, pero hay
-tres variables marcadas como `sync: false` que **vos** tenés que setear desde
+cuatro variables marcadas como `sync: false` que **vos** tenés que setear desde
 el dashboard de Render una vez después del primer deploy. Sin estas, la API no
 arranca o arranca con seguridad rota.
 
@@ -44,7 +44,31 @@ https://nicarunner-web.vercel.app
 Sin `/` final. Si necesitás más de un origen (ej. dominio custom + url
 `.vercel.app`), agregá `Cors__AllowedOrigins__1`, `__2`, etc.
 
-## Después de setear las 3
+### 4. `Admin__CleanupSecret`
+
+Autoriza al cron de GitHub Actions
+(`.github/workflows/refresh-token-cleanup.yml`) a invocar
+`POST /api/admin/refresh-tokens/cleanup`, que borra refresh tokens expirados
+o revocados hace más de 7 días. Sin este secret configurado el endpoint
+responde 401 a todas las peticiones (safe-by-default).
+
+Generar con:
+
+```bash
+openssl rand -base64 32
+```
+
+Además del valor en Render, **el mismo valor** hay que ponerlo en
+GitHub → Settings → Secrets and variables → Actions → **Secrets** → New
+repository secret con nombre `ADMIN_CLEANUP_SECRET`. Si los dos no coinciden
+el cron falla con 401 y GitHub avisa por email.
+
+Rotación: cambiá primero el valor en Render (el cron seguirá funcionando
+con el valor viejo hasta que Render redeploye), después el secret de GitHub.
+Ventana de riesgo breve durante la cual el cron podría fallar una vez — no
+crítico, el próximo run del día siguiente ya usa el valor nuevo.
+
+## Después de setear las 4
 
 Render hace **redeploy automático** al guardar variables. Esperar a que el
 servicio quede en estado `Live` y verificar:
