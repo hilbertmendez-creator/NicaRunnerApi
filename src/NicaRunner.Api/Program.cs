@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Formatting.Compact;
 using NicaRunner.Api.Middleware;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Categories;
@@ -22,7 +24,29 @@ using NicaRunner.Infrastructure.Repositories;
 using NicaRunner.Infrastructure.Security;
 using NicaRunner.Infrastructure.Seed;
 
+// Bootstrap logger para capturar errores del arranque MISMO antes de que el
+// host esté armado (ej. una falla al leer appsettings). Se reemplaza más abajo
+// por el logger definitivo configurado desde builder.Host.UseSerilog.
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console(new CompactJsonFormatter())
+    .CreateBootstrapLogger();
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog reemplaza el logger default de ASP.NET. Config declarativa desde
+// appsettings.json (sección "Serilog") para poder ajustar levels sin
+// recompilar. Enriquecimiento con MachineName + ThreadId + EnvironmentName +
+// contexto de logs. Sink: stdout con CLEF (Compact Log Event Format) que
+// Render captura tal cual y cualquier log aggregator (Datadog, Grafana Loki,
+// Better Stack) parsea nativamente.
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithThreadId()
+    .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName)
+    .WriteTo.Console(new CompactJsonFormatter()));
 
 // Add services to the container.
 builder.Services.AddControllers()
@@ -150,6 +174,26 @@ using (var seedScope = app.Services.CreateScope())
         app.Logger.LogWarning(ex, "No se pudo ejecutar el seed de administradores (¿faltan migraciones por aplicar?).");
     }
 }
+
+// Log estructurado 1-por-request antes que cualquier otro middleware para
+// capturar TODOS los requests (incluso los que rechaza HTTPS redirect, CORS,
+// auth). Enriquecemos con UserId cuando el usuario está autenticado — es la
+// pregunta más común al debuggear "qué hizo este usuario en el evento".
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} → {StatusCode} en {Elapsed:0.0}ms";
+    options.EnrichDiagnosticContext = (diag, http) =>
+    {
+        diag.Set("Host", http.Request.Host.Value);
+        diag.Set("Scheme", http.Request.Scheme);
+        // ClaimTypes.NameIdentifier viene poblado desde el JWT (ver
+        // JwtTokenGenerator). Cuando el endpoint es público o el token no
+        // vino/expiró, User.Identity está desautenticado y el claim es null.
+        var userId = http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
+            diag.Set("UserId", userId);
+    };
+});
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
