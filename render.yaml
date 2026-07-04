@@ -47,3 +47,9 @@ services:
         value: "450796447742-hi3dpbuo0i6k5jua6u31rqpgf7dpm06b.apps.googleusercontent.com"
       - key: Cors__AllowedOrigins__0
         sync: false
+      # Secret que autoriza al cron de GitHub Actions a llamar
+      # POST /api/admin/refresh-tokens/cleanup. Setearlo una vez con
+      # `openssl rand -base64 32` y usar EL MISMO valor como GitHub Actions
+      # secret ADMIN_CLEANUP_SECRET. Ver docs/render-setup.md.
+      - key: Admin__CleanupSecret
+        sync: false

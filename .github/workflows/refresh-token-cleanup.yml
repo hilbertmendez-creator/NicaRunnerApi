@@ -1,0 +1,60 @@
+name: Refresh token cleanup
+
+# La tabla RefreshTokens crece con cada login/register/google-login/refresh y
+# los tokens expirados o revocados hace tiempo no aportan nada. Este cron
+# corre diariamente en horario de baja carga (04:00 UTC ~ 22:00 hora
+# Nicaragua) y llama al endpoint admin del backend para borrar el basural.
+#
+# Requisitos en Settings → Secrets and variables → Actions:
+#   Secret:   ADMIN_CLEANUP_SECRET  — la misma cadena que en Render como
+#             Admin__CleanupSecret. Rotable en cualquier momento; para
+#             rotar cambiala en Render primero y después acá.
+#   Variable: RENDER_API_URL         — reutilizada del cron keep-alive
+#             (misma URL pública del servicio).
+#
+# Si el endpoint retorna algo distinto a 200 (401 por secret desalineado,
+# 500 por bug del cleanup, etc.), el workflow falla — GitHub avisa por email
+# y quedamos con visibilidad sin tener que revisar Render manualmente.
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validar config
+        env:
+          URL: ${{ vars.RENDER_API_URL }}
+          SECRET: ${{ secrets.ADMIN_CLEANUP_SECRET }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Variable RENDER_API_URL no configurada."
+            exit 1
+          fi
+          if [ -z "$SECRET" ]; then
+            echo "::error::Secret ADMIN_CLEANUP_SECRET no configurado."
+            exit 1
+          fi
+          echo "Target: $URL/api/admin/refresh-tokens/cleanup"
+
+      - name: POST cleanup
+        env:
+          URL: ${{ vars.RENDER_API_URL }}
+          SECRET: ${{ secrets.ADMIN_CLEANUP_SECRET }}
+        run: |
+          # --fail-with-body: sale con 22 si HTTP >= 400, imprime el body
+          # de error igual (útil para debug del 401 vs 500).
+          # --max-time 120: el DELETE puede tardar en Postgres si hay
+          # decenas de miles de rows viejas; 2 min es margen amplio.
+          RESPONSE=$(curl --fail-with-body --silent --show-error --max-time 120 \
+            -X POST \
+            -H "X-Admin-Secret: $SECRET" \
+            "$URL/api/admin/refresh-tokens/cleanup")
+          echo "Cleanup result: $RESPONSE"

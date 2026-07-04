@@ -28,5 +28,19 @@ public class RefreshTokenRepository(NicaRunnerDbContext db) : IRefreshTokenRepos
                 .SetProperty(t => t.RevokedReason, reason), ct);
     }
 
+    public async Task<int> DeleteExpiredAsync(DateTime now, TimeSpan revokedRetention, CancellationToken ct = default)
+    {
+        // ExecuteDeleteAsync: SQL DELETE plano, no materializa filas. Ideal
+        // para un cron que puede encontrarse decenas de miles de tokens viejos.
+        // Criterio: token ya expiró por TTL, O fue revocado hace más que la
+        // ventana de retención (por defecto 7 días — sirve para auditar
+        // replays recientes; pasado ese tiempo la cadena no importa).
+        var revokedCutoff = now - revokedRetention;
+        return await db.RefreshTokens
+            .Where(t => t.ExpiresAt < now
+                     || (t.RevokedAt != null && t.RevokedAt < revokedCutoff))
+            .ExecuteDeleteAsync(ct);
+    }
+
     public Task SaveChangesAsync(CancellationToken ct = default) => db.SaveChangesAsync(ct);
 }
