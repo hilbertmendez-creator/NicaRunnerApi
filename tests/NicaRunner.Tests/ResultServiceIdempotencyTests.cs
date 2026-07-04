@@ -198,4 +198,35 @@ public class ResultServiceIdempotencyTests
         await Assert.ThrowsAsync<IdempotencyConflictException>(
             () => BuildService().CreateAsync(1, MakeRequest(), capturistaId: 5));
     }
+
+    // El tiempo de la request (2026-06-29 10:00 UTC, ver MakeRequest) queda
+    // antes del inicio real de la carrera → debe rechazarse.
+    [Fact]
+    public async Task Create_TiempoAnteriorAlInicioDeLaCarrera_LanzaValidationException()
+    {
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new Race
+        {
+            Id = 1,
+            Nombre = "Test",
+            AdminId = 1,
+            RaceStartUtc = new DateTime(2026, 6, 29, 11, 0, 0, DateTimeKind.Utc)
+        });
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => BuildService().CreateAsync(1, MakeRequest(), capturistaId: 5));
+
+        _results.Verify(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_TiempoFuturo_LanzaValidationException()
+    {
+        RaceExists();
+        var futureRequest = new CreateResultRequest(null, DateTime.UtcNow.AddDays(1));
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => BuildService().CreateAsync(1, futureRequest, capturistaId: 5));
+
+        _results.Verify(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }
