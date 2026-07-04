@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Runners.Dtos;
@@ -154,6 +155,9 @@ public class RunnerService(
                 else
                     reasons.Add($"Sexo '{row.Sexo}' inválido (use M o F)");
             }
+
+            if (!string.IsNullOrWhiteSpace(row.Email) && !new EmailAddressAttribute().IsValid(row.Email))
+                reasons.Add($"Email '{row.Email}' no es válido");
 
             Category? category = null;
             if (string.IsNullOrWhiteSpace(row.Categoria))
