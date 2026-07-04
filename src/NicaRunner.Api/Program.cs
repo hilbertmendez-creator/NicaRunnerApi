@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -29,6 +30,28 @@ builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// URL versioning con dos rutas por controller: la legacy `/api/{resource}` y la
+// nueva `/api/v{version:apiVersion}/{resource}`. Cuando el cliente no especifica
+// versión (URL legacy), asumimos 1.0 por default. Cuando aparezca un breaking
+// change se creará /api/v2/{resource} y esta configuración crece con
+// [ApiVersion("2.0")] adicional. La app Android en Play Store sigue funcionando
+// contra /api/{resource} indefinidamente — es la garantía que motivó agregar
+// versioning ahora.
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+})
+.AddMvc()
+.AddApiExplorer(options =>
+{
+    // "v1" en vez de "v1.0" en la URL — cliente-friendlier.
+    options.GroupNameFormat = "'v'V";
+    options.SubstituteApiVersionInUrl = true;
+});
 
 var useSqlite = builder.Environment.IsDevelopment();
 

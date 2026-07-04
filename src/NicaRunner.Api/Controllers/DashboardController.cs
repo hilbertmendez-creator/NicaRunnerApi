@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Dashboard;
@@ -6,7 +7,9 @@ using NicaRunner.Application.Dashboard.Dtos;
 namespace NicaRunner.Api.Controllers;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api/races/{raceId:int}")]
+[Route("api/v{version:apiVersion}/races/{raceId:int}")]
 [Authorize]
 public class DashboardController(IDashboardService dashboardService) : ControllerBase
 {

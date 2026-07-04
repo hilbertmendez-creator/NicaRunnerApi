@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Results;
@@ -9,7 +10,9 @@ using NicaRunner.Domain.Entities;
 namespace NicaRunner.Api.Controllers;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api/races/{raceId:int}/results")]
+[Route("api/v{version:apiVersion}/races/{raceId:int}/results")]
 [Authorize]
 public class ResultsController(IResultService resultService) : ControllerBase
 {

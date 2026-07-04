@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Users;
@@ -8,7 +9,9 @@ using NicaRunner.Domain.Entities;
 namespace NicaRunner.Api.Controllers;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api/users")]
+[Route("api/v{version:apiVersion}/users")]
 [Authorize(Roles = nameof(UserRole.Administrador))]
 public class UsersController(IUserManagementService userManagementService) : ControllerBase
 {
