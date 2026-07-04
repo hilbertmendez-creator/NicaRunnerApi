@@ -9,5 +9,6 @@ public interface IRunnerService
     Task<RunnerDto> GetByIdAsync(int raceId, int runnerId, CancellationToken ct = default);
     Task<RunnerDto> UpdateAsync(int raceId, int runnerId, UpdateRunnerRequest request, CancellationToken ct = default);
     Task DeleteAsync(int raceId, int runnerId, CancellationToken ct = default);
+    Task<byte[]> GenerateImportTemplateAsync(int raceId, CancellationToken ct = default);
     Task<ImportRunnersResultDto> ImportFromExcelAsync(int raceId, Stream excelStream, CancellationToken ct = default);
 }

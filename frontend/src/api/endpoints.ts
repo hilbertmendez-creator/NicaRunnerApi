@@ -1,10 +1,12 @@
 import { apiClient } from './client'
 import type {
+  AssignCategoryRequest,
   AuthResponse,
+  CategoryDto,
   CategoryStandingsDto,
   ChangePasswordRequest,
+  CreateCategoryRequest,
   CreatePublicTokenRequest,
-  CreateRaceCategoryRequest,
   CreateRaceRequest,
   CreateRunnerRequest,
   CreateUserRequest,
@@ -23,7 +25,7 @@ import type {
   ResultAuditDto,
   ResultDto,
   RunnerDto,
-  UpdateRaceCategoryRequest,
+  UpdateCategoryRequest,
   UpdateRaceRequest,
   UpdateResultRequest,
   UpdateRunnerRequest,
@@ -99,29 +101,44 @@ export async function joinRaceByCode(request: JoinByCodeRequest): Promise<RaceDt
   return data
 }
 
+// Catálogo global de categorías (backoffice)
+export async function getCategoryCatalog(): Promise<CategoryDto[]> {
+  const { data } = await apiClient.get<CategoryDto[]>('/categories')
+  return data
+}
+
+export async function createCategoryCatalogEntry(request: CreateCategoryRequest): Promise<CategoryDto> {
+  const { data } = await apiClient.post<CategoryDto>('/categories', request)
+  return data
+}
+
+export async function updateCategoryCatalogEntry(
+  categoryId: number,
+  request: UpdateCategoryRequest,
+): Promise<CategoryDto> {
+  const { data } = await apiClient.put<CategoryDto>(`/categories/${categoryId}`, request)
+  return data
+}
+
+export async function deleteCategoryCatalogEntry(categoryId: number): Promise<void> {
+  await apiClient.delete(`/categories/${categoryId}`)
+}
+
+// Categorías del catálogo asignadas a una carrera específica
 export async function getCategories(raceId: number): Promise<RaceCategoryDto[]> {
   const { data } = await apiClient.get<RaceCategoryDto[]>(`/races/${raceId}/categories`)
   return data
 }
 
-export async function createCategory(
+export async function assignCategory(
   raceId: number,
-  request: CreateRaceCategoryRequest,
+  request: AssignCategoryRequest,
 ): Promise<RaceCategoryDto> {
   const { data } = await apiClient.post<RaceCategoryDto>(`/races/${raceId}/categories`, request)
   return data
 }
 
-export async function updateCategory(
-  raceId: number,
-  categoryId: number,
-  request: UpdateRaceCategoryRequest,
-): Promise<RaceCategoryDto> {
-  const { data } = await apiClient.put<RaceCategoryDto>(`/races/${raceId}/categories/${categoryId}`, request)
-  return data
-}
-
-export async function deleteCategory(raceId: number, categoryId: number): Promise<void> {
+export async function unassignCategory(raceId: number, categoryId: number): Promise<void> {
   await apiClient.delete(`/races/${raceId}/categories/${categoryId}`)
 }
 
@@ -146,6 +163,11 @@ export async function updateRunner(
 
 export async function deleteRunner(raceId: number, runnerId: number): Promise<void> {
   await apiClient.delete(`/races/${raceId}/runners/${runnerId}`)
+}
+
+export async function downloadRunnerImportTemplate(raceId: number): Promise<Blob> {
+  const { data } = await apiClient.get(`/races/${raceId}/import-excel/template`, { responseType: 'blob' })
+  return data
 }
 
 export async function importRunnersExcel(raceId: number, file: File): Promise<ImportRunnersResultDto> {

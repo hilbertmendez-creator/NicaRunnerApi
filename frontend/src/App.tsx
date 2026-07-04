@@ -16,6 +16,7 @@ import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { PublicLinksPage } from './features/public-links/PublicLinksPage'
 import { PublicResultsPage } from './features/public-results/PublicResultsPage'
 import { UsersPage } from './features/users/UsersPage'
+import { CategoryCatalogPage } from './features/categories/CategoryCatalogPage'
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
 
                 <Route element={<ProtectedRoute allowedRoles={['Administrador']} />}>
                   <Route path="/usuarios" element={<UsersPage />} />
+                  <Route path="/categorias" element={<CategoryCatalogPage />} />
                 </Route>
               </Route>
             </Route>

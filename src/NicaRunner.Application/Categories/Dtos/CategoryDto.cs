@@ -1,7 +1,7 @@
 namespace NicaRunner.Application.Categories.Dtos;
 
-public record RaceCategoryDto(
-    int CategoryId,
+public record CategoryDto(
+    int Id,
     string Codigo,
     string NombreCategoria,
     string? Descripcion,

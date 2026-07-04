@@ -1,17 +1,18 @@
 import { useState, type FormEvent } from 'react'
-import type { RaceCategoryDto } from '../../api/types'
-import { createCategory, updateCategory } from '../../api/endpoints'
-import { Modal, Button, Label, Input } from '@nicarunner/ui'
+import type { CategoryDto } from '../../api/types'
+import { createCategoryCatalogEntry, updateCategoryCatalogEntry } from '../../api/endpoints'
+import { Modal, Button, Label, Input, Textarea } from '@nicarunner/ui'
 
-interface CategoryFormModalProps {
-  raceId: number
-  category: RaceCategoryDto | null
+interface CategoryCatalogFormModalProps {
+  category: CategoryDto | null
   onClose: () => void
   onSaved: () => void
 }
 
-export function CategoryFormModal({ raceId, category, onClose, onSaved }: CategoryFormModalProps) {
+export function CategoryCatalogFormModal({ category, onClose, onSaved }: CategoryCatalogFormModalProps) {
+  const [codigo, setCodigo] = useState(category?.codigo ?? '')
   const [nombreCategoria, setNombreCategoria] = useState(category?.nombreCategoria ?? '')
+  const [descripcion, setDescripcion] = useState(category?.descripcion ?? '')
   const [distancia, setDistancia] = useState(category?.distancia ?? 5)
   const [edadMinima, setEdadMinima] = useState(category?.edadMinima ?? 0)
   const [edadMaxima, setEdadMaxima] = useState(category?.edadMaxima ?? 120)
@@ -22,17 +23,23 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+
+    if (edadMinima >= edadMaxima) {
+      setError('La edad mínima debe ser menor que la edad máxima.')
+      return
+    }
+
     setSubmitting(true)
     try {
-      const payload = { nombreCategoria, distancia, edadMinima, edadMaxima, orden }
+      const payload = { codigo, nombreCategoria, descripcion, distancia, edadMinima, edadMaxima, orden }
       if (category) {
-        await updateCategory(raceId, category.id, payload)
+        await updateCategoryCatalogEntry(category.id, payload)
       } else {
-        await createCategory(raceId, payload)
+        await createCategoryCatalogEntry(payload)
       }
       onSaved()
     } catch {
-      setError('No se pudo guardar la categoría. Verifica los datos.')
+      setError('No se pudo guardar la categoría. Verifica que el código no esté repetido.')
     } finally {
       setSubmitting(false)
     }
@@ -45,28 +52,18 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
           {category ? 'Editar categoría' : 'Nueva categoría'}
         </h2>
 
-        <Label htmlFor="cat-nombre">Nombre</Label>
-        <Input
-          id="cat-nombre"
-          value={nombreCategoria}
-          onChange={(e) => setNombreCategoria(e.target.value)}
-          required
-          maxLength={100}
-          className="mb-3 w-full"
-        />
-
         <div className="mb-3 grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="cat-distancia">Distancia (km)</Label>
+            <Label htmlFor="cat-codigo">Código corto</Label>
             <Input
-              id="cat-distancia"
-              type="number"
-              step="0.1"
-              min="0.1"
-              max="1000"
-              value={distancia}
-              onChange={(e) => setDistancia(Number(e.target.value))}
+              id="cat-codigo"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value.toUpperCase())}
               required
+              minLength={2}
+              maxLength={10}
+              pattern="[A-Za-z0-9]+"
+              title="Alfanumérico, sin espacios ni símbolos"
               className="w-full"
             />
           </div>
@@ -84,7 +81,41 @@ export function CategoryFormModal({ raceId, category, onClose, onSaved }: Catego
           </div>
         </div>
 
-        <div className="mb-3 grid grid-cols-2 gap-3">
+        <Label htmlFor="cat-nombre">Nombre</Label>
+        <Input
+          id="cat-nombre"
+          value={nombreCategoria}
+          onChange={(e) => setNombreCategoria(e.target.value)}
+          required
+          maxLength={100}
+          className="mb-3 w-full"
+        />
+
+        <Label htmlFor="cat-descripcion">Descripción</Label>
+        <Textarea
+          id="cat-descripcion"
+          value={descripcion ?? ''}
+          onChange={(e) => setDescripcion(e.target.value)}
+          rows={2}
+          maxLength={300}
+          className="mb-3 w-full"
+        />
+
+        <div className="mb-3 grid grid-cols-3 gap-3">
+          <div>
+            <Label htmlFor="cat-distancia">Distancia (km)</Label>
+            <Input
+              id="cat-distancia"
+              type="number"
+              step="0.1"
+              min="0.1"
+              max="1000"
+              value={distancia}
+              onChange={(e) => setDistancia(Number(e.target.value))}
+              required
+              className="w-full"
+            />
+          </div>
           <div>
             <Label htmlFor="cat-edad-min">Edad mínima</Label>
             <Input

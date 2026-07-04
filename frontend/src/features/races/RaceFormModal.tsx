@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react'
-import type { RaceDto, RaceStatus } from '../../api/types'
-import { createRace, updateRace } from '../../api/endpoints'
+import { useEffect, useState, type FormEvent } from 'react'
+import type { CategoryDto, RaceDto, RaceStatus } from '../../api/types'
+import { createRace, getCategoryCatalog, updateRace } from '../../api/endpoints'
 import { Modal, Button, Label, Input, Textarea, Select } from '@nicarunner/ui'
 
 interface RaceFormModalProps {
@@ -22,8 +22,23 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
     race ? toDateInputValue(race.fechaCarrera) : '',
   )
   const [estado, setEstado] = useState<RaceStatus>(race?.estado ?? 'Planeada')
+  const [catalog, setCatalog] = useState<CategoryDto[]>([])
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // Effect-driven fetch: react.dev/learn/synchronizing-with-effects#fetching-data
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (race) return
+    getCategoryCatalog().then(setCatalog)
+  }, [race])
+
+  function toggleCategory(categoryId: number) {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId],
+    )
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -34,7 +49,7 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
       if (race) {
         await updateRace(race.id, { nombre, descripcion, fechaCarrera: fechaIso, estado })
       } else {
-        await createRace({ nombre, descripcion, fechaCarrera: fechaIso })
+        await createRace({ nombre, descripcion, fechaCarrera: fechaIso, categoryIds: selectedCategoryIds })
       }
       onSaved()
     } catch {
@@ -83,6 +98,29 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           required
           className="mb-3 w-full"
         />
+
+        {!race && (
+          <div className="mb-3">
+            <Label>Categorías participantes</Label>
+            {catalog.length === 0 && (
+              <p className="text-sm" style={{ color: 'var(--text-lo)' }}>
+                No hay categorías en el catálogo todavía. Créalas primero en Administración → Categorías.
+              </p>
+            )}
+            <div className="flex flex-col gap-1" style={{ maxHeight: 160, overflowY: 'auto' }}>
+              {catalog.map((cat) => (
+                <label key={cat.id} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-lo)' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCategoryIds.includes(cat.id)}
+                    onChange={() => toggleCategory(cat.id)}
+                  />
+                  {cat.codigo} — {cat.nombreCategoria} ({cat.edadMinima}–{cat.edadMaxima})
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
 
         {race && (
           <>

@@ -25,7 +25,7 @@ public class Result
 
     public Race Race { get; set; } = null!;
     public Runner? Runner { get; set; }
-    public RaceCategory? Category { get; set; }
+    public Category? Category { get; set; }
     public User Capturista { get; set; } = null!;
     public ICollection<ResultAudit> AuditEntries { get; set; } = new List<ResultAudit>();
 }
