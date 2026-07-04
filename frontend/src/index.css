@@ -228,6 +228,25 @@ body {
   background: linear-gradient(160deg, #0D47A1 0%, #08306B 100%) !important;
 }
 
+/* Botón primario tematizado (fondo sólido; el tema brand lo sobreescribe con gradiente abajo) */
+.btn-primary {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #fff;
+}
+.btn-primary:hover {
+  filter: brightness(0.9);
+}
+
+/* Botón secundario tematizado */
+.btn-secondary {
+  border: 1px solid var(--bd);
+  color: var(--text-lo);
+}
+.btn-secondary:hover {
+  background: var(--bg-hover);
+}
+
 /* Botón primario con gradiente en tema brand */
 [data-theme="brand"] .btn-primary {
   background: linear-gradient(90deg, #42A5F5, #1565FF) !important;
@@ -242,6 +261,28 @@ body {
 .row-hover:hover {
   background: var(--bg-hover);
 }
+
+/* Pestañas tematizadas (Tabs) */
+.tab-btn {
+  color: var(--text-lo);
+  border-color: transparent;
+}
+.tab-btn:hover {
+  color: var(--text-hi);
+  border-color: var(--bd);
+}
+.tab-btn.active {
+  color: var(--tab-active);
+  border-color: var(--tab-active);
+}
+
+/* Utilidades de superficie/texto tematizadas (para componentes que componen clases) */
+.nr-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bd-card);
+}
+.nr-text-hi { color: var(--text-hi); }
+.nr-text-lo { color: var(--text-lo); }
 
 /* Input tematizado */
 .nr-input {

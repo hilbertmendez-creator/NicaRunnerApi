@@ -5,8 +5,11 @@ interface EmptyStateProps {
 
 export function EmptyState({ message, className = '' }: EmptyStateProps) {
   return (
-    <div className={`flex flex-col items-center justify-center border border-dashed border-zinc-200 bg-zinc-50 p-8 text-center ${className}`}>
-      <p className="text-sm font-medium text-zinc-500">{message}</p>
+    <div
+      className={`flex flex-col items-center justify-center border border-dashed p-8 text-center ${className}`}
+      style={{ borderColor: 'var(--bd)', background: 'var(--bg-hover)' }}
+    >
+      <p className="text-sm font-medium" style={{ color: 'var(--text-lo)' }}>{message}</p>
     </div>
   )
 }

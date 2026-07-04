@@ -34,7 +34,7 @@ export function UserFormModal({ onClose, onSaved }: UserFormModalProps) {
   return (
     <Modal onClose={onClose} labelledBy="user-form-title">
       <form onSubmit={handleSubmit}>
-        <h2 id="user-form-title" className="mb-4 text-base font-semibold text-zinc-900">
+        <h2 id="user-form-title" className="mb-4 text-base font-semibold" style={{ color: 'var(--text-hi)' }}>
           Nuevo usuario
         </h2>
 

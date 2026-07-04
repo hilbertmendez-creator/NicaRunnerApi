@@ -9,7 +9,7 @@ interface MetricCardProps {
 }
 
 const VARIANT_CLASSES: Record<MetricCardVariant, { bg: string; label: string; value: string }> = {
-  gray: { bg: 'bg-white border border-zinc-200', label: 'text-zinc-500', value: 'text-zinc-900' },
+  gray: { bg: 'nr-card', label: 'nr-text-lo', value: 'nr-text-hi' },
   orange: { bg: 'bg-dispute-50 border border-dispute-200', label: 'text-dispute-600', value: 'text-dispute-600' },
   teal: { bg: 'bg-official-50 border border-official-200', label: 'text-official-600', value: 'text-official-600' },
   amber: { bg: 'bg-dispute-50 border border-dispute-200', label: 'text-dispute-600', value: 'text-dispute-600' },
