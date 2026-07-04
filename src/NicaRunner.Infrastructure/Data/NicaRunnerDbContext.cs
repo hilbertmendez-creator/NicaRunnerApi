@@ -180,6 +180,11 @@ public class NicaRunnerDbContext : DbContext
             .WithMany()
             .OnDelete(DeleteBehavior.Restrict);
 
+        // El barrido de reintentos (ProcessPendingAsync) filtra por Status en
+        // cada corrida del cron — índice para no escanear toda la tabla.
+        modelBuilder.Entity<NotificationLog>()
+            .HasIndex(n => n.Status);
+
         base.OnModelCreating(modelBuilder);
     }
 }

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Admin;
+using NicaRunner.Application.Notifications;
+using NicaRunner.Application.Notifications.Dtos;
 
 namespace NicaRunner.Api.Controllers;
 
@@ -17,6 +19,7 @@ namespace NicaRunner.Api.Controllers;
 [AllowAnonymous]
 public class AdminController(
     IRefreshTokenCleanupService refreshTokenCleanup,
+    INotificationService notificationService,
     IConfiguration configuration,
     ILogger<AdminController> logger) : ControllerBase
 {
@@ -26,23 +29,39 @@ public class AdminController(
     [HttpPost("refresh-tokens/cleanup")]
     public async Task<ActionResult<CleanupResult>> CleanupRefreshTokens(CancellationToken ct)
     {
+        if (!IsAuthorized("refresh-tokens/cleanup"))
+            return Unauthorized();
+
+        var result = await refreshTokenCleanup.RunAsync(ct);
+        logger.LogInformation("Admin cleanup borró {Deleted} refresh tokens expirados/revocados.", result.Deleted);
+        return Ok(result);
+    }
+
+    [HttpPost("notifications/process-pending")]
+    public async Task<ActionResult<NotificationProcessSummaryDto>> ProcessPendingNotifications(CancellationToken ct)
+    {
+        if (!IsAuthorized("notifications/process-pending"))
+            return Unauthorized();
+
+        var result = await notificationService.ProcessPendingAsync(ct);
+        logger.LogInformation(
+            "Admin notifications sweep: {Procesadas} procesadas, {Enviadas} enviadas, {Fallidas} fallidas.",
+            result.Procesadas, result.Enviadas, result.Fallidas);
+        return Ok(result);
+    }
+
+    private bool IsAuthorized(string endpoint)
+    {
         var expected = configuration[AdminSecretConfigKey];
         if (string.IsNullOrWhiteSpace(expected))
         {
             // Sin secret configurado, el endpoint queda cerrado por default —
             // preferible al comportamiento inverso (endpoint abierto en fresh
             // deploys donde el operador todavía no seteó la variable).
-            logger.LogWarning("Admin cleanup endpoint invocado pero {Key} no está configurado.", AdminSecretConfigKey);
-            return Unauthorized();
+            logger.LogWarning("Admin endpoint {Endpoint} invocado pero {Key} no está configurado.", endpoint, AdminSecretConfigKey);
+            return false;
         }
 
-        if (!Request.Headers.TryGetValue(AdminSecretHeader, out var provided) || provided.ToString() != expected)
-        {
-            return Unauthorized();
-        }
-
-        var result = await refreshTokenCleanup.RunAsync(ct);
-        logger.LogInformation("Admin cleanup borró {Deleted} refresh tokens expirados/revocados.", result.Deleted);
-        return Ok(result);
+        return Request.Headers.TryGetValue(AdminSecretHeader, out var provided) && provided.ToString() == expected;
     }
 }
