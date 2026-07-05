@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NicaRunner.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using NicaRunner.Infrastructure.Data;
 namespace NicaRunner.Infrastructure.Migrations
 {
     [DbContext(typeof(NicaRunnerDbContext))]
-    partial class NicaRunnerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260705140000_AddUniqueRaceRunnerResultIndex")]
+    partial class AddUniqueRaceRunnerResultIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.28");
@@ -69,9 +72,6 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.Property<string>("Error")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("IntentosEnvio")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Mensaje")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -98,8 +98,6 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.HasIndex("ResultId");
 
                     b.HasIndex("RunnerId");
-
-                    b.HasIndex("Status");
 
                     b.ToTable("NotificationLogs");
                 });
