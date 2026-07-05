@@ -1,0 +1,54 @@
+name: Public tokens cleanup
+
+# La tabla PublicResultTokens crece con cada enlace público generado y los
+# tokens ya vencidos no aportan nada (ResolveValidTokenAsync los rechaza al
+# consultar de todos modos). Este cron corre diariamente en horario de baja
+# carga (04:00 UTC ~ 22:00 hora Nicaragua) y llama al endpoint admin del
+# backend para borrar el basural — mismo patrón que refresh-token-cleanup.
+#
+# Requisitos en Settings → Secrets and variables → Actions (compartidos con
+# los otros crons admin, no hace falta configurar nada nuevo si ya están):
+#   Secret:   ADMIN_CLEANUP_SECRET  — la misma cadena que en Render como
+#             Admin__CleanupSecret.
+#   Variable: RENDER_API_URL         — misma URL pública del servicio.
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validar config
+        env:
+          URL: ${{ vars.RENDER_API_URL }}
+          SECRET: ${{ secrets.ADMIN_CLEANUP_SECRET }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Variable RENDER_API_URL no configurada."
+            exit 1
+          fi
+          if [ -z "$SECRET" ]; then
+            echo "::error::Secret ADMIN_CLEANUP_SECRET no configurado."
+            exit 1
+          fi
+          echo "Target: $URL/api/admin/public-tokens/cleanup"
+
+      - name: POST cleanup
+        env:
+          URL: ${{ vars.RENDER_API_URL }}
+          SECRET: ${{ secrets.ADMIN_CLEANUP_SECRET }}
+        run: |
+          # --fail-with-body: sale con 22 si HTTP >= 400, imprime el body
+          # de error igual (útil para debug del 401 vs 500).
+          RESPONSE=$(curl --fail-with-body --silent --show-error --max-time 120 \
+            -X POST \
+            -H "X-Admin-Secret: $SECRET" \
+            "$URL/api/admin/public-tokens/cleanup")
+          echo "Cleanup result: $RESPONSE"

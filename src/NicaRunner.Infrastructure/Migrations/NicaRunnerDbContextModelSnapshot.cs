@@ -17,6 +17,43 @@ namespace NicaRunner.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.28");
 
+            modelBuilder.Entity("NicaRunner.Domain.Entities.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Descripcion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Distancia")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EdadMaxima")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("EdadMinima")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NombreCategoria")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique();
+
+                    b.ToTable("Categories");
+                });
+
             modelBuilder.Entity("NicaRunner.Domain.Entities.NotificationLog", b =>
                 {
                     b.Property<int>("Id")
@@ -31,6 +68,9 @@ namespace NicaRunner.Infrastructure.Migrations
 
                     b.Property<string>("Error")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("IntentosEnvio")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Mensaje")
                         .IsRequired()
@@ -58,6 +98,8 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.HasIndex("ResultId");
 
                     b.HasIndex("RunnerId");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("NotificationLogs");
                 });
@@ -150,20 +192,7 @@ namespace NicaRunner.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("Distancia")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("EdadMaxima")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("EdadMinima")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("NombreCategoria")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Orden")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("RaceId")
@@ -171,7 +200,10 @@ namespace NicaRunner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RaceId");
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("RaceId", "CategoryId")
+                        .IsUnique();
 
                     b.ToTable("RaceCategories");
                 });
@@ -201,6 +233,51 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.ToTable("RaceJudges");
                 });
 
+            modelBuilder.Entity("NicaRunner.Domain.Entities.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("RevokedReason")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("NicaRunner.Domain.Entities.Result", b =>
                 {
                     b.Property<int>("Id")
@@ -217,6 +294,10 @@ namespace NicaRunner.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Dorsal")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Posicion")
@@ -240,9 +321,15 @@ namespace NicaRunner.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("RaceId");
-
                     b.HasIndex("RunnerId");
+
+                    b.HasIndex("RaceId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("\"IdempotencyKey\" IS NOT NULL");
+
+                    b.HasIndex("RaceId", "RunnerId")
+                        .IsUnique()
+                        .HasFilter("\"RunnerId\" IS NOT NULL");
 
                     b.ToTable("Results");
                 });
@@ -292,8 +379,14 @@ namespace NicaRunner.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Apellidos")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("CategoryId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Club")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
@@ -308,11 +401,17 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("FechaNacimiento")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("RaceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("Sexo")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Telefono")
@@ -440,11 +539,19 @@ namespace NicaRunner.Infrastructure.Migrations
 
             modelBuilder.Entity("NicaRunner.Domain.Entities.RaceCategory", b =>
                 {
+                    b.HasOne("NicaRunner.Domain.Entities.Category", "Category")
+                        .WithMany("RaceCategories")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("NicaRunner.Domain.Entities.Race", "Race")
                         .WithMany("Categories")
                         .HasForeignKey("RaceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Category");
 
                     b.Navigation("Race");
                 });
@@ -468,6 +575,17 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("NicaRunner.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("NicaRunner.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("NicaRunner.Domain.Entities.Result", b =>
                 {
                     b.HasOne("NicaRunner.Domain.Entities.User", "Capturista")
@@ -476,7 +594,7 @@ namespace NicaRunner.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NicaRunner.Domain.Entities.RaceCategory", "Category")
+                    b.HasOne("NicaRunner.Domain.Entities.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId");
 
@@ -521,10 +639,10 @@ namespace NicaRunner.Infrastructure.Migrations
 
             modelBuilder.Entity("NicaRunner.Domain.Entities.Runner", b =>
                 {
-                    b.HasOne("NicaRunner.Domain.Entities.RaceCategory", "Category")
+                    b.HasOne("NicaRunner.Domain.Entities.Category", "Category")
                         .WithMany("Runners")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("NicaRunner.Domain.Entities.Race", "Race")
@@ -538,6 +656,13 @@ namespace NicaRunner.Infrastructure.Migrations
                     b.Navigation("Race");
                 });
 
+            modelBuilder.Entity("NicaRunner.Domain.Entities.Category", b =>
+                {
+                    b.Navigation("RaceCategories");
+
+                    b.Navigation("Runners");
+                });
+
             modelBuilder.Entity("NicaRunner.Domain.Entities.Race", b =>
                 {
                     b.Navigation("Categories");
@@ -548,11 +673,6 @@ namespace NicaRunner.Infrastructure.Migrations
 
                     b.Navigation("Results");
 
-                    b.Navigation("Runners");
-                });
-
-            modelBuilder.Entity("NicaRunner.Domain.Entities.RaceCategory", b =>
-                {
                     b.Navigation("Runners");
                 });
 

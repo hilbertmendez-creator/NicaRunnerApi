@@ -17,6 +17,7 @@ export function RacesPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<RaceDto | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function reload() {
     setLoading(true)
@@ -31,8 +32,13 @@ export function RacesPage() {
 
   async function handleDelete(race: RaceDto) {
     if (!confirm(`¿Eliminar la carrera "${race.nombre}"? Esta acción no se puede deshacer.`)) return
-    await deleteRace(race.id)
-    reload()
+    setError(null)
+    try {
+      await deleteRace(race.id)
+      reload()
+    } catch (err: any) {
+      setError(err.response?.data?.detail ?? 'No se pudo eliminar la carrera.')
+    }
   }
 
   const columns: Column<RaceDto>[] = [
@@ -60,6 +66,9 @@ export function RacesPage() {
       header: '',
       render: (race) => (
         <div className="flex gap-2">
+          <Link to={`/carreras/${race.id}?tab=corredores`}>
+            <Button size="sm">Corredores</Button>
+          </Link>
           {canManage && (
             <>
               <Button size="sm" onClick={() => setEditing(race)}>
@@ -85,6 +94,8 @@ export function RacesPage() {
           </Button>
         )}
       </div>
+
+      {error && <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
 
       {loading && <LoadingText message="Cargando carreras..." />}
 

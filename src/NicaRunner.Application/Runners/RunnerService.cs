@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Runners.Dtos;
@@ -13,20 +14,27 @@ public class RunnerService(
 {
     public async Task<RunnerDto> CreateAsync(int raceId, CreateRunnerRequest request, CancellationToken ct = default)
     {
-        await EnsureRaceExistsAsync(raceId, ct);
-        await EnsureCategoryBelongsToRaceAsync(raceId, request.CategoryId, ct);
+        var race = await GetRaceOrThrowAsync(raceId, ct);
+        var category = await EnsureCategoryBelongsToRaceAsync(raceId, request.CategoryId, ct);
 
         if (await runnerRepository.DorsalExistsAsync(raceId, request.Dorsal, ct: ct))
             throw new ConflictException($"Ya existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
+
+        var edad = ResolveEdad(request.FechaNacimiento, request.Edad, race.FechaCarrera);
+        EnsureAgeMatchesCategoryOrThrow(edad, category);
 
         var runner = new Runner
         {
             RaceId = raceId,
             Nombre = request.Nombre,
+            Apellidos = request.Apellidos,
             Dorsal = request.Dorsal,
             Telefono = request.Telefono,
             Email = request.Email,
-            Edad = request.Edad,
+            Sexo = request.Sexo,
+            Club = request.Club,
+            FechaNacimiento = request.FechaNacimiento,
+            Edad = edad,
             CategoryId = request.CategoryId
         };
 
@@ -53,17 +61,25 @@ public class RunnerService(
 
     public async Task<RunnerDto> UpdateAsync(int raceId, int runnerId, UpdateRunnerRequest request, CancellationToken ct = default)
     {
+        var race = await GetRaceOrThrowAsync(raceId, ct);
         var runner = await GetRunnerOrThrowAsync(raceId, runnerId, ct);
-        await EnsureCategoryBelongsToRaceAsync(raceId, request.CategoryId, ct);
+        var category = await EnsureCategoryBelongsToRaceAsync(raceId, request.CategoryId, ct);
 
         if (await runnerRepository.DorsalExistsAsync(raceId, request.Dorsal, runnerId, ct))
             throw new ConflictException($"Ya existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
 
+        var edad = ResolveEdad(request.FechaNacimiento, request.Edad, race.FechaCarrera);
+        EnsureAgeMatchesCategoryOrThrow(edad, category);
+
         runner.Nombre = request.Nombre;
+        runner.Apellidos = request.Apellidos;
         runner.Dorsal = request.Dorsal;
         runner.Telefono = request.Telefono;
         runner.Email = request.Email;
-        runner.Edad = request.Edad;
+        runner.Sexo = request.Sexo;
+        runner.Club = request.Club;
+        runner.FechaNacimiento = request.FechaNacimiento;
+        runner.Edad = edad;
         runner.CategoryId = request.CategoryId;
 
         await runnerRepository.SaveChangesAsync(ct);
@@ -79,11 +95,32 @@ public class RunnerService(
         await runnerRepository.SaveChangesAsync(ct);
     }
 
-    public async Task<ImportRunnersResultDto> ImportFromExcelAsync(int raceId, Stream excelStream, CancellationToken ct = default)
+    public async Task<byte[]> GenerateImportTemplateAsync(int raceId, CancellationToken ct = default)
     {
         await EnsureRaceExistsAsync(raceId, ct);
 
-        var rows = excelRunnerParser.Parse(excelStream);
+        var categories = await categoryRepository.GetAllByRaceAsync(raceId, ct);
+        return excelRunnerParser.GenerateTemplate(categories);
+    }
+
+    public async Task<ImportRunnersResultDto> ImportFromExcelAsync(int raceId, Stream excelStream, CancellationToken ct = default)
+    {
+        var race = await GetRaceOrThrowAsync(raceId, ct);
+
+        List<ParsedRunnerRow> rows;
+        try
+        {
+            rows = excelRunnerParser.Parse(excelStream);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // ClosedXML no documenta un tipo de excepción propio para "no es un
+            // OOXML válido" — atrapamos genérico (mismo boundary que ya cruza
+            // ResultRepository con DbUpdateException, acá el origen es una
+            // librería de parseo en vez de EF) y devolvemos un 400 claro en vez
+            // de dejar que se escape como 500 sin manejar.
+            throw new Common.Exceptions.ValidationException("El archivo no es un Excel válido (.xlsx) o está dañado.");
+        }
 
         var categoriesByName = (await categoryRepository.GetAllByRaceAsync(raceId, ct))
             .GroupBy(c => Normalize(c.NombreCategoria))
@@ -107,10 +144,22 @@ public class RunnerService(
             if (string.IsNullOrWhiteSpace(row.Dorsal))
                 reasons.Add("Dorsal vacío");
 
-            if (row.Edad is null)
-                reasons.Add("Edad inválida o vacía");
+            if (row.FechaNacimiento is null)
+                reasons.Add("Fecha de nacimiento inválida o vacía");
 
-            RaceCategory? category = null;
+            Sexo? sexo = null;
+            if (!string.IsNullOrWhiteSpace(row.Sexo))
+            {
+                if (TryParseSexo(row.Sexo, out var parsedSexo))
+                    sexo = parsedSexo;
+                else
+                    reasons.Add($"Sexo '{row.Sexo}' inválido (use M o F)");
+            }
+
+            if (!string.IsNullOrWhiteSpace(row.Email) && !new EmailAddressAttribute().IsValid(row.Email))
+                reasons.Add($"Email '{row.Email}' no es válido");
+
+            Category? category = null;
             if (string.IsNullOrWhiteSpace(row.Categoria))
                 reasons.Add("Categoría vacía");
             else if (!categoriesByName.TryGetValue(Normalize(row.Categoria), out category))
@@ -119,6 +168,14 @@ public class RunnerService(
             if (reasons.Count == 0 && !string.IsNullOrWhiteSpace(row.Dorsal) &&
                 (existingDorsals.Contains(row.Dorsal) || seenDorsals.Contains(row.Dorsal)))
                 reasons.Add($"El dorsal '{row.Dorsal}' ya existe en esta carrera o está duplicado en el archivo");
+
+            int edad = 0;
+            if (reasons.Count == 0 && category is not null)
+            {
+                edad = CalculateEdad(row.FechaNacimiento!.Value, race.FechaCarrera);
+                if (!IsAgeValidForCategory(edad, category))
+                    reasons.Add($"La edad ({edad}) no corresponde al rango de la categoría '{category.NombreCategoria}' ({category.EdadMinima}-{category.EdadMaxima})");
+            }
 
             if (reasons.Count > 0)
             {
@@ -131,10 +188,14 @@ public class RunnerService(
             {
                 RaceId = raceId,
                 Nombre = row.Nombre.Trim(),
+                Apellidos = row.Apellidos?.Trim(),
                 Dorsal = row.Dorsal.Trim(),
                 Telefono = row.Telefono,
                 Email = row.Email,
-                Edad = row.Edad!.Value,
+                Sexo = sexo,
+                Club = row.Club,
+                FechaNacimiento = row.FechaNacimiento,
+                Edad = edad,
                 CategoryId = category!.Id
             });
         }
@@ -150,17 +211,66 @@ public class RunnerService(
 
     private static string Normalize(string value) => value.Trim().ToLowerInvariant();
 
+    private static bool TryParseSexo(string value, out Sexo sexo)
+    {
+        switch (value.Trim().ToUpperInvariant())
+        {
+            case "M":
+            case "MASCULINO":
+                sexo = Sexo.M;
+                return true;
+            case "F":
+            case "FEMENINO":
+                sexo = Sexo.F;
+                return true;
+            default:
+                sexo = default;
+                return false;
+        }
+    }
+
+    private static int ResolveEdad(DateTime? fechaNacimiento, int? edad, DateTime fechaCarrera)
+    {
+        if (fechaNacimiento is not null)
+            return CalculateEdad(fechaNacimiento.Value, fechaCarrera);
+
+        if (edad is not null)
+            return edad.Value;
+
+        throw new Common.Exceptions.ValidationException("Debe indicar la fecha de nacimiento o, en su defecto, la edad del corredor.");
+    }
+
+    private static int CalculateEdad(DateTime fechaNacimiento, DateTime asOf)
+    {
+        var edad = asOf.Year - fechaNacimiento.Year;
+        if (fechaNacimiento.Date > asOf.Date.AddYears(-edad))
+            edad--;
+        return Math.Max(edad, 0);
+    }
+
+    private static bool IsAgeValidForCategory(int edad, Category category) =>
+        edad >= category.EdadMinima && edad <= category.EdadMaxima;
+
+    private static void EnsureAgeMatchesCategoryOrThrow(int edad, Category category)
+    {
+        if (!IsAgeValidForCategory(edad, category))
+            throw new Common.Exceptions.ValidationException(
+                $"La edad ({edad}) no corresponde al rango de la categoría '{category.NombreCategoria}' ({category.EdadMinima}-{category.EdadMaxima}).");
+    }
+
     private async Task EnsureRaceExistsAsync(int raceId, CancellationToken ct)
     {
         if (await raceRepository.GetByIdAsync(raceId, ct) is null)
             throw new NotFoundException($"No existe la carrera con id {raceId}.");
     }
 
-    private async Task EnsureCategoryBelongsToRaceAsync(int raceId, int categoryId, CancellationToken ct)
-    {
-        if (await categoryRepository.GetByIdAsync(raceId, categoryId, ct) is null)
-            throw new NotFoundException($"No existe la categoría con id {categoryId} en la carrera {raceId}.");
-    }
+    private async Task<Race> GetRaceOrThrowAsync(int raceId, CancellationToken ct) =>
+        await raceRepository.GetByIdAsync(raceId, ct)
+            ?? throw new NotFoundException($"No existe la carrera con id {raceId}.");
+
+    private async Task<Category> EnsureCategoryBelongsToRaceAsync(int raceId, int categoryId, CancellationToken ct) =>
+        await categoryRepository.GetByIdAsync(raceId, categoryId, ct)
+            ?? throw new NotFoundException($"No existe la categoría con id {categoryId} en la carrera {raceId}.");
 
     private async Task<Runner> GetRunnerOrThrowAsync(int raceId, int runnerId, CancellationToken ct) =>
         await runnerRepository.GetByIdAsync(raceId, runnerId, ct)
@@ -170,9 +280,13 @@ public class RunnerService(
         runner.Id,
         runner.RaceId,
         runner.Nombre,
+        runner.Apellidos,
         runner.Dorsal,
         runner.Telefono,
         runner.Email,
+        runner.Sexo,
+        runner.Club,
+        runner.FechaNacimiento,
         runner.Edad,
         runner.CategoryId,
         runner.Category?.NombreCategoria ?? string.Empty,

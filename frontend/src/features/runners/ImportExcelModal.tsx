@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { importRunnersExcel } from '../../api/endpoints'
+import { downloadRunnerImportTemplate, importRunnersExcel } from '../../api/endpoints'
 import type { ImportRunnersResultDto } from '../../api/types'
 import { Modal, Button } from '@nicarunner/ui'
 
@@ -14,6 +14,25 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
   const [result, setResult] = useState<ImportRunnersResultDto | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  async function handleDownloadTemplate() {
+    setError(null)
+    setDownloading(true)
+    try {
+      const blob = await downloadRunnerImportTemplate(raceId)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `plantilla-corredores-carrera-${raceId}.xlsx`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      setError('No se pudo descargar la plantilla. Asegúrate de que la carrera tenga categorías asignadas.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   async function handleUpload() {
     const file = fileInputRef.current?.files?.[0]
@@ -41,8 +60,15 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
       </h2>
 
       <p className="mb-3 text-sm" style={{ color: 'var(--text-lo)' }}>
-        Columnas esperadas: Nombre, Dorsal, Teléfono, Email, Edad, Categoría, Distancia.
+        Descarga la plantilla para esta carrera: incluye las categorías asignadas como lista
+        desplegable, para que cada corredor quede bien asociado a su categoría.
       </p>
+
+      <div className="mb-3">
+        <Button onClick={handleDownloadTemplate} disabled={downloading}>
+          {downloading ? 'Descargando...' : 'Descargar plantilla'}
+        </Button>
+      </div>
 
       <input ref={fileInputRef} type="file" accept=".xlsx" className="mb-3 w-full text-sm" />
 

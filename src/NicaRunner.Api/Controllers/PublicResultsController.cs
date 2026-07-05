@@ -1,13 +1,18 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using NicaRunner.Application.PublicResults;
 using NicaRunner.Application.PublicResults.Dtos;
 
 namespace NicaRunner.Api.Controllers;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api/public")]
+[Route("api/v{version:apiVersion}/public")]
 [AllowAnonymous]
+[EnableRateLimiting("public-results")]
 public class PublicResultsController(IPublicResultService publicResultService) : ControllerBase
 {
     [HttpGet("results/{token}")]

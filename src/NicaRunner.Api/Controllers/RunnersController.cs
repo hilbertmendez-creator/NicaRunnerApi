@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Runners;
@@ -7,7 +8,9 @@ using NicaRunner.Domain.Entities;
 namespace NicaRunner.Api.Controllers;
 
 [ApiController]
+[ApiVersion("1.0")]
 [Route("api/races/{raceId:int}/runners")]
+[Route("api/v{version:apiVersion}/races/{raceId:int}/runners")]
 [Authorize]
 public class RunnersController(IRunnerService runnerService) : ControllerBase
 {
@@ -40,16 +43,35 @@ public class RunnersController(IRunnerService runnerService) : ControllerBase
         return NoContent();
     }
 
+    private const long MaxExcelFileSizeBytes = 5 * 1024 * 1024;
+
     [HttpPost("/api/races/{raceId:int}/import-excel")]
     [Authorize(Roles = nameof(UserRole.Administrador))]
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<ImportRunnersResultDto>> ImportExcel(int raceId, IFormFile file, CancellationToken ct)
     {
-        if (file.Length == 0)
+        if (file is null || file.Length == 0)
             return BadRequest("Debe adjuntar un archivo Excel (.xlsx) con al menos una fila de datos.");
+
+        if (file.Length > MaxExcelFileSizeBytes)
+            return BadRequest("El archivo excede el tamaño máximo permitido (5 MB).");
+
+        if (!string.Equals(Path.GetExtension(file.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
+            return BadRequest("El archivo debe tener extensión .xlsx.");
 
         await using var stream = file.OpenReadStream();
         var result = await runnerService.ImportFromExcelAsync(raceId, stream, ct);
         return Ok(result);
+    }
+
+    [HttpGet("/api/races/{raceId:int}/import-excel/template")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<IActionResult> DownloadTemplate(int raceId, CancellationToken ct)
+    {
+        var content = await runnerService.GenerateImportTemplateAsync(raceId, ct);
+        return File(
+            content,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"plantilla-corredores-carrera-{raceId}.xlsx");
     }
 }

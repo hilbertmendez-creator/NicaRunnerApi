@@ -55,6 +55,12 @@ export function NotificationsPage() {
 
         {error && <p className="mt-3 text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
 
+        {summary && summary.notificacionesCreadas > 0 && (
+          <p className="mt-3 text-sm" style={textLo}>
+            El envío se procesa en segundo plano cada pocos minutos — vuelve a esta pantalla más tarde para ver cuántas se enviaron.
+          </p>
+        )}
+
         {summary && (
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div style={miniMetric('var(--text-lo)')}>

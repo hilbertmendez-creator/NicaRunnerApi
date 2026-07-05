@@ -9,11 +9,24 @@ public class ResultService(
     IResultRepository resultRepository,
     IResultAuditRepository auditRepository,
     IRaceRepository raceRepository,
-    IRunnerRepository runnerRepository) : IResultService
+    IRunnerRepository runnerRepository,
+    IRaceDashboardNotifier raceDashboardNotifier) : IResultService
 {
-    public async Task<ResultDto> CreateAsync(int raceId, CreateResultRequest request, int capturistaId, CancellationToken ct = default)
+    public async Task<ResultDto> CreateAsync(int raceId, CreateResultRequest request, int capturistaId, string? idempotencyKey = null, CancellationToken ct = default)
     {
-        await EnsureRaceExistsAsync(raceId, ct);
+        var race = await GetRaceOrThrowAsync(raceId, ct);
+
+        // Lookup temprano: si ya hay un Result con este key, devolverlo sin
+        // hacer ninguna validación adicional. El cliente que reintenta no
+        // espera que validemos de nuevo: espera saber "qué pasó con MI POST".
+        if (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            var existing = await resultRepository.GetByIdempotencyKeyAsync(raceId, idempotencyKey, ct);
+            if (existing is not null)
+                return ToDto(existing);
+        }
+
+        ValidateTiempoLlegada(race, request.TiempoLlegada);
 
         Runner? runner = null;
         if (!string.IsNullOrWhiteSpace(request.Dorsal))
@@ -32,14 +45,39 @@ public class ResultService(
             Dorsal = runner?.Dorsal,
             TiempoLlegada = request.TiempoLlegada,
             CategoryId = runner?.CategoryId,
-            CapturistaId = capturistaId
+            CapturistaId = capturistaId,
+            IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey
         };
 
         await resultRepository.AddAsync(result, ct);
-        await resultRepository.SaveChangesAsync(ct);
+        try
+        {
+            await resultRepository.SaveNewResultAsync(ct);
+        }
+        catch (IdempotencyConflictException) when (!string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            // Race: dos POSTs concurrentes con el mismo key. El primero ya
+            // commiteó; el segundo perdió contra el UK. Re-leemos el ganador
+            // y devolvemos esa respuesta (idempotente). Si por alguna razón
+            // el ganador no aparece en la BD, dejamos burbujear la excepción
+            // — es un estado imposible que merece visibilidad.
+            var winner = await resultRepository.GetByIdempotencyKeyAsync(raceId, idempotencyKey, ct);
+            if (winner is null) throw;
+            return ToDto(winner);
+        }
+        catch (RunnerResultConflictException)
+        {
+            // A diferencia del conflicto de Idempotency-Key, acá no hay
+            // "ganador" que devolver: dos capturas distintas del mismo dorsal
+            // es un error real, y el perdedor debe enterarse igual que en el
+            // chequeo previo (ExistsByRunnerAsync) — mismo mensaje.
+            throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
+        }
 
         if (runner is not null)
             await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
+
+        await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
 
         var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
         return ToDto(saved ?? result);
@@ -47,7 +85,7 @@ public class ResultService(
 
     public async Task<List<ResultDto>> GetAllByRaceAsync(int raceId, CancellationToken ct = default)
     {
-        await EnsureRaceExistsAsync(raceId, ct);
+        await GetRaceOrThrowAsync(raceId, ct);
 
         var results = await resultRepository.GetAllByRaceAsync(raceId, ct);
         return results.Select(ToDto).ToList();
@@ -62,6 +100,8 @@ public class ResultService(
     public async Task<ResultDto> UpdateAsync(int raceId, int resultId, UpdateResultRequest request, int editorId, CancellationToken ct = default)
     {
         var result = await GetResultOrThrowAsync(raceId, resultId, ct);
+        var race = await GetRaceOrThrowAsync(raceId, ct);
+        ValidateTiempoLlegada(race, request.TiempoLlegada);
 
         var runner = await runnerRepository.GetByDorsalAsync(raceId, request.Dorsal, ct)
             ?? throw new NotFoundException($"No existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
@@ -86,6 +126,8 @@ public class ResultService(
             await RecalculatePositionsAsync(raceId, oldCategoryId.Value, ct);
         if (runner.CategoryId != oldCategoryId)
             await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
+
+        await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
 
         var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
         return ToDto(saved ?? result);
@@ -130,10 +172,22 @@ public class ResultService(
         await resultRepository.SaveChangesAsync(ct);
     }
 
-    private async Task EnsureRaceExistsAsync(int raceId, CancellationToken ct)
+    private async Task<Race> GetRaceOrThrowAsync(int raceId, CancellationToken ct) =>
+        await raceRepository.GetByIdAsync(raceId, ct)
+            ?? throw new NotFoundException($"No existe la carrera con id {raceId}.");
+
+    // Margen de tolerancia por diferencias de reloj entre el dispositivo del
+    // capturista y el servidor — no rechazar un tiempo real por unos segundos
+    // de desfase.
+    private const int FutureToleranceMinutes = 5;
+
+    private static void ValidateTiempoLlegada(Race race, DateTime tiempoLlegada)
     {
-        if (await raceRepository.GetByIdAsync(raceId, ct) is null)
-            throw new NotFoundException($"No existe la carrera con id {raceId}.");
+        if (race.RaceStartUtc is { } inicio && tiempoLlegada < inicio)
+            throw new ValidationException("El tiempo de llegada no puede ser anterior al inicio de la carrera.");
+
+        if (tiempoLlegada > DateTime.UtcNow.AddMinutes(FutureToleranceMinutes))
+            throw new ValidationException("El tiempo de llegada no puede ser una fecha futura.");
     }
 
     private async Task<Result> GetResultOrThrowAsync(int raceId, int resultId, CancellationToken ct) =>

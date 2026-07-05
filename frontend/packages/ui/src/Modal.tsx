@@ -34,7 +34,7 @@ export function Modal({ onClose, children, maxWidth = 'md', labelledBy }: ModalP
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/30"
+      className="fixed inset-0 flex items-center justify-center bg-black/30 p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -44,7 +44,12 @@ export function Modal({ onClose, children, maxWidth = 'md', labelledBy }: ModalP
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className={`w-full ${MAX_WIDTH_CLASSES[maxWidth]} border border-zinc-200 bg-white p-6`}
+        className={`w-full ${MAX_WIDTH_CLASSES[maxWidth]} max-h-[90vh] overflow-y-auto p-6`}
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--bd-card)',
+          borderRadius: 'var(--radius-card)',
+        }}
       >
         {children}
       </div>

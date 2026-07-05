@@ -19,6 +19,11 @@ public class PublicResultTokenRepository(NicaRunnerDbContext context) : IPublicR
     public async Task AddAsync(PublicResultToken token, CancellationToken ct = default) =>
         await context.PublicResultTokens.AddAsync(token, ct);
 
+    public async Task<int> DeleteExpiredAsync(DateTime now, CancellationToken ct = default) =>
+        await context.PublicResultTokens
+            .Where(t => t.FechaExpiracion < now)
+            .ExecuteDeleteAsync(ct);
+
     public Task SaveChangesAsync(CancellationToken ct = default) =>
         context.SaveChangesAsync(ct);
 }

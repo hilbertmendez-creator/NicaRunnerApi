@@ -18,30 +18,75 @@ export function DataTable<T>({ columns, data, rowKey, emptyState }: DataTablePro
     return <>{emptyState}</>
   }
 
+  const labeledColumns = columns.filter((col) => col.header !== '')
+  const actionColumns = columns.filter((col) => col.header === '')
+
   return (
-    <div className="overflow-x-auto border border-zinc-200 bg-white">
-      <table className="w-full border-collapse text-left text-sm">
-        <thead>
-          <tr className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
-            {columns.map((col, idx) => (
-              <th key={idx} className={`h-8 px-3 font-medium ${col.className ?? ''}`}>
-                {col.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row) => (
-            <tr key={rowKey(row)} className="h-9 border-b border-zinc-100 hover:bg-zinc-50">
-              {columns.map((col, idx) => (
-                <td key={idx} className={`px-3 align-middle ${col.className ?? ''}`}>
+    <>
+      {/* Tarjetas — solo pantallas angostas (<sm) */}
+      <div className="flex flex-col gap-2 sm:hidden">
+        {data.map((row) => (
+          <div
+            key={rowKey(row)}
+            className="p-3"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)' }}
+          >
+            {labeledColumns.map((col, idx) => (
+              <div key={idx} className="flex items-start justify-between gap-3 py-1 text-sm">
+                <span className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-th)' }}>
+                  {col.header}
+                </span>
+                <span className={`text-right ${col.className ?? ''}`} style={{ color: 'var(--text-hi)' }}>
                   {col.render(row)}
-                </td>
+                </span>
+              </div>
+            ))}
+            {actionColumns.length > 0 && (
+              <div className="mt-2 flex justify-end gap-2 border-t pt-2" style={{ borderColor: 'var(--bd-row)' }}>
+                {actionColumns.map((col, idx) => (
+                  <div key={idx}>{col.render(row)}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Tabla — sm y mayores */}
+      <div
+        className="hidden overflow-x-auto sm:block"
+        style={{ border: '1px solid var(--bd-card)', background: 'var(--bg-card)' }}
+      >
+        <table className="w-full border-collapse text-left text-sm">
+          <thead>
+            <tr
+              className="text-xs uppercase tracking-wide"
+              style={{ borderBottom: '1px solid var(--bd)', background: 'var(--bg-th)', color: 'var(--text-th)' }}
+            >
+              {columns.map((col, idx) => (
+                <th key={idx} className={`h-8 px-3 font-medium ${col.className ?? ''}`}>
+                  {col.header}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {data.map((row) => (
+              <tr
+                key={rowKey(row)}
+                className="row-hover h-9"
+                style={{ borderBottom: '1px solid var(--bd-row)', color: 'var(--text-hi)' }}
+              >
+                {columns.map((col, idx) => (
+                  <td key={idx} className={`px-3 align-middle ${col.className ?? ''}`}>
+                    {col.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }

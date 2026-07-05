@@ -59,10 +59,6 @@ export interface RaceDto {
   updatedAt: string
 }
 
-export interface JoinByCodeRequest {
-  code: string
-}
-
 export interface CategoryProgressDto {
   categoryId: number
   nombreCategoria: string
@@ -144,6 +140,7 @@ export interface CreateRaceRequest {
   nombre: string
   descripcion?: string | null
   fechaCarrera: string
+  categoryIds?: number[]
 }
 
 export interface UpdateRaceRequest {
@@ -153,33 +150,59 @@ export interface UpdateRaceRequest {
   estado: RaceStatus
 }
 
-export interface RaceCategoryDto {
+// Catálogo global de categorías (backoffice), independiente de cualquier carrera.
+export interface CategoryDto {
   id: number
-  raceId: number
+  codigo: string
   nombreCategoria: string
+  descripcion?: string | null
   distancia: number
   edadMinima: number
   edadMaxima: number
   orden: number
 }
 
-export interface CreateRaceCategoryRequest {
+export interface CreateCategoryRequest {
+  codigo: string
   nombreCategoria: string
+  descripcion?: string | null
   distancia: number
   edadMinima: number
   edadMaxima: number
   orden: number
 }
 
-export type UpdateRaceCategoryRequest = CreateRaceCategoryRequest
+export type UpdateCategoryRequest = CreateCategoryRequest
+
+// Categorías del catálogo seleccionadas para una carrera específica.
+export interface RaceCategoryDto {
+  categoryId: number
+  codigo: string
+  nombreCategoria: string
+  descripcion?: string | null
+  distancia: number
+  edadMinima: number
+  edadMaxima: number
+  orden: number
+}
+
+export interface AssignCategoryRequest {
+  categoryId: number
+}
+
+export type Sexo = 'M' | 'F'
 
 export interface RunnerDto {
   id: number
   raceId: number
   nombre: string
+  apellidos?: string | null
   dorsal: string
   telefono?: string | null
   email?: string | null
+  sexo?: Sexo | null
+  club?: string | null
+  fechaNacimiento?: string | null
   edad: number
   categoryId: number
   categoriaNombre: string
@@ -189,10 +212,14 @@ export interface RunnerDto {
 
 export interface CreateRunnerRequest {
   nombre: string
+  apellidos?: string | null
   dorsal: string
   telefono?: string | null
   email?: string | null
-  edad: number
+  sexo?: Sexo | null
+  club?: string | null
+  fechaNacimiento?: string | null
+  edad?: number | null
   categoryId: number
 }
 

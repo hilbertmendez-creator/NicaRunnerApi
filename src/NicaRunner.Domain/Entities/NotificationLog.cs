@@ -23,6 +23,7 @@ public class NotificationLog
     public NotificationStatus Status { get; set; } = NotificationStatus.Pendiente;
     public string Mensaje { get; set; } = string.Empty;
     public string? Error { get; set; }
+    public int IntentosEnvio { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? SentAt { get; set; }
 

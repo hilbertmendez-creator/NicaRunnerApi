@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Data;
@@ -41,9 +42,47 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
             r => r.RaceId == raceId && r.RunnerId == runnerId && r.Id != excludeResultId,
             ct);
 
+    public Task<Result?> GetByIdempotencyKeyAsync(int raceId, string idempotencyKey, CancellationToken ct = default) =>
+        context.Results
+            .Include(r => r.Runner)
+            .Include(r => r.Category)
+            .Include(r => r.Capturista)
+            .FirstOrDefaultAsync(r => r.RaceId == raceId && r.IdempotencyKey == idempotencyKey, ct);
+
     public async Task AddAsync(Result result, CancellationToken ct = default) =>
         await context.Results.AddAsync(result, ct);
 
+    public async Task SaveNewResultAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (IsIdempotencyKeyViolation(ex))
+        {
+            throw new IdempotencyConflictException();
+        }
+        catch (DbUpdateException ex) when (IsRunnerResultViolation(ex))
+        {
+            throw new RunnerResultConflictException();
+        }
+    }
+
     public Task SaveChangesAsync(CancellationToken ct = default) =>
         context.SaveChangesAsync(ct);
+
+    // Tanto Npgsql como SqliteException incluyen el nombre de la columna en
+    // su mensaje de violación de UK. Como en este punto del flujo el único
+    // UK candidato a violarse es (RaceId, IdempotencyKey), basta con detectar
+    // la palabra "IdempotencyKey" en la cadena. No es lo más bonito (depende
+    // del mensaje del provider), pero es el método portable más simple sin
+    // tipar contra Npgsql/Sqlite específicamente.
+    private static bool IsIdempotencyKeyViolation(DbUpdateException ex) =>
+        ex.InnerException?.Message.Contains("IdempotencyKey", StringComparison.OrdinalIgnoreCase) == true;
+
+    // Mismo truco portable que IsIdempotencyKeyViolation: tanto el nombre de
+    // índice que genera Postgres (IX_Results_RaceId_RunnerId) como el mensaje
+    // nativo de Sqlite (que lista los nombres de columna) contienen "RunnerId".
+    private static bool IsRunnerResultViolation(DbUpdateException ex) =>
+        ex.InnerException?.Message.Contains("RunnerId", StringComparison.OrdinalIgnoreCase) == true;
 }

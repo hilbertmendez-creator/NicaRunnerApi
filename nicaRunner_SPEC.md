@@ -139,9 +139,11 @@
 ### 4.5 Notificaciones a Corredores (Post-carrera)
 
 **Canales (sin costo):**
-- Email HTML personalizado
-- WhatsApp (API gratuita o webhook)
-- Push (Firebase Messaging)
+- Email HTML personalizado — implementado (Resend)
+- WhatsApp (API gratuita o webhook) — **no implementado**: `StubWhatsAppSender` siempre falla a propósito (`Success=false`, "Integración de WhatsApp pendiente de configurar"). Falta decidir proveedor (Meta Cloud API directo, o un intermediario como Twilio) y conseguir las credenciales — es una decisión de negocio, no solo código.
+- Push (Firebase Messaging) — **no implementado**: no existe ningún `INotificationSender` para este canal. Requiere un proyecto Firebase + service account, y que la app Android registre el token FCM del dispositivo (fuera de este repo).
+
+Mientras estos dos canales no estén conectados, un corredor sin email registrado no recibe ninguna notificación — solo queda un intento fallido en el log, visible en `NotificationsPage`/`GetStatusAsync`.
 
 **Contenido del mensaje:**
 - Nombre del corredor
@@ -278,11 +280,11 @@ Notifications
 
 ### Autenticación
 ```
-POST   /api/auth/register          - Registrar nuevo capturista
 POST   /api/auth/login             - Login (genera JWT)
 POST   /api/auth/refresh           - Refresh token
 POST   /api/auth/logout            - Logout
 ```
+*(el `register` público original se retiró: aceptaba un `role` elegido por el cliente sin autenticación, permitiendo auto-registro como Administrador. La creación de cuentas — incluyendo Capturista — quedó centralizada en `POST /api/users`, solo accesible por un Administrador autenticado.)*
 
 ### Gestión de Carreras (Admin)
 ```
@@ -407,9 +409,9 @@ GET    /api/public/runner/{token}/{runnerId} - Ver resultado individual (opciona
 - **Storage local:** SQLite para offline
 
 ### Notificaciones
-- **Email:** SendGrid (tier gratuito)
-- **WhatsApp:** WhatsApp Business API (webhook)
-- **Push:** Firebase Cloud Messaging
+- **Email:** Resend (implementado; spec original decía SendGrid)
+- **WhatsApp:** WhatsApp Business API (webhook) — pendiente, ver sección 4.5
+- **Push:** Firebase Cloud Messaging — pendiente, ver sección 4.5
 
 ---
 
@@ -443,42 +445,42 @@ GET    /api/public/runner/{token}/{runnerId} - Ver resultado individual (opciona
 ## 10. Implementación — Plan por Fases
 
 ### Fase 1: Core API (2-3 semanas)
-- [ ] Estructura de proyecto ASP.NET Core
-- [ ] Modelos de datos y migraciones
-- [ ] Autenticación JWT
-- [ ] Endpoints CRUD base (carreras, corredores, resultados)
-- [ ] Import de Excel
+- [x] Estructura de proyecto ASP.NET Core
+- [x] Modelos de datos y migraciones
+- [x] Autenticación JWT
+- [x] Endpoints CRUD base (carreras, corredores, resultados)
+- [x] Import de Excel
 
 ### Fase 2: Captura de Tiempos (1-2 semanas)
-- [ ] Endpoint de captura de tiempos
-- [ ] WebSocket para actualizaciones en vivo
-- [ ] App móvil básica conectada a API
+- [x] Endpoint de captura de tiempos
+- [x] Actualizaciones en vivo del dashboard vía SignalR (hub `/hubs/race-dashboard`; ResultService notifica al grupo de la carrera tras cada creación/edición, el frontend refresca al instante y el polling de 5s queda como respaldo)
+- [x] Captura de tiempos conectada a API — se resuelve vía app móvil nativa para jueces capturistas (repo separado: `hilbertmendez-creator/NicaRunner`), no desde el back office web. El back office web es exclusivamente Admin/Lector; el rol Capturista solo existe para autenticación/autorización contra la API desde esa app.
 
 ### Fase 3: Back Office (2-3 semanas)
-- [ ] Dashboard en tiempo real
-- [ ] Edición manual de tiempos con auditoría
-- [ ] Gestión de roles y permisos
+- [x] Dashboard en tiempo real (con SignalR, ver Fase 2)
+- [x] Edición manual de tiempos con auditoría
+- [x] Gestión de roles y permisos (incluye pantalla de mantenimiento de usuarios)
 
 ### Fase 4: Notificaciones (1-2 semanas)
-- [ ] Servicio de notificaciones (Email, WhatsApp, Push)
-- [ ] Background job para envío
-- [ ] Reenvío en caso de fallos
+- [x] Servicio de notificaciones — Email vía Resend (spec original decía SendGrid; WhatsApp es un stub sin integración real — ver sección 4.5 —, Push/Firebase no implementado)
+- [x] Background job para envío — sin Hangfire: `NotifyAllAsync` encola (`NotificationLog` en Pendiente) y `ProcessPendingAsync` procesa el envío real, disparado por un cron de GitHub Actions cada 5 min contra un endpoint admin (mismo patrón que la limpieza de refresh tokens)
+- [x] Reenvío en caso de fallos — `ProcessPendingAsync` reintenta las `Fallida` hasta un tope de 5 intentos (`IntentosEnvio`)
 
 ### Fase 5: Sitio Público (1 semana)
-- [ ] Generación de tokens públicos
-- [ ] Sitio público con resultados
-- [ ] Limpieza automática de tokens expirados
+- [x] Generación de tokens públicos
+- [x] Sitio público con resultados
+- [ ] Limpieza automática de tokens expirados (no hay job en background; hoy solo se valida expiración al consultar)
 
 ### Fase 6: Refinamiento & Testing (1-2 semanas)
-- [ ] Tests unitarios
+- [ ] Tests unitarios (solo cubren Auth/Users — Races, Runners, Results, Dashboard, Notifications sin tests)
 - [ ] Tests de integración
 - [ ] Ajustes de performance
 - [ ] Documentación
 
 ### Fase 7: Diseño Profesional (A futuro)
-- [ ] Cloud design system
-- [ ] Rediseño de UI/UX
-- [ ] Aplicar a app móvil y back office
+- [x] Cloud design system (`@nicarunner/ui`, ver `.design-sync/NOTES.md`)
+- [x] Rediseño de UI/UX (tema + login rediseñado)
+- [ ] Aplicar a app móvil (ver Fase 2 — app móvil vive en repo separado, fuera del alcance de este rediseño)
 
 ---
 

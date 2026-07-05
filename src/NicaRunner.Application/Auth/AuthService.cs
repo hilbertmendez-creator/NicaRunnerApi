@@ -13,29 +13,11 @@ public class AuthService(
     IPasswordHasher passwordHasher,
     IJwtTokenGenerator jwtTokenGenerator,
     IGoogleAuthService googleAuthService,
+    IRefreshTokenService refreshTokenService,
     IEnumerable<INotificationSender> notificationSenders,
     IOptions<FrontendOptions> frontendOptions) : IAuthService
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
-
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
-    {
-        if (await userRepository.EmailExistsAsync(request.Email, ct))
-            throw new ConflictException($"Ya existe un usuario registrado con el email '{request.Email}'.");
-
-        var user = new User
-        {
-            Email = request.Email,
-            Nombre = request.Nombre,
-            Role = request.Role,
-            PasswordHash = passwordHasher.Hash(request.Password)
-        };
-
-        await userRepository.AddAsync(user, ct);
-        await userRepository.SaveChangesAsync(ct);
-
-        return BuildAuthResponse(user);
-    }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
@@ -44,7 +26,7 @@ public class AuthService(
             !passwordHasher.Verify(request.Password, user.PasswordHash))
             throw new InvalidCredentialsException("Email o contraseña incorrectos.");
 
-        return BuildAuthResponse(user);
+        return await BuildAuthResponseAsync(user, ct);
     }
 
     public async Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken ct = default)
@@ -80,7 +62,7 @@ public class AuthService(
 
         await userRepository.SaveChangesAsync(ct);
 
-        return BuildAuthResponse(user);
+        return await BuildAuthResponseAsync(user, ct);
     }
 
     public async Task ChangePasswordAsync(int userId, ChangePasswordRequest request, CancellationToken ct = default)
@@ -97,6 +79,9 @@ public class AuthService(
         user.PasswordHash = passwordHasher.Hash(request.NewPassword);
         user.MustChangePassword = false;
 
+        // Un refresh token robado no debe seguir sirviendo una vez que el
+        // usuario cambia su contraseña.
+        await refreshTokenService.RevokeAllForUserAsync(user.Id, ct);
         await userRepository.SaveChangesAsync(ct);
     }
 
@@ -135,12 +120,49 @@ public class AuthService(
         user.PasswordResetTokenExpiry = null;
         user.MustChangePassword = false;
 
+        // Un refresh token robado no debe seguir sirviendo una vez que la
+        // víctima recupera su cuenta.
+        await refreshTokenService.RevokeAllForUserAsync(user.Id, ct);
         await userRepository.SaveChangesAsync(ct);
     }
 
-    private AuthResponse BuildAuthResponse(User user)
+    public async Task<AuthResponse> RefreshAsync(RefreshRequest request, CancellationToken ct = default)
     {
-        var generated = jwtTokenGenerator.GenerateToken(user);
-        return new AuthResponse(generated.Token, generated.ExpiresAtUtc, user.Id, user.Email, user.Nombre, user.Role, user.MustChangePassword);
+        var result = await refreshTokenService.ValidateAndRotateAsync(request.RefreshToken, ct);
+        var access = jwtTokenGenerator.GenerateToken(result.User);
+        return new AuthResponse(
+            access.Token,
+            access.ExpiresAtUtc,
+            result.NewToken.Token,
+            result.NewToken.ExpiresAtUtc,
+            result.User.Id,
+            result.User.Email,
+            result.User.Nombre,
+            result.User.Role,
+            result.User.MustChangePassword);
+    }
+
+    public Task LogoutAsync(LogoutRequest request, CancellationToken ct = default) =>
+        refreshTokenService.LogoutAsync(request.RefreshToken, ct);
+
+    private async Task<AuthResponse> BuildAuthResponseAsync(User user, CancellationToken ct)
+    {
+        var access = jwtTokenGenerator.GenerateToken(user);
+        var refresh = await refreshTokenService.IssueAsync(user, familyId: null, ct);
+        // Issue persiste el refresh via IRefreshTokenRepository.AddAsync (sin
+        // SaveChanges). Lo guardamos acá para mantener una sola transacción
+        // por llamada de login/register/google — si algo falla después no
+        // queda un token huérfano en la BD.
+        await userRepository.SaveChangesAsync(ct);
+        return new AuthResponse(
+            access.Token,
+            access.ExpiresAtUtc,
+            refresh.Token,
+            refresh.ExpiresAtUtc,
+            user.Id,
+            user.Email,
+            user.Nombre,
+            user.Role,
+            user.MustChangePassword);
     }
 }

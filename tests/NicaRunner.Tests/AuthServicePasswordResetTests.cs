@@ -15,13 +15,15 @@ public class AuthServicePasswordResetTests
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
     private readonly Mock<IJwtTokenGenerator> _jwt = new();
     private readonly Mock<IGoogleAuthService> _google = new();
+    private readonly Mock<IRefreshTokenService> _refresh = new();
     private readonly Mock<INotificationSender> _emailSender = new();
     private readonly IOptions<FrontendOptions> _frontendOptions = Options.Create(new FrontendOptions { BaseUrl = "https://backoffice.nicarunner.test" });
 
     private AuthService BuildService()
     {
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
-        return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object, [_emailSender.Object], _frontendOptions);
+        return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
+            _refresh.Object, [_emailSender.Object], _frontendOptions);
     }
 
     [Fact]
@@ -83,6 +85,7 @@ public class AuthServicePasswordResetTests
         Assert.Null(user.PasswordResetToken);
         Assert.Null(user.PasswordResetTokenExpiry);
         Assert.False(user.MustChangePassword);
+        _refresh.Verify(r => r.RevokeAllForUserAsync(1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -99,6 +102,8 @@ public class AuthServicePasswordResetTests
 
         await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => BuildService().ResetPasswordAsync(new ResetPasswordRequest("token-123", "nueva-segura")));
+
+        _refresh.Verify(r => r.RevokeAllForUserAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -108,6 +113,8 @@ public class AuthServicePasswordResetTests
 
         await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => BuildService().ResetPasswordAsync(new ResetPasswordRequest("no-existe", "nueva-segura")));
+
+        _refresh.Verify(r => r.RevokeAllForUserAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -116,7 +123,8 @@ public class AuthServicePasswordResetTests
         var user = new User { Id = 1, Email = "a@b.com", Provider = AuthProvider.Local, PasswordHash = "hash" };
         _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
-        var service = new AuthService(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object, [], _frontendOptions);
+        var service = new AuthService(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
+            _refresh.Object, [], _frontendOptions);
 
         await service.ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
 

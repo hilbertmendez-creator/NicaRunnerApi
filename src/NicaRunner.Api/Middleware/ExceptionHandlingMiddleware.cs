@@ -28,6 +28,10 @@ public class ExceptionHandlingMiddleware(RequestDelegate next)
         {
             await WriteProblemAsync(context, HttpStatusCode.Forbidden, ex.Message);
         }
+        catch (ValidationException ex)
+        {
+            await WriteProblemAsync(context, HttpStatusCode.BadRequest, ex.Message);
+        }
     }
 
     private static Task WriteProblemAsync(HttpContext context, HttpStatusCode statusCode, string detail)
