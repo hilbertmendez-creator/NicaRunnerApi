@@ -119,7 +119,7 @@ public class RunnerService(
             // ResultRepository con DbUpdateException, acá el origen es una
             // librería de parseo en vez de EF) y devolvemos un 400 claro en vez
             // de dejar que se escape como 500 sin manejar.
-            throw new ValidationException("El archivo no es un Excel válido (.xlsx) o está dañado.");
+            throw new Common.Exceptions.ValidationException("El archivo no es un Excel válido (.xlsx) o está dañado.");
         }
 
         var categoriesByName = (await categoryRepository.GetAllByRaceAsync(raceId, ct))
@@ -237,7 +237,7 @@ public class RunnerService(
         if (edad is not null)
             return edad.Value;
 
-        throw new ValidationException("Debe indicar la fecha de nacimiento o, en su defecto, la edad del corredor.");
+        throw new Common.Exceptions.ValidationException("Debe indicar la fecha de nacimiento o, en su defecto, la edad del corredor.");
     }
 
     private static int CalculateEdad(DateTime fechaNacimiento, DateTime asOf)
@@ -254,7 +254,7 @@ public class RunnerService(
     private static void EnsureAgeMatchesCategoryOrThrow(int edad, Category category)
     {
         if (!IsAgeValidForCategory(edad, category))
-            throw new ValidationException(
+            throw new Common.Exceptions.ValidationException(
                 $"La edad ({edad}) no corresponde al rango de la categoría '{category.NombreCategoria}' ({category.EdadMinima}-{category.EdadMaxima}).");
     }
 
