@@ -1,0 +1,66 @@
+name: API Docs → Vercel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/NicaRunner.Api/**'
+      - 'src/NicaRunner.Application/**'
+      - 'src/NicaRunner.Domain/**'
+      - 'src/NicaRunner.Infrastructure/**'
+      - 'docs-site/**'
+      - '.github/workflows/docs-vercel.yml'
+      - '.config/dotnet-tools.json'
+      - 'global.json'
+  workflow_dispatch:
+
+concurrency:
+  group: docs-vercel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore Swashbuckle CLI
+        run: dotnet tool restore
+
+      - name: Restore and build API
+        run: |
+          dotnet restore src/NicaRunner.Api/NicaRunner.Api.csproj
+          dotnet build src/NicaRunner.Api/NicaRunner.Api.csproj --configuration Release --no-restore
+
+      - name: Generate OpenAPI spec
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ConnectionStrings__SqliteConnection: 'Data Source=/tmp/nicarunner.ci.db'
+          Docs__ApiServerUrl: ${{ vars.RENDER_API_URL }}
+        run: |
+          dotnet swagger tofile \
+            --output docs-site/openapi.json \
+            src/NicaRunner.Api/bin/Release/net8.0/NicaRunner.Api.dll \
+            v1
+
+      - name: Validate OpenAPI spec
+        run: |
+          test -s docs-site/openapi.json
+          python3 -c "import json; json.load(open('docs-site/openapi.json'))"
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
+          working-directory: docs-site
+          vercel-args: '--prod'

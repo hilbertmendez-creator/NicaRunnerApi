@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Formatting.Compact;
 using NicaRunner.Api.Hubs;
@@ -60,7 +61,31 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "NicaRunner API",
+        Version = "v1",
+        Description = "REST API for athletics race timing, results capture, and notifications."
+    });
+
+    var apiServerUrl = builder.Configuration["Docs:ApiServerUrl"];
+    if (!string.IsNullOrWhiteSpace(apiServerUrl))
+    {
+        options.AddServer(new OpenApiServer { Url = apiServerUrl.TrimEnd('/') });
+    }
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT token from POST /api/auth/login"
+    });
+});
 builder.Services.AddSignalR();
 
 // URL versioning con dos rutas por controller: la legacy `/api/{resource}` y la
