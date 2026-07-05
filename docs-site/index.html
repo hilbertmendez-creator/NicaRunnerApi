@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NicaRunner API</title>
+    <style>
+      body {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      Scalar.createApiReference('#app', {
+        url: '/openapi.json',
+        theme: 'purple',
+        layout: 'modern',
+        hideDownloadButton: false,
+        metaData: {
+          title: 'NicaRunner API',
+          description: 'Documentación interactiva de la API REST de NicaRunner.',
+        },
+      });
+    </script>
+  </body>
+</html>
