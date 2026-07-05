@@ -196,4 +196,4 @@ This project uses [openwiki](https://github.com/langchain-ai/openwiki) to genera
 Rules:
 - If `openwiki/` exists, consult it for codebase orientation before broad source exploration.
 - To generate or refresh it locally: `npm install -g openwiki`, then `openwiki --init` (first run — configures inference provider and API key, stored in `~/.openwiki/.env`) or `openwiki --update` on subsequent runs.
-- The GitHub Action requires an `ANTHROPIC_API_KEY` repository secret (Settings → Secrets and variables → Actions) to run non-interactively; without it the scheduled workflow fails.
+- The GitHub Action requires an `OPENROUTER_API_KEY` repository secret (Settings → Secrets and variables → Actions) to run non-interactively; without it the scheduled workflow fails.
