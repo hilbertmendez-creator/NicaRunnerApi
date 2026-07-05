@@ -5,8 +5,8 @@ name: OpenWiki Update
 #
 # Configuración necesaria:
 #   Settings → Secrets and variables → Actions → Secrets → "New repository secret"
-#   Name:  OPENROUTER_API_KEY
-#   Value: <tu API key de OpenRouter, ver https://openrouter.ai/keys>
+#   Name:  ANTHROPIC_API_KEY
+#   Value: <tu API key de Anthropic>
 #
 # Sin ese secret configurado, este workflow falla al intentar correr openwiki.
 # La primera vez que corre (sin openwiki/ existente) crea la documentación
@@ -40,8 +40,8 @@ jobs:
       - name: Run OpenWiki
         run: openwiki --update --print
         env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          OPENWIKI_MODEL_ID: z-ai/glm-5.2
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENWIKI_MODEL_ID: claude-sonnet-5
 
       - name: Create OpenWiki update pull request
         uses: peter-evans/create-pull-request@v7
