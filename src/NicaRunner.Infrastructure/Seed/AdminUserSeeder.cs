@@ -1,4 +1,5 @@
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Infrastructure.Seed;
@@ -10,13 +11,6 @@ namespace NicaRunner.Infrastructure.Seed;
 /// </summary>
 public static class AdminUserSeeder
 {
-    private static readonly string[] AdminEmails =
-    [
-        "hilbert.mendez@gmail.com",
-        "evr86.skip@gmail.com",
-        "edufisica@ymail.com"
-    ];
-
     public static async Task SeedAsync(IUserRepository userRepository, IPasswordHasher passwordHasher, string? defaultPassword, CancellationToken ct = default)
     {
         // Sin password configurada (Seed:DefaultAdminPassword) no hay nada seguro que
@@ -28,7 +22,7 @@ public static class AdminUserSeeder
             .Select(u => u.Email)
             .ToHashSet();
 
-        foreach (var email in AdminEmails)
+        foreach (var email in ProtectedSeedUsers.Emails)
         {
             if (existingEmails.Contains(email))
                 continue;
