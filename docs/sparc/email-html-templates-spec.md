@@ -2,7 +2,7 @@
 
 **Feature:** Estilizar correos del sistema con plantilla HTML moderna  
 **Slug:** `email-html-templates`  
-**Fase:** 1 — Specification  
+**Fase:** 2 — Pseudocode *(gate Fase 1 aprobado 2026-07-06)*  
 **Decisión arquitectónica:** Opción A — plantillas renderizadas en el API, Resend solo como transporte  
 **Fecha:** 2026-07-06
 
@@ -166,7 +166,7 @@ Tokens de color como constantes C# (`EmailDesignTokens.cs`) que mapean 1:1 al te
 | AC-02 | El diseño visual usa la paleta del tema `brand` del backoffice (header navy, card blanca, CTA gradiente, tipografía Inter) | Revisión visual contra captura del backoffice en tema brand |
 | AC-03 | Los correos se renderizan correctamente en Gmail, Outlook web y cliente móvil iOS | Checklist manual con capturas |
 | AC-04 | Valores dinámicos escapados; intento de XSS en nombre de corredor no ejecuta script | Test unitario con input malicioso |
-| AC-5 | `ResendEmailSender` envía payload con campos `html` y `text`; sin `html` el envío sigue funcionando (retrocompat) | Test de integración con mock HTTP |
+| AC-05 | `ResendEmailSender` envía payload con campos `html` y `text`; sin `html` el envío sigue funcionando (retrocompat) | Test de integración con mock HTTP |
 | AC-06 | `NotificationLog.Mensaje` conserva versión text para auditoría | Test en NotificationService |
 | AC-07 | Si `Frontend:BaseUrl` está vacío, EM-02 falla con error claro sin enviar correo roto | Test en AuthService |
 
@@ -331,6 +331,24 @@ NicaRunner.Infrastructure/
 
 ---
 
-## 12. Próximo paso
+## 12. Historial de gates
 
-Ejecutar `/sparc advance` para validar gate de Fase 1, luego Fase 2 (Pseudocode) con algoritmos de renderizado y estructura Scriban detallada.
+| Fase | Resultado | Fecha | Detalle |
+|------|-----------|-------|---------|
+| 1 — Specification | **Passed** | 2026-07-06 | 7 AC, 7 restricciones, 10 edge cases |
+
+### Validación gate Fase 1
+
+| Criterio del gate | Requerido | Encontrado | Estado |
+|-------------------|-----------|------------|--------|
+| Criterios de aceptación | ≥ 3 | 7 (AC-01…AC-07) | ✓ |
+| Restricciones explícitas | Sí | 7 (sección 6) | ✓ |
+| Casos borde identificados | Sí | 10 (EC-01…EC-10) | ✓ |
+
+**Blockers:** ninguno.
+
+---
+
+## 13. Próximo paso
+
+Fase 2 — Pseudocode: algoritmos de renderizado Scriban, flujo de escape HTML, construcción de payload Resend y migración de los 3 servicios emisores.
