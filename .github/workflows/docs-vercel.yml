@@ -56,11 +56,21 @@ jobs:
           test -s docs-site/openapi.json
           python3 -c "import json; json.load(open('docs-site/openapi.json'))"
 
+      - name: Verify Vercel deploy credentials
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::Falta el secret VERCEL_TOKEN en GitHub (Settings → Secrets → Actions)."
+            echo "Creá un token en https://vercel.com/account/tokens y guardalo como secret, no como variable."
+            exit 1
+          fi
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_DOCS_PROJECT_ID }}
+          vercel-org-id: ${{ vars.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ vars.VERCEL_DOCS_PROJECT_ID }}
           working-directory: docs-site
           vercel-args: '--prod'
