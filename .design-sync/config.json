@@ -1,0 +1,14 @@
+{
+  "projectId": "032619b5-48bc-4343-a196-ce31a29190bc",
+  "shape": "package",
+  "pkg": "@nicarunner/ui",
+  "globalName": "NicaRunnerUI",
+  "buildCmd": "cd frontend/packages/ui && npm run build",
+  "cssEntry": "./nicarunner-ds.css",
+  "runtimeFontPrefixes": ["Inter", "JetBrains Mono"],
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "Modal": { "cardMode": "single", "viewport": "700x500" },
+    "DataTable": { "cardMode": "column" }
+  }
+}
