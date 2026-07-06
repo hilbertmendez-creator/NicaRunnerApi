@@ -2,6 +2,7 @@ using Moq;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Notifications;
 using NicaRunner.Domain.Entities;
+using NicaRunner.Infrastructure.Notifications;
 
 namespace NicaRunner.Tests;
 
@@ -12,11 +13,12 @@ public class NotificationServiceTests
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<INotificationSender> _emailSender = new();
+    private readonly IEmailTemplateRenderer _emailRenderer = new EmailTemplateRenderer();
 
     private NotificationService BuildService()
     {
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
-        return new(_logs.Object, _results.Object, _runners.Object, _races.Object, [_emailSender.Object]);
+        return new(_logs.Object, _results.Object, _runners.Object, _races.Object, [_emailSender.Object], _emailRenderer);
     }
 
     private static Race MakeRace(int id = 1) => new() { Id = id, Nombre = "Carrera Test", AdminId = 1 };
@@ -42,8 +44,13 @@ public class NotificationServiceTests
         TiempoLlegada = new DateTime(2026, 6, 29, 10, 0, 0, DateTimeKind.Utc)
     };
 
-    // NotifyAllAsync debe encolar (Pendiente) y NUNCA llamar al sender — el
-    // envío real lo hace ProcessPendingAsync en el barrido, no el request.
+    private void SetupResultContext(Result result, Runner runner)
+    {
+        _results.Setup(r => r.GetByIdAsync(result.Id, It.IsAny<CancellationToken>())).ReturnsAsync(result);
+        _races.Setup(r => r.GetByIdAsync(result.RaceId, It.IsAny<CancellationToken>())).ReturnsAsync(MakeRace());
+        _runners.Setup(r => r.GetByIdAsync(result.RaceId, runner.Id, It.IsAny<CancellationToken>())).ReturnsAsync(runner);
+    }
+
     [Fact]
     public async Task NotifyAllAsync_SoloEncola_NuncaLlamaAlSender()
     {
@@ -60,33 +67,31 @@ public class NotificationServiceTests
         Assert.Equal(1, summary.NotificacionesCreadas);
         Assert.Equal(0, summary.Enviadas);
         Assert.Equal(0, summary.Fallidas);
-        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
-        _logs.Verify(l => l.AddAsync(It.Is<NotificationLog>(n => n.Status == NotificationStatus.Pendiente), It.IsAny<CancellationToken>()), Times.Once);
+        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _logs.Verify(l => l.AddAsync(It.Is<NotificationLog>(n => n.Status == NotificationStatus.Pendiente && n.Mensaje.Contains("Juan")), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // NotifyResultAsync (un solo resultado) sigue enviando de inmediato —
-    // no tiene el riesgo de timeout del caso masivo.
     [Fact]
-    public async Task NotifyResultAsync_EnviaDeInmediato()
+    public async Task NotifyResultAsync_EnviaDeInmediatoConHtml()
     {
         var runner = MakeRunner();
         var result = MakeResult(runnerId: runner.Id);
-        _results.Setup(r => r.GetByIdAsync(100, It.IsAny<CancellationToken>())).ReturnsAsync(result);
-        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(MakeRace());
-        _runners.Setup(r => r.GetByIdAsync(1, runner.Id, It.IsAny<CancellationToken>())).ReturnsAsync(runner);
-        _emailSender.Setup(s => s.SendAsync(runner.Email!, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        SetupResultContext(result, runner);
+        _emailSender.Setup(s => s.SendAsync(runner.Email!, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NotificationSendResult(true, null));
 
         var dtos = await BuildService().NotifyResultAsync(100);
 
         Assert.Single(dtos);
         Assert.Equal(NotificationStatus.Enviada, dtos[0].Status);
-        _emailSender.Verify(s => s.SendAsync(runner.Email!, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _emailSender.Verify(s => s.SendAsync(
+            runner.Email!,
+            It.IsAny<string>(),
+            It.IsAny<string?>(),
+            It.Is<string?>(h => h != null && h.Contains("#0D47A1")),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // Corredor sin email ni teléfono: se marca Fallida de inmediato, sin
-    // intentar ningún envío, y con IntentosEnvio agotado para que el barrido
-    // no lo siga reintentando en vano.
     [Fact]
     public async Task NotifyResultAsync_SinContacto_MarcaFallidaSinReintentos()
     {
@@ -100,17 +105,16 @@ public class NotificationServiceTests
 
         Assert.Single(dtos);
         Assert.Equal(NotificationStatus.Fallida, dtos[0].Status);
-        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // ProcessPendingAsync: envía lo que el repositorio le da (ya filtrado por
-    // Pendiente/Fallida-reintentable), incrementa IntentosEnvio, y refleja
-    // éxitos/fallos en el resumen.
     [Fact]
     public async Task ProcessPendingAsync_EnviaLosQueDevuelveElRepositorioYCuentaResultados()
     {
         var runnerOk = MakeRunner(id: 1, email: "ok@test.com");
         var runnerFalla = MakeRunner(id: 2, email: "falla@test.com");
+        var resultOk = MakeResult(id: 100, runnerId: 1);
+        var resultFalla = MakeResult(id: 101, runnerId: 2);
 
         var logPendiente = new NotificationLog
         {
@@ -127,9 +131,11 @@ public class NotificationServiceTests
 
         _logs.Setup(l => l.GetPendingOrRetryableAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync([logPendiente, logReintento]);
-        _emailSender.Setup(s => s.SendAsync("ok@test.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        SetupResultContext(resultOk, runnerOk);
+        SetupResultContext(resultFalla, runnerFalla);
+        _emailSender.Setup(s => s.SendAsync("ok@test.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NotificationSendResult(true, null));
-        _emailSender.Setup(s => s.SendAsync("falla@test.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _emailSender.Setup(s => s.SendAsync("falla@test.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NotificationSendResult(false, "Resend caído"));
 
         var summary = await BuildService().ProcessPendingAsync();

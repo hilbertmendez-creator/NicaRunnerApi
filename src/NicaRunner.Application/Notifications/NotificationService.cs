@@ -1,6 +1,7 @@
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Notifications.Dtos;
+using NicaRunner.Application.Notifications.EmailTemplates;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Notifications;
@@ -10,7 +11,8 @@ public class NotificationService(
     IResultRepository resultRepository,
     IRunnerRepository runnerRepository,
     IRaceRepository raceRepository,
-    IEnumerable<INotificationSender> senders) : INotificationService
+    IEnumerable<INotificationSender> senders,
+    IEmailTemplateRenderer emailTemplateRenderer) : INotificationService
 {
     private readonly Dictionary<NotificationChannel, INotificationSender> _sendersByChannel =
         senders.ToDictionary(s => s.Channel);
@@ -106,7 +108,8 @@ public class NotificationService(
     // barrido (ProcessPendingAsync).
     private async Task<List<NotificationLog>> CreatePendingLogsAsync(Race race, Runner runner, Result result, CancellationToken ct)
     {
-        var mensaje = BuildMessage(race, runner, result);
+        var rendered = BuildRenderedEmail(race, runner, result);
+        var mensaje = rendered.Text;
         var channels = DetermineChannels(runner);
 
         if (channels.Count == 0)
@@ -175,10 +178,30 @@ public class NotificationService(
         }
         else if (_sendersByChannel.TryGetValue(log.Channel, out var sender))
         {
-            var sendResult = await sender.SendAsync(destino, log.Mensaje, ct: ct);
-            log.Status = sendResult.Success ? NotificationStatus.Enviada : NotificationStatus.Fallida;
-            log.Error = sendResult.ErrorMessage;
-            log.SentAt = sendResult.Success ? DateTime.UtcNow : null;
+            NotificationSendResult sendResult;
+            if (log.Channel == NotificationChannel.Email)
+            {
+                var rendered = await TryRebuildRenderedEmailAsync(log, ct);
+                if (rendered is null)
+                {
+                    log.Status = NotificationStatus.Fallida;
+                    log.Error = "No se pudo reconstruir el contenido del correo para reenvío.";
+                }
+                else
+                {
+                    sendResult = await sender.SendAsync(destino, rendered.Text, rendered.Subject, rendered.Html, ct);
+                    log.Status = sendResult.Success ? NotificationStatus.Enviada : NotificationStatus.Fallida;
+                    log.Error = sendResult.ErrorMessage;
+                    log.SentAt = sendResult.Success ? DateTime.UtcNow : null;
+                }
+            }
+            else
+            {
+                sendResult = await sender.SendAsync(destino, log.Mensaje, ct: ct);
+                log.Status = sendResult.Success ? NotificationStatus.Enviada : NotificationStatus.Fallida;
+                log.Error = sendResult.ErrorMessage;
+                log.SentAt = sendResult.Success ? DateTime.UtcNow : null;
+            }
         }
         else
         {
@@ -202,9 +225,35 @@ public class NotificationService(
         return channels;
     }
 
-    private static string BuildMessage(Race race, Runner runner, Result result) =>
-        $"Hola {runner.Nombre}, tu resultado en {race.Nombre} fue: posición {result.Posicion}, " +
-        $"tiempo {result.TiempoLlegada:HH:mm:ss}. ¡Gracias por participar!";
+    private RenderedEmail BuildRenderedEmail(Race race, Runner runner, Result result)
+    {
+        var model = new RaceResultEmailModel(runner.Nombre, race.Nombre, result.Posicion, result.TiempoLlegada);
+        return emailTemplateRenderer.RenderRaceResult(model);
+    }
+
+    private async Task<RenderedEmail?> TryRebuildRenderedEmailAsync(NotificationLog log, CancellationToken ct)
+    {
+        if (log.ResultId <= 0)
+            return null;
+
+        var result = await resultRepository.GetByIdAsync(log.ResultId, ct);
+        if (result is null)
+            return null;
+
+        try
+        {
+            var (race, runner) = await LoadContextAsync(result, ct);
+            return BuildRenderedEmail(race, runner, result);
+        }
+        catch (NotFoundException)
+        {
+            return null;
+        }
+        catch (ConflictException)
+        {
+            return null;
+        }
+    }
 
     private static NotificationDto ToDto(NotificationLog log) => new(
         log.Id,

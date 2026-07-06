@@ -4,6 +4,7 @@ using NicaRunner.Application.Auth.Dtos;
 using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Notifications.EmailTemplates;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Auth;
@@ -15,6 +16,7 @@ public class AuthService(
     IGoogleAuthService googleAuthService,
     IRefreshTokenService refreshTokenService,
     IEnumerable<INotificationSender> notificationSenders,
+    IEmailTemplateRenderer emailTemplateRenderer,
     IOptions<FrontendOptions> frontendOptions) : IAuthService
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
@@ -102,11 +104,24 @@ public class AuthService(
         if (emailSender is null)
             return;
 
-        var resetLink = $"{frontendOptions.Value.BaseUrl}/reset-password?token={user.PasswordResetToken}";
-        var mensaje = $"Hola {user.Nombre}, recibimos una solicitud para restablecer tu contraseña de NicaRunner Backoffice. " +
-            $"Este link es válido por 30 minutos: {resetLink}\n\nSi no solicitaste esto, ignora este correo.";
+        try
+        {
+            var resetLink = EmailLinkBuilder.BuildResetUrl(frontendOptions.Value.BaseUrl, user.PasswordResetToken);
+            var rendered = emailTemplateRenderer.RenderPasswordReset(new PasswordResetEmailModel(
+                user.Nombre,
+                resetLink,
+                (int)ResetTokenLifetime.TotalMinutes));
 
-        await emailSender.SendAsync(user.Email, mensaje, "Restablece tu contraseña de NicaRunner", ct);
+            await emailSender.SendAsync(user.Email, rendered.Text, rendered.Subject, rendered.Html, ct);
+        }
+        catch (InvalidOperationException)
+        {
+            // BaseUrl no configurado o URL inválida — token guardado, correo omitido.
+        }
+        catch (TemplateRenderException)
+        {
+            // Fallo interno de plantilla — no exponer al caller.
+        }
     }
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default)

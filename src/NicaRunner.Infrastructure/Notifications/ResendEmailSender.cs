@@ -17,7 +17,12 @@ public class ResendEmailSender(HttpClient httpClient, IOptions<ResendOptions> op
 
     public NotificationChannel Channel => NotificationChannel.Email;
 
-    public async Task<NotificationSendResult> SendAsync(string destino, string mensaje, string? subject = null, CancellationToken ct = default)
+    public async Task<NotificationSendResult> SendAsync(
+        string destino,
+        string mensaje,
+        string? subject = null,
+        string? html = null,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
         {
@@ -26,13 +31,16 @@ public class ResendEmailSender(HttpClient httpClient, IOptions<ResendOptions> op
                 "Falta configurar Resend:ApiKey (ver appsettings.Development.json o user-secrets).");
         }
 
-        var payload = new
+        var payload = new Dictionary<string, object>
         {
-            from = _options.FromEmail,
-            to = new[] { destino },
-            subject = subject ?? _options.Subject,
-            text = mensaje,
+            ["from"] = _options.FromEmail,
+            ["to"] = new[] { destino },
+            ["subject"] = subject ?? _options.Subject,
+            ["text"] = mensaje,
         };
+
+        if (!string.IsNullOrWhiteSpace(html))
+            payload["html"] = html;
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "emails")
         {

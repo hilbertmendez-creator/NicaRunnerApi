@@ -144,6 +144,7 @@ builder.Services.AddScoped<IExcelRunnerParser, ExcelRunnerParser>();
 builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenRepository>();
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
 builder.Services.AddHttpClient<ResendEmailSender>(client =>
 {
     client.BaseAddress = new Uri("https://api.resend.com/");

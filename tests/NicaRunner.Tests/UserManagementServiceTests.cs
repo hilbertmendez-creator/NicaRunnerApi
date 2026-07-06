@@ -1,9 +1,11 @@
 using Moq;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Notifications.EmailTemplates;
 using NicaRunner.Application.Users;
 using NicaRunner.Application.Users.Dtos;
 using NicaRunner.Domain.Entities;
+using NicaRunner.Infrastructure.Notifications;
 
 namespace NicaRunner.Tests;
 
@@ -12,11 +14,12 @@ public class UserManagementServiceTests
     private readonly Mock<IUserRepository> _users = new();
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
     private readonly Mock<INotificationSender> _emailSender = new();
+    private readonly IEmailTemplateRenderer _emailRenderer = new EmailTemplateRenderer();
 
     private UserManagementService BuildService()
     {
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
-        return new(_users.Object, _passwordHasher.Object, [_emailSender.Object]);
+        return new(_users.Object, _passwordHasher.Object, [_emailSender.Object], _emailRenderer);
     }
 
     [Fact]
@@ -40,7 +43,7 @@ public class UserManagementServiceTests
     {
         _users.Setup(u => u.EmailExistsAsync("nuevo@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _passwordHasher.Setup(p => p.Hash(It.IsAny<string>())).Returns("hash-temporal");
-        _emailSender.Setup(s => s.SendAsync("nuevo@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _emailSender.Setup(s => s.SendAsync("nuevo@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NotificationSendResult(true, null));
 
         User? created = null;
@@ -55,7 +58,7 @@ public class UserManagementServiceTests
         Assert.True(created.MustChangePassword);
         Assert.Equal(AuthProvider.Local, created.Provider);
         Assert.Equal("nuevo@b.com", dto.Email);
-        _emailSender.Verify(s => s.SendAsync("nuevo@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _emailSender.Verify(s => s.SendAsync("nuevo@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
