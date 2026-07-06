@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Users.Dtos;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Users;
@@ -59,6 +60,14 @@ public class UserManagementService(
                 throw new ForbiddenException("No puedes desactivar tu propia cuenta.");
             if (request.Role is not null && request.Role != user.Role)
                 throw new ForbiddenException("No puedes cambiar tu propio rol.");
+        }
+
+        if (ProtectedSeedUsers.IsProtected(user.Email))
+        {
+            if (request.IsActive is false)
+                throw new ForbiddenException("No se puede desactivar un usuario administrador semilla.");
+            if (request.Role is not null && request.Role != user.Role)
+                throw new ForbiddenException("No se puede cambiar el rol de un usuario administrador semilla.");
         }
 
         if (request.Role is { } role)

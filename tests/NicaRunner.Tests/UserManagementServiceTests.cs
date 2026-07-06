@@ -108,4 +108,30 @@ public class UserManagementServiceTests
         await Assert.ThrowsAsync<NotFoundException>(
             () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 99, new UpdateUserRequest(UserRole.Lector, null)));
     }
+
+    [Theory]
+    [InlineData("hilbert.mendez@gmail.com")]
+    [InlineData("evr86.skip@gmail.com")]
+    [InlineData("edufisica@ymail.com")]
+    public async Task UpdateAsync_UsuarioSemillaIntentaDesactivarse_LanzaForbidden(string email)
+    {
+        var seed = new User { Id = 2, Email = email, Role = UserRole.Administrador, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(seed);
+
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(null, false)));
+    }
+
+    [Theory]
+    [InlineData("hilbert.mendez@gmail.com")]
+    [InlineData("evr86.skip@gmail.com")]
+    [InlineData("edufisica@ymail.com")]
+    public async Task UpdateAsync_UsuarioSemillaIntentaCambiarRol_LanzaForbidden(string email)
+    {
+        var seed = new User { Id = 2, Email = email, Role = UserRole.Administrador, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(seed);
+
+        await Assert.ThrowsAsync<ForbiddenException>(
+            () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(UserRole.Lector, null)));
+    }
 }
