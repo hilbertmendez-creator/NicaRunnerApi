@@ -1,0 +1,22 @@
+<p style="margin:0 0 16px;font-size:14px;color:{{ text_hi }};line-height:1.6;">
+  Hola, <strong>{{ recipient_name }}</strong>
+</p>
+<p style="margin:0 0 24px;font-size:14px;color:{{ text_lo }};line-height:1.6;">
+  Tu resultado en <strong style="color:{{ text_hi }};">{{ race_name }}</strong>:
+</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:24px;">
+  <tr>
+    <td width="48%" style="background-color:{{ accent_bg }};border:1px solid {{ accent_border }};border-radius:{{ radius_card }}px;padding:16px;text-align:center;">
+      <div style="font-size:11px;font-weight:600;color:{{ text_lo }};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Posición</div>
+      <div style="font-size:28px;font-weight:700;color:{{ accent_text }};font-family:{{ font_mono }};">#{{ position }}</div>
+    </td>
+    <td width="4%"></td>
+    <td width="48%" style="background-color:{{ accent_bg }};border:1px solid {{ accent_border }};border-radius:{{ radius_card }}px;padding:16px;text-align:center;">
+      <div style="font-size:11px;font-weight:600;color:{{ text_lo }};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Tiempo</div>
+      <div style="font-size:22px;font-weight:600;color:{{ text_hi }};font-family:{{ font_mono }};">{{ arrival_time }}</div>
+    </td>
+  </tr>
+</table>
+<p style="margin:0;font-size:14px;color:{{ text_lo }};line-height:1.6;">
+  ¡Gracias por participar!
+</p>

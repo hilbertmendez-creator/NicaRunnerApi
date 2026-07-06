@@ -16,13 +16,14 @@ public class AuthServiceGoogleLoginTests
     private readonly Mock<IJwtTokenGenerator> _jwt = new();
     private readonly Mock<IGoogleAuthService> _google = new();
     private readonly Mock<IRefreshTokenService> _refresh = new();
+    private readonly Mock<IEmailTemplateRenderer> _emailRenderer = new();
 
     private AuthService BuildService()
     {
         _refresh.Setup(r => r.IssueAsync(It.IsAny<User>(), null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new IssuedRefreshToken("fake-refresh", DateTime.UtcNow.AddDays(30), Guid.NewGuid()));
         return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
-            _refresh.Object, [], Options.Create(new FrontendOptions()));
+            _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()));
     }
 
     private void SetupTokenGenerator() =>

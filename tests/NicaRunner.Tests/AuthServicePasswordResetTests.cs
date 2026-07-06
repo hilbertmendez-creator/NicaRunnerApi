@@ -5,7 +5,9 @@ using NicaRunner.Application.Auth.Dtos;
 using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Notifications.EmailTemplates;
 using NicaRunner.Domain.Entities;
+using NicaRunner.Infrastructure.Notifications;
 
 namespace NicaRunner.Tests;
 
@@ -17,13 +19,14 @@ public class AuthServicePasswordResetTests
     private readonly Mock<IGoogleAuthService> _google = new();
     private readonly Mock<IRefreshTokenService> _refresh = new();
     private readonly Mock<INotificationSender> _emailSender = new();
+    private readonly IEmailTemplateRenderer _emailRenderer = new EmailTemplateRenderer();
     private readonly IOptions<FrontendOptions> _frontendOptions = Options.Create(new FrontendOptions { BaseUrl = "https://backoffice.nicarunner.test" });
 
     private AuthService BuildService()
     {
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
         return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
-            _refresh.Object, [_emailSender.Object], _frontendOptions);
+            _refresh.Object, [_emailSender.Object], _emailRenderer, _frontendOptions);
     }
 
     [Fact]
@@ -31,14 +34,19 @@ public class AuthServicePasswordResetTests
     {
         var user = new User { Id = 1, Email = "a@b.com", Provider = AuthProvider.Local, PasswordHash = "hash" };
         _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        _emailSender.Setup(s => s.SendAsync("a@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        _emailSender.Setup(s => s.SendAsync("a@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NotificationSendResult(true, null));
 
         await BuildService().ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
 
         Assert.NotNull(user.PasswordResetToken);
         Assert.NotNull(user.PasswordResetTokenExpiry);
-        _emailSender.Verify(s => s.SendAsync("a@b.com", It.Is<string>(m => m.Contains("https://backoffice.nicarunner.test")), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _emailSender.Verify(s => s.SendAsync(
+            "a@b.com",
+            It.Is<string>(m => m.Contains("https://backoffice.nicarunner.test")),
+            It.IsAny<string?>(),
+            It.Is<string?>(h => h != null && h.Contains("#0D47A1")),
+            It.IsAny<CancellationToken>()), Times.Once);
         _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -49,7 +57,7 @@ public class AuthServicePasswordResetTests
 
         await BuildService().ForgotPasswordAsync(new ForgotPasswordRequest("nadie@b.com"));
 
-        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -61,7 +69,7 @@ public class AuthServicePasswordResetTests
         await BuildService().ForgotPasswordAsync(new ForgotPasswordRequest("g@b.com"));
 
         Assert.Null(user.PasswordResetToken);
-        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -118,13 +126,28 @@ public class AuthServicePasswordResetTests
     }
 
     [Fact]
+    public async Task ForgotPassword_BaseUrlVacio_NoEnviaEmail()
+    {
+        var user = new User { Id = 1, Email = "a@b.com", Provider = AuthProvider.Local, PasswordHash = "hash", Nombre = "Ana" };
+        _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        var service = new AuthService(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
+            _refresh.Object, [_emailSender.Object], _emailRenderer,
+            Options.Create(new FrontendOptions { BaseUrl = "" }));
+
+        await service.ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
+
+        Assert.NotNull(user.PasswordResetToken);
+        _emailSender.Verify(s => s.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ForgotPassword_SinSenderDeEmailRegistrado_NoLanzaExcepcion()
     {
         var user = new User { Id = 1, Email = "a@b.com", Provider = AuthProvider.Local, PasswordHash = "hash" };
         _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var service = new AuthService(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
-            _refresh.Object, [], _frontendOptions);
+            _refresh.Object, [], _emailRenderer, _frontendOptions);
 
         await service.ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
 

@@ -1,0 +1,12 @@
+{
+  "namespace": "NicaRunnerUI",
+  "source": "@nicarunner/ui@0.1.0",
+  "shape": "package",
+  "provider": null,
+  "componentCount": 12,
+  "skippedStoryIds": [],
+  "runtimeFontPrefixes": [
+    "Inter",
+    "JetBrains Mono"
+  ]
+}

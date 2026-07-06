@@ -1,0 +1,121 @@
+{
+  "global": "NicaRunnerUI",
+  "pkg": "@nicarunner/ui",
+  "pkgDir": "E:\\HILBERT\\Proyectos\\Claude Code\\NicaRunner-API\\frontend\\node_modules\\@nicarunner\\ui",
+  "extraEntries": [],
+  "exported": [
+    "Button",
+    "DataTable",
+    "EmptyState",
+    "ErrorAlert",
+    "Input",
+    "Label",
+    "LoadingText",
+    "MetricCard",
+    "Modal",
+    "Select",
+    "Tabs",
+    "Textarea"
+  ],
+  "storybookStatic": null,
+  "keyRecipe": 7,
+  "cfgSliceGlobal": "a139d95ad8ab0a8ba08b44a258c54602e36090304087f48fe923c61aa5a8ae08",
+  "components": [
+    {
+      "name": "Button",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "04ecc241b948fe5a",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "DataTable",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "a4730df6c1eb881f",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "EmptyState",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "befdad76689ef7a5",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "ErrorAlert",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "62403d9f23fdafef",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Input",
+      "group": "form",
+      "srcSha": null,
+      "sourceKey": "1d59ce5188d07e2d",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Label",
+      "group": "form",
+      "srcSha": null,
+      "sourceKey": "fed6cc7e979b15e7",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "LoadingText",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "faab16b949f40223",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "MetricCard",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "597edff4ddad3213",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Modal",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "6deb26c7cb9ae99a",
+      "cfgSlice": "4dad39289a4bf7b73528bc2c8a79548f8ddb757266c5049b172399a9c7b0e427",
+      "stories": []
+    },
+    {
+      "name": "Select",
+      "group": "form",
+      "srcSha": null,
+      "sourceKey": "1d36a4af7df9c0d8",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Tabs",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "fa1e24938518650b",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Textarea",
+      "group": "form",
+      "srcSha": null,
+      "sourceKey": "28640fdab2a0c983",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    }
+  ]
+}

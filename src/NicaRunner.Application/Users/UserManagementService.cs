@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Notifications.EmailTemplates;
 using NicaRunner.Application.Users.Dtos;
 using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
@@ -10,7 +11,8 @@ namespace NicaRunner.Application.Users;
 public class UserManagementService(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
-    IEnumerable<INotificationSender> notificationSenders) : IUserManagementService
+    IEnumerable<INotificationSender> notificationSenders,
+    IEmailTemplateRenderer emailTemplateRenderer) : IUserManagementService
 {
     private const string TempPasswordAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -40,11 +42,12 @@ public class UserManagementService(
         await userRepository.AddAsync(user, ct);
         await userRepository.SaveChangesAsync(ct);
 
-        var mensaje = $"Hola {user.Nombre}, se creó tu cuenta en NicaRunner Backoffice. " +
-            $"Tu contraseña temporal es: {tempPassword}\n\nDeberás cambiarla al iniciar sesión por primera vez.";
         var emailSender = notificationSenders.FirstOrDefault(s => s.Channel == NotificationChannel.Email);
         if (emailSender is not null)
-            await emailSender.SendAsync(user.Email, mensaje, "Tu cuenta en NicaRunner Backoffice", ct);
+        {
+            var rendered = emailTemplateRenderer.RenderWelcomeAccount(new WelcomeAccountEmailModel(user.Nombre, tempPassword));
+            await emailSender.SendAsync(user.Email, rendered.Text, rendered.Subject, rendered.Html, ct);
+        }
 
         return ToDto(user);
     }

@@ -1,0 +1,19 @@
+[
+  {
+    "sheet": 1,
+    "components": [
+      "Button",
+      "DataTable",
+      "EmptyState",
+      "ErrorAlert",
+      "Input",
+      "Label",
+      "LoadingText",
+      "MetricCard",
+      "Modal",
+      "Select",
+      "Tabs",
+      "Textarea"
+    ]
+  }
+]
