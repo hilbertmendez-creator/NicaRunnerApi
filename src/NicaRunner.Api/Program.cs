@@ -15,6 +15,7 @@ using Serilog.Formatting.Compact;
 using NicaRunner.Api.Dev;
 using NicaRunner.Api.Hubs;
 using NicaRunner.Api.Middleware;
+using NicaRunner.Api.Workers;
 using NicaRunner.Application.Admin;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Categories;
@@ -169,6 +170,7 @@ builder.Services.AddScoped<IPublicResultService, PublicResultService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IRaceDashboardNotifier, RaceDashboardNotifier>();
+builder.Services.AddHostedService<PendingNotificationsWorker>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services
