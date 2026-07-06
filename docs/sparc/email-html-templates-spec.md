@@ -351,4 +351,5 @@ NicaRunner.Infrastructure/
 
 ## 13. Próximo paso
 
-Fase 2 — Pseudocode: algoritmos de renderizado Scriban, flujo de escape HTML, construcción de payload Resend y migración de los 3 servicios emisores.
+Ver [`email-html-templates-pseudocode.md`](email-html-templates-pseudocode.md) — Fase 2 completada.  
+Siguiente: Fase 3 — Architecture (contratos C#, EmbeddedResource, registro DI).
