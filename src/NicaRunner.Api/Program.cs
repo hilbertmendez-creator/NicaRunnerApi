@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Formatting.Compact;
+using NicaRunner.Api.Dev;
 using NicaRunner.Api.Hubs;
 using NicaRunner.Api.Middleware;
 using NicaRunner.Application.Admin;
@@ -358,6 +359,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    EmailPreviewEndpoints.Map(app);
 }
 
 app.UseHttpsRedirection();
