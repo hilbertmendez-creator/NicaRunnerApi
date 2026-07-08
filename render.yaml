@@ -1,10 +1,4 @@
-databases:
-  - name: nicarunner-db
-    plan: free
-    region: oregon
-    databaseName: nicarunner
-    user: nicarunner
-
+# La BD vive en Neon (tier gratuito permanente). Ver docs/render-setup.md.
 services:
   - type: web
     name: nicarunner-api
@@ -17,10 +11,10 @@ services:
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
+      # Connection string pooled de Neon. Setear manualmente en el dashboard
+      # (Environment → Add) con la URI postgresql://... del pooler.
       - key: ConnectionStrings__PostgresConnection
-        fromDatabase:
-          name: nicarunner-db
-          property: connectionString
+        sync: false
       # NO usar generateValue: true — un re-aprovisionamiento del Blueprint
       # (o un suspend/resume del servicio) regenera el valor e invalida todos
       # los JWT en uso, tirando las sesiones de capturistas en medio de una

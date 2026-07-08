@@ -18,6 +18,9 @@ obj/
 appsettings.*.local.json
 .env
 
+## Dumps temporales de migración de BD
+.migration/
+
 ## Build/deploy artifacts
 publish/
 
