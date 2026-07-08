@@ -1,7 +1,8 @@
 # Render — setup manual post-deploy
 
-El blueprint `render.yaml` aprovisiona el servicio y la base de datos, pero hay
-cuatro variables marcadas como `sync: false` que **vos** tenés que setear desde
+El blueprint `render.yaml` aprovisiona solo el servicio web. La base de datos
+PostgreSQL vive en [Neon](https://neon.tech) (tier gratuito permanente). Hay
+cinco variables marcadas como `sync: false` que **vos** tenés que setear desde
 el dashboard de Render una vez después del primer deploy. Sin estas, la API no
 arranca o arranca con seguridad rota.
 
@@ -9,7 +10,21 @@ arranca o arranca con seguridad rota.
 
 Render Dashboard → tu servicio `nicarunner-api` → **Environment** → **Add Environment Variable**.
 
-### 1. `Jwt__Key`
+### 1. `ConnectionStrings__PostgresConnection`
+
+URI de conexión **pooled** de Neon (Dashboard → tu proyecto → Connection
+details → **Pooled connection**). Formato:
+
+```
+postgresql://user:pass@ep-xxx-pooler.us-west-2.aws.neon.tech/neondb?sslmode=require
+```
+
+La API ya normaliza URIs `postgres://` / `postgresql://` a formato Npgsql en
+`Program.cs`. Usar siempre el endpoint **pooler** en producción.
+
+Para migrar datos desde Render, ver `scripts/migrate-db-to-neon.ps1`.
+
+### 2. `Jwt__Key`
 
 Llave simétrica HMAC que firma todos los JWT emitidos por la API. Tiene que
 ser **larga, aleatoria y estable** — si cambia, todos los tokens activos
@@ -24,7 +39,7 @@ openssl rand -base64 64
 Pegar el resultado entero como valor. Después no se toca más, salvo emergencia
 (filtración confirmada de la llave).
 
-### 2. `Resend__ApiKey`
+### 3. `Resend__ApiKey`
 
 Llave de [Resend](https://resend.com/api-keys) para el envío de emails de
 resultados. Crear una llave con scope `Send only` (no necesita más permisos).
@@ -33,7 +48,7 @@ Si todavía no usás Resend en producción y querés posponer el envío real, po
 dejar esta variable vacía — la API arranca igual, pero `POST /api/notifications/notify`
 va a fallar con error explícito.
 
-### 3. `Cors__AllowedOrigins__0`
+### 4. `Cors__AllowedOrigins__0`
 
 Origen del back office en producción (Vercel). Ejemplo:
 
@@ -44,7 +59,7 @@ https://nicarunner-web.vercel.app
 Sin `/` final. Si necesitás más de un origen (ej. dominio custom + url
 `.vercel.app`), agregá `Cors__AllowedOrigins__1`, `__2`, etc.
 
-### 4. `Admin__CleanupSecret`
+### 5. `Admin__CleanupSecret`
 
 Autoriza al cron de GitHub Actions
 (`.github/workflows/refresh-token-cleanup.yml`) a invocar
@@ -68,7 +83,7 @@ con el valor viejo hasta que Render redeploye), después el secret de GitHub.
 Ventana de riesgo breve durante la cual el cron podría fallar una vez — no
 crítico, el próximo run del día siguiente ya usa el valor nuevo.
 
-## Después de setear las 4
+## Después de setear las 5
 
 Render hace **redeploy automático** al guardar variables. Esperar a que el
 servicio quede en estado `Live` y verificar:
