@@ -2,8 +2,11 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NicaRunner.Application.Auditing;
+using NicaRunner.Application.Auditing.Dtos;
 using NicaRunner.Application.Races;
 using NicaRunner.Application.Races.Dtos;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Api.Controllers;
@@ -13,7 +16,7 @@ namespace NicaRunner.Api.Controllers;
 [Route("api/races")]
 [Route("api/v{version:apiVersion}/races")]
 [Authorize]
-public class RacesController(IRaceService raceService) : ControllerBase
+public class RacesController(IRaceService raceService, IAuditService auditService) : ControllerBase
 {
     [HttpPost]
     [Authorize(Roles = nameof(UserRole.Administrador))]
@@ -34,7 +37,14 @@ public class RacesController(IRaceService raceService) : ControllerBase
     [HttpPut("{raceId:int}")]
     [Authorize(Roles = nameof(UserRole.Administrador))]
     public async Task<ActionResult<RaceDto>> Update(int raceId, UpdateRaceRequest request, CancellationToken ct) =>
-        Ok(await raceService.UpdateAsync(raceId, request, ct));
+        Ok(await raceService.UpdateAsync(raceId, request, GetUserId(), ct));
+
+    /// <summary>Historial de modificaciones de la carrera (más reciente primero). Solo administradores.</summary>
+    [HttpGet("{raceId:int}/audit")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<ActionResult<List<AuditLogDto>>> GetAudit(
+        int raceId, [FromQuery] int limit = 50, [FromQuery] DateTime? before = null, CancellationToken ct = default) =>
+        Ok(await auditService.GetHistoryAsync(AuditEntityTypes.Race, raceId, limit, before, ct));
 
     [HttpDelete("{raceId:int}")]
     [Authorize(Roles = nameof(UserRole.Administrador))]

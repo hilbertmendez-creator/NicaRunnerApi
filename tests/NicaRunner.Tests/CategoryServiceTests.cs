@@ -1,8 +1,10 @@
 using Moq;
+using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Categories.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Tests;
@@ -11,8 +13,9 @@ public class CategoryServiceTests
 {
     private readonly Mock<ICategoryRepository> _categories = new();
     private readonly Mock<IRunnerRepository> _runners = new();
+    private readonly FakeAuditLogRepository _auditRepo = new();
 
-    private CategoryService BuildService() => new(_categories.Object, _runners.Object);
+    private CategoryService BuildService() => new(_categories.Object, _runners.Object, new AuditService(_auditRepo));
 
     private static CreateCategoryRequest ValidRequest(string codigo = "JUV") =>
         new(codigo, "Juvenil", "13 a 17 años", 5m, 13, 17, 1);
@@ -65,11 +68,34 @@ public class CategoryServiceTests
         _categories.Setup(c => c.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(category);
         _categories.Setup(c => c.CodigoExistsAsync("lib", 1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-        var dto = await BuildService().UpdateAsync(1, new UpdateCategoryRequest("lib", "Libre", null, 10m, 18, 39, 2));
+        var dto = await BuildService().UpdateAsync(1, new UpdateCategoryRequest("lib", "Libre", null, 10m, 18, 39, 2), currentUserId: 7);
 
         Assert.Equal("LIB", category.Codigo);
         Assert.Equal("LIB", dto.Codigo);
         Assert.Equal(18, category.EdadMinima);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CambiaDistanciaYNombre_RegistraSoloLosCamposQueCambiaron()
+    {
+        var category = new Category
+        {
+            Id = 1, Codigo = "JUV", NombreCategoria = "Juvenil", Descripcion = "13 a 17",
+            Distancia = 5m, EdadMinima = 13, EdadMaxima = 17, Orden = 1
+        };
+        _categories.Setup(c => c.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(category);
+        _categories.Setup(c => c.CodigoExistsAsync("juv", 1, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        // Mismo código, mismo nombre, misma edad y orden; solo Distancia cambia.
+        await BuildService().UpdateAsync(
+            1, new UpdateCategoryRequest("juv", "Juvenil", "13 a 17", 10m, 13, 17, 1), currentUserId: 7);
+
+        var entry = Assert.Single(_auditRepo.Entries);
+        Assert.Equal(AuditEntityTypes.Category, entry.EntityType);
+        Assert.Equal("Distancia", entry.Campo);
+        Assert.Equal("5", entry.ValorAnterior);
+        Assert.Equal("10", entry.ValorNuevo);
+        Assert.Equal(7, entry.AutorId);
     }
 
     [Fact]

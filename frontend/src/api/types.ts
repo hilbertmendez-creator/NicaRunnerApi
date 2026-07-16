@@ -42,6 +42,19 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   role?: UserRole
   isActive?: boolean
+  nombre?: string
+}
+
+export interface AuditLogDto {
+  id: number
+  entityType: string
+  entityId: number
+  campo: string
+  valorAnterior: string | null
+  valorNuevo: string | null
+  autorId: number
+  autorNombre: string
+  createdAt: string
 }
 
 export type RaceStatus = 'Planeada' | 'EnCurso' | 'Terminada'

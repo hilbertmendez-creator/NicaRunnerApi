@@ -1,8 +1,12 @@
+using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NicaRunner.Application.Auditing;
+using NicaRunner.Application.Auditing.Dtos;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Categories.Dtos;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Api.Controllers;
@@ -13,7 +17,7 @@ namespace NicaRunner.Api.Controllers;
 [Route("api/categories")]
 [Route("api/v{version:apiVersion}/categories")]
 [Authorize]
-public class CategoriesController(ICategoryService categoryService) : ControllerBase
+public class CategoriesController(ICategoryService categoryService, IAuditService auditService) : ControllerBase
 {
     [HttpPost]
     [Authorize(Roles = nameof(UserRole.Administrador))]
@@ -34,7 +38,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
     [HttpPut("{categoryId:int}")]
     [Authorize(Roles = nameof(UserRole.Administrador))]
     public async Task<ActionResult<CategoryDto>> Update(int categoryId, UpdateCategoryRequest request, CancellationToken ct) =>
-        Ok(await categoryService.UpdateAsync(categoryId, request, ct));
+        Ok(await categoryService.UpdateAsync(categoryId, request, GetUserId(), ct));
 
     [HttpDelete("{categoryId:int}")]
     [Authorize(Roles = nameof(UserRole.Administrador))]
@@ -43,4 +47,13 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         await categoryService.DeleteAsync(categoryId, ct);
         return NoContent();
     }
+
+    /// <summary>Historial de modificaciones de la categoría (más reciente primero). Solo administradores.</summary>
+    [HttpGet("{categoryId:int}/audit")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<ActionResult<List<AuditLogDto>>> GetAudit(
+        int categoryId, [FromQuery] int limit = 50, [FromQuery] DateTime? before = null, CancellationToken ct = default) =>
+        Ok(await auditService.GetHistoryAsync(AuditEntityTypes.Category, categoryId, limit, before, ct));
+
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

@@ -1,6 +1,7 @@
 import { apiClient } from './client'
 import type {
   AssignCategoryRequest,
+  AuditLogDto,
   AuthResponse,
   CategoryDto,
   CategoryStandingsDto,
@@ -240,5 +241,20 @@ export async function createUser(request: CreateUserRequest): Promise<UserDto> {
 
 export async function updateUser(id: number, request: UpdateUserRequest): Promise<UserDto> {
   const { data } = await apiClient.patch<UserDto>(`/users/${id}`, request)
+  return data
+}
+
+export async function getUserAudit(id: number): Promise<AuditLogDto[]> {
+  const { data } = await apiClient.get<AuditLogDto[]>(`/users/${id}/audit`)
+  return data
+}
+
+export async function getRaceAudit(raceId: number): Promise<AuditLogDto[]> {
+  const { data } = await apiClient.get<AuditLogDto[]>(`/races/${raceId}/audit`)
+  return data
+}
+
+export async function getCategoryAudit(categoryId: number): Promise<AuditLogDto[]> {
+  const { data } = await apiClient.get<AuditLogDto[]>(`/categories/${categoryId}/audit`)
   return data
 }

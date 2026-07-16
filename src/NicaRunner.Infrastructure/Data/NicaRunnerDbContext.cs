@@ -17,6 +17,7 @@ public class NicaRunnerDbContext : DbContext
     public DbSet<Runner> Runners => Set<Runner>();
     public DbSet<Result> Results => Set<Result>();
     public DbSet<ResultAudit> ResultAudits => Set<ResultAudit>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<PublicResultToken> PublicResultTokens => Set<PublicResultToken>();
     public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
     public DbSet<RaceJudge> RaceJudges => Set<RaceJudge>();
@@ -161,6 +162,27 @@ public class NicaRunnerDbContext : DbContext
             .HasOne(a => a.Result)
             .WithMany(r => r.AuditEntries)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Bitácora transversal (Usuarios/Carreras/Categorías). Append-only.
+        modelBuilder.Entity<AuditLog>(e =>
+        {
+            e.Property(a => a.EntityType).HasMaxLength(40).IsRequired();
+            e.Property(a => a.Campo).HasMaxLength(60).IsRequired();
+            e.Property(a => a.ValorAnterior).HasMaxLength(1024);
+            e.Property(a => a.ValorNuevo).HasMaxLength(1024);
+
+            // Índice que cubre el WHERE (EntityType, EntityId) y el ORDER BY CreatedAt DESC
+            // de la consulta de historial → index range scan, sin sort en memoria.
+            e.HasIndex(a => new { a.EntityType, a.EntityId, a.CreatedAt })
+                .IsDescending(false, false, true)
+                .HasDatabaseName("IX_AuditLog_Entity_Created");
+
+            // Restrict para no perder historial si se intenta borrar al autor.
+            e.HasOne(a => a.Autor)
+                .WithMany()
+                .HasForeignKey(a => a.AutorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         // El historial de notificaciones no debe perderse por cascada si se borra
         // la carrera/corredor/resultado relacionado (no hay endpoints de borrado hoy,

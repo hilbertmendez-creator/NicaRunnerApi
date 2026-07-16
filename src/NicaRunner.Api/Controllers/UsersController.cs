@@ -2,8 +2,11 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NicaRunner.Application.Auditing;
+using NicaRunner.Application.Auditing.Dtos;
 using NicaRunner.Application.Users;
 using NicaRunner.Application.Users.Dtos;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Api.Controllers;
@@ -13,7 +16,9 @@ namespace NicaRunner.Api.Controllers;
 [Route("api/users")]
 [Route("api/v{version:apiVersion}/users")]
 [Authorize(Roles = nameof(UserRole.Administrador))]
-public class UsersController(IUserManagementService userManagementService) : ControllerBase
+public class UsersController(
+    IUserManagementService userManagementService,
+    IAuditService auditService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<List<UserDto>>> GetAll(CancellationToken ct) =>
@@ -29,6 +34,12 @@ public class UsersController(IUserManagementService userManagementService) : Con
     [HttpPatch("{id:int}")]
     public async Task<ActionResult<UserDto>> Update(int id, UpdateUserRequest request, CancellationToken ct) =>
         Ok(await userManagementService.UpdateAsync(GetUserId(), id, request, ct));
+
+    /// <summary>Historial de modificaciones del usuario (más reciente primero). Solo administradores.</summary>
+    [HttpGet("{id:int}/audit")]
+    public async Task<ActionResult<List<AuditLogDto>>> GetAudit(
+        int id, [FromQuery] int limit = 50, [FromQuery] DateTime? before = null, CancellationToken ct = default) =>
+        Ok(await auditService.GetHistoryAsync(AuditEntityTypes.User, id, limit, before, ct));
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }
