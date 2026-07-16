@@ -1,9 +1,11 @@
 using Moq;
+using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Notifications.EmailTemplates;
 using NicaRunner.Application.Users;
 using NicaRunner.Application.Users.Dtos;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Notifications;
 
@@ -15,11 +17,12 @@ public class UserManagementServiceTests
     private readonly Mock<IPasswordHasher> _passwordHasher = new();
     private readonly Mock<INotificationSender> _emailSender = new();
     private readonly IEmailTemplateRenderer _emailRenderer = new EmailTemplateRenderer();
+    private readonly FakeAuditLogRepository _auditRepo = new();
 
     private UserManagementService BuildService()
     {
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
-        return new(_users.Object, _passwordHasher.Object, [_emailSender.Object], _emailRenderer);
+        return new(_users.Object, _passwordHasher.Object, [_emailSender.Object], _emailRenderer, new AuditService(_auditRepo));
     }
 
     [Fact]
@@ -81,6 +84,61 @@ public class UserManagementServiceTests
         Assert.Equal(UserRole.Lector, target.Role);
         Assert.False(target.IsActive);
         Assert.Equal(UserRole.Lector, dto.Role);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CambiaNombre_RegistraUnaEntradaDeAuditoriaConAutorYValores()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Nombre = "Nombre Viejo", Role = UserRole.Capturista, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+        await BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(null, null, "  Nombre Nuevo  "));
+
+        Assert.Equal("Nombre Nuevo", target.Nombre); // Trim (E-3)
+        var entry = Assert.Single(_auditRepo.Entries);
+        Assert.Equal(AuditEntityTypes.User, entry.EntityType);
+        Assert.Equal(2, entry.EntityId);
+        Assert.Equal("Nombre", entry.Campo);
+        Assert.Equal("Nombre Viejo", entry.ValorAnterior);
+        Assert.Equal("Nombre Nuevo", entry.ValorNuevo);
+        Assert.Equal(1, entry.AutorId);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CambiaRolYEstado_RegistraUnaEntradaPorCampo()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Nombre = "N", Role = UserRole.Capturista, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+        await BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(UserRole.Lector, false));
+
+        Assert.Equal(2, _auditRepo.Entries.Count);
+        Assert.Contains(_auditRepo.Entries, e => e.Campo == "Role" && e.ValorAnterior == "Capturista" && e.ValorNuevo == "Lector");
+        Assert.Contains(_auditRepo.Entries, e => e.Campo == "IsActive" && e.ValorAnterior == "true" && e.ValorNuevo == "false");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NombreIdenticoAlActual_NoRegistraAuditoria()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Nombre = "Mismo Nombre", Role = UserRole.Capturista, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+        await BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(null, null, "Mismo Nombre"));
+
+        Assert.Empty(_auditRepo.Entries);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_NombreVacio_LanzaValidationYNoAudita()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Nombre = "N", Role = UserRole.Capturista, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(null, null, "   ")));
+
+        Assert.Empty(_auditRepo.Entries);
+        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

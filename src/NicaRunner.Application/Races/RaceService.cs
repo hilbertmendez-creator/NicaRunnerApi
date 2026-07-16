@@ -1,6 +1,8 @@
+using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Races.Dtos;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Races;
@@ -8,7 +10,8 @@ namespace NicaRunner.Application.Races;
 public class RaceService(
     IRaceRepository raceRepository,
     IRaceCategoryRepository raceCategoryRepository,
-    ICategoryRepository categoryRepository) : IRaceService
+    ICategoryRepository categoryRepository,
+    IAuditService auditService) : IRaceService
 {
     // Sin I, O, 0, 1 para evitar confusiones visuales al teclear el código en el móvil.
     private const string JoinCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -62,15 +65,25 @@ public class RaceService(
         return ToDto(race);
     }
 
-    public async Task<RaceDto> UpdateAsync(int raceId, UpdateRaceRequest request, CancellationToken ct = default)
+    public async Task<RaceDto> UpdateAsync(int raceId, UpdateRaceRequest request, int currentUserId, CancellationToken ct = default)
     {
         var race = await GetRaceOrThrowAsync(raceId, ct);
+
+        var changes = new List<FieldChange>
+        {
+            new("Nombre", race.Nombre, request.Nombre),
+            new("Descripcion", AuditValue.Of(race.Descripcion), AuditValue.Of(request.Descripcion)),
+            new("FechaCarrera", AuditValue.Of(race.FechaCarrera), AuditValue.Of(request.FechaCarrera)),
+            new("Estado", AuditValue.Of(race.Estado), AuditValue.Of(request.Estado)),
+        };
 
         race.Nombre = request.Nombre;
         race.Descripcion = request.Descripcion;
         race.FechaCarrera = request.FechaCarrera;
         race.Estado = request.Estado;
         race.UpdatedAt = DateTime.UtcNow;
+
+        auditService.TrackChanges(AuditEntityTypes.Race, race.Id, currentUserId, changes);
 
         await raceRepository.SaveChangesAsync(ct);
         return ToDto(race);
