@@ -23,6 +23,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("google-login")]
+    [EnableRateLimiting("auth")]
     public async Task<ActionResult<AuthResponse>> GoogleLogin(GoogleLoginRequest request, CancellationToken ct)
     {
         var result = await authService.GoogleLoginAsync(request, ct);
@@ -46,6 +47,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("reset-password")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken ct)
     {
         await authService.ResetPasswordAsync(request, ct);
