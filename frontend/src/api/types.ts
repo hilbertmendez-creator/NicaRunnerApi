@@ -3,6 +3,8 @@ export type UserRole = 'Capturista' | 'Administrador' | 'Lector'
 export interface AuthResponse {
   token: string
   expiresAtUtc: string
+  refreshToken: string
+  refreshExpiresAtUtc: string
   userId: number
   email: string
   nombre: string
