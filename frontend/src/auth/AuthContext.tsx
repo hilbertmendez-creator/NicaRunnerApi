@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { login as loginRequest } from '../api/endpoints'
-import { getStoredToken, setStoredToken, setUnauthorizedHandler } from '../api/client'
+import { apiClient, getStoredToken, setStoredToken, setStoredRefreshToken, setUnauthorizedHandler } from '../api/client'
 import { AuthContext, type AuthContextValue, type CurrentUser } from './auth-context'
 
 const USER_STORAGE_KEY = 'nicarunner.user'
@@ -20,8 +20,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getStoredToken() ? readStoredUser() : null,
   )
 
-  const logout = useCallback(() => {
+  const logout = useCallback((refreshToken?: string) => {
+    const token = refreshToken ?? localStorage.getItem('nicarunner.refresh_token')
+    if (token) {
+      // Best-effort: revoke the token family on the server. Don't await —
+      // local session is cleared immediately regardless of network outcome.
+      apiClient.post('/auth/logout', { refreshToken: token }).catch(() => {})
+    }
     setStoredToken(null)
+    setStoredRefreshToken(null)
     localStorage.removeItem(USER_STORAGE_KEY)
     setUser(null)
   }, [])
@@ -33,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const response = await loginRequest(email, password)
     setStoredToken(response.token)
+    setStoredRefreshToken(response.refreshToken)
     const currentUser: CurrentUser = {
       userId: response.userId,
       email: response.email,
