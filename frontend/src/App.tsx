@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeProvider } from './hooks/useTheme'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './auth/ProtectedRoute'
@@ -20,6 +21,7 @@ import { CategoryCatalogPage } from './features/categories/CategoryCatalogPage'
 
 function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
@@ -54,6 +56,7 @@ function App() {
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }
 
