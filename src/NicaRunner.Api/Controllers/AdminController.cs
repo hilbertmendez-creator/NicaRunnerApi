@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Admin;
@@ -74,6 +76,11 @@ public class AdminController(
             return false;
         }
 
-        return Request.Headers.TryGetValue(AdminSecretHeader, out var provided) && provided.ToString() == expected;
+        if (!Request.Headers.TryGetValue(AdminSecretHeader, out var provided))
+            return false;
+
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        var providedBytes = Encoding.UTF8.GetBytes(provided.ToString());
+        return CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes);
     }
 }
