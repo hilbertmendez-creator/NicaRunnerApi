@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Formatting.Compact;
+using NicaRunner.Api.Auth;
 using NicaRunner.Api.Dev;
 using NicaRunner.Api.Hubs;
 using NicaRunner.Api.Middleware;
@@ -203,19 +204,24 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
         };
 
-        // El cliente de SignalR (browser) no puede mandar el header Authorization en
-        // el handshake de WebSocket, así que manda el JWT como query string
-        // "?access_token=...". Solo se acepta ahí, y solo para el path del hub —
-        // el resto de la API sigue exigiendo el header Authorization normal.
+        // El cliente web (browser) no manda el header Authorization: el JWT
+        // viaja en la cookie httpOnly nr_at (ver AuthController). Si no vino
+        // el header, se cae a la cookie — cubre tanto la API normal como el
+        // handshake de WebSocket del hub de SignalR (el browser adjunta
+        // cookies automáticamente ahí también). La app Android y cualquier
+        // cliente que sí mande Authorization siguen priorizando el header, sin
+        // cambios — este fallback nunca pisa un header ya presente.
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var accessToken = context.Request.Query["access_token"];
-                if (!string.IsNullOrEmpty(accessToken) &&
-                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                if (!context.Request.Headers.ContainsKey("Authorization"))
                 {
-                    context.Token = accessToken;
+                    var cookieToken = context.Request.Cookies[AuthCookieNames.AccessToken];
+                    if (!string.IsNullOrEmpty(cookieToken))
+                    {
+                        context.Token = cookieToken;
+                    }
                 }
                 return Task.CompletedTask;
             }
@@ -392,6 +398,36 @@ app.UseCors(FrontendCorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// CSRF (double-submit cookie) para tráfico autenticado por cookie: si el
+// browser manda la cookie nr_at o nr_rt en un request mutante SIN header
+// Authorization, exige que el header X-CSRF-Token coincida con la cookie
+// nr_csrf (legible por JS a propósito). Clientes que sí mandan Authorization
+// (Android, scripts, admin) no dependen de cookies ambient y quedan afuera de
+// este chequeo — CSRF ataca cookies que el browser adjunta solo.
+var mutatingMethods = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "POST", "PUT", "PATCH", "DELETE" };
+app.Use(async (context, next) =>
+{
+    var request = context.Request;
+    var usaCookieAuth = !request.Headers.ContainsKey("Authorization") &&
+        (request.Cookies.ContainsKey(AuthCookieNames.AccessToken) || request.Cookies.ContainsKey(AuthCookieNames.RefreshToken));
+
+    if (mutatingMethods.Contains(request.Method) && usaCookieAuth)
+    {
+        var csrfCookie = request.Cookies[AuthCookieNames.Csrf];
+        var csrfHeader = request.Headers[AuthCookieNames.CsrfHeader].ToString();
+        if (string.IsNullOrEmpty(csrfCookie) || !string.Equals(csrfCookie, csrfHeader, StringComparison.Ordinal))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(
+                """{"status":403,"title":"Forbidden","detail":"CSRF token invalido o ausente."}""");
+            return;
+        }
+    }
+
+    await next();
+});
 
 app.UseRateLimiter();
 

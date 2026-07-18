@@ -1,40 +1,31 @@
 import axios from 'axios'
 
-const TOKEN_KEY = 'nicarunner.token'
-const REFRESH_TOKEN_KEY = 'nicarunner.refresh_token'
-
+// El JWT y el refresh token viajan en cookies httpOnly (nr_at / nr_rt) que el
+// backend setea en login/refresh/logout — el cliente web ya no los lee ni
+// los guarda (localStorage era vulnerable a robo vía XSS). withCredentials
+// hace que el browser adjunte esas cookies en cada request.
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
+  withCredentials: true,
 })
 
-export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+const CSRF_COOKIE_NAME = 'nr_csrf'
+const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete'])
+
+function readCsrfCookie(): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE_NAME}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
 }
 
-export function setStoredToken(token: string | null) {
-  if (token) {
-    localStorage.setItem(TOKEN_KEY, token)
-  } else {
-    localStorage.removeItem(TOKEN_KEY)
-  }
-}
-
-export function getStoredRefreshToken(): string | null {
-  return localStorage.getItem(REFRESH_TOKEN_KEY)
-}
-
-export function setStoredRefreshToken(token: string | null) {
-  if (token) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token)
-  } else {
-    localStorage.removeItem(REFRESH_TOKEN_KEY)
-  }
-}
-
+// Double-submit CSRF: el backend valida que este header coincida con el
+// valor de la cookie nr_csrf en requests mutantes autenticados por cookie.
 apiClient.interceptors.request.use((config) => {
-  const token = getStoredToken()
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  const method = config.method?.toLowerCase()
+  if (method && MUTATING_METHODS.has(method)) {
+    const csrfToken = readCsrfCookie()
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken
+    }
   }
   return config
 })
@@ -49,16 +40,14 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler) {
 // Deduplication: if multiple requests 401 simultaneously, only one refresh
 // call goes out. The rest queue and replay once the refresh resolves.
 let isRefreshing = false
-let pendingQueue: Array<(token: string) => void> = []
+let pendingQueue: Array<() => void> = []
 
-function drainQueue(token: string) {
-  pendingQueue.forEach((resolve) => resolve(token))
+function drainQueue() {
+  pendingQueue.forEach((resolve) => resolve())
   pendingQueue = []
 }
 
 function clearSession() {
-  setStoredToken(null)
-  setStoredRefreshToken(null)
   pendingQueue = []
   onUnauthorized?.()
 }
@@ -78,30 +67,19 @@ apiClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const refreshToken = getStoredRefreshToken()
-    if (!refreshToken) {
-      clearSession()
-      return Promise.reject(error)
-    }
-
     if (isRefreshing) {
-      return new Promise<string>((resolve) => {
+      return new Promise<void>((resolve) => {
         pendingQueue.push(resolve)
-      }).then((newToken) => {
-        original.headers.Authorization = `Bearer ${newToken}`
-        return apiClient(original)
-      })
+      }).then(() => apiClient(original))
     }
 
     original._retry = true
     isRefreshing = true
 
     try {
-      const { data } = await apiClient.post('/auth/refresh', { refreshToken })
-      setStoredToken(data.token)
-      setStoredRefreshToken(data.refreshToken)
-      drainQueue(data.token)
-      original.headers.Authorization = `Bearer ${data.token}`
+      // Sin body: el refresh token viaja en la cookie httpOnly nr_rt.
+      await apiClient.post('/auth/refresh')
+      drainQueue()
       return apiClient(original)
     } catch {
       clearSession()

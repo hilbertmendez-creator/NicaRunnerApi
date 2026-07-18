@@ -12,6 +12,16 @@ export interface AuthResponse {
   mustChangePassword: boolean
 }
 
+// Respuesta de GET /auth/me — usada por el cliente web para saber si hay
+// sesión activa al cargar la app (no puede leer la cookie httpOnly con JS).
+export interface CurrentUserDto {
+  userId: number
+  email: string
+  nombre: string
+  role: UserRole
+  mustChangePassword: boolean
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string
   newPassword: string

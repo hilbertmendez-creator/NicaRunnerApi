@@ -1,69 +1,62 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { login as loginRequest } from '../api/endpoints'
-import { apiClient, getStoredToken, setStoredToken, setStoredRefreshToken, setUnauthorizedHandler } from '../api/client'
+import { login as loginRequest, getCurrentUser } from '../api/endpoints'
+import { apiClient, setUnauthorizedHandler } from '../api/client'
 import { AuthContext, type AuthContextValue, type CurrentUser } from './auth-context'
 
-const USER_STORAGE_KEY = 'nicarunner.user'
-
-function readStoredUser(): CurrentUser | null {
-  const raw = localStorage.getItem(USER_STORAGE_KEY)
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as CurrentUser
-  } catch {
-    return null
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<CurrentUser | null>(() =>
-    getStoredToken() ? readStoredUser() : null,
-  )
+  const [user, setUser] = useState<CurrentUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const logout = useCallback((refreshToken?: string) => {
-    const token = refreshToken ?? localStorage.getItem('nicarunner.refresh_token')
-    if (token) {
-      // Best-effort: revoke the token family on the server. Don't await —
-      // local session is cleared immediately regardless of network outcome.
-      apiClient.post('/auth/logout', { refreshToken: token }).catch(() => {})
-    }
-    setStoredToken(null)
-    setStoredRefreshToken(null)
-    localStorage.removeItem(USER_STORAGE_KEY)
+  const logout = useCallback(() => {
+    // Best-effort: revoke el refresh token y limpia las cookies httpOnly en
+    // el server. No await — la sesión local se limpia igual sin importar el
+    // resultado de red.
+    apiClient.post('/auth/logout').catch(() => {})
     setUser(null)
   }, [])
 
   useEffect(() => {
-    setUnauthorizedHandler(logout)
-  }, [logout])
+    setUnauthorizedHandler(() => setUser(null))
+  }, [])
+
+  // Al montar, la app no tiene forma de leer la cookie httpOnly con JS —
+  // le pregunta al server si hay sesión activa.
+  useEffect(() => {
+    let cancelled = false
+    getCurrentUser()
+      .then((current) => {
+        if (cancelled) return
+        setUser(current)
+      })
+      .catch(() => {
+        // Sin sesión (401) u otro error de red — se trata igual como "no logueado".
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     const response = await loginRequest(email, password)
-    setStoredToken(response.token)
-    setStoredRefreshToken(response.refreshToken)
-    const currentUser: CurrentUser = {
+    setUser({
       userId: response.userId,
       email: response.email,
       nombre: response.nombre,
       role: response.role,
       mustChangePassword: response.mustChangePassword,
-    }
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(currentUser))
-    setUser(currentUser)
-  }, [])
-
-  const clearMustChangePassword = useCallback(() => {
-    setUser((current) => {
-      if (!current) return current
-      const updated = { ...current, mustChangePassword: false }
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated))
-      return updated
     })
   }, [])
 
+  const clearMustChangePassword = useCallback(() => {
+    setUser((current) => (current ? { ...current, mustChangePassword: false } : current))
+  }, [])
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, isAuthenticated: user !== null, login, logout, clearMustChangePassword }),
-    [user, login, logout, clearMustChangePassword],
+    () => ({ user, isAuthenticated: user !== null, isLoading, login, logout, clearMustChangePassword }),
+    [user, isLoading, login, logout, clearMustChangePassword],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
