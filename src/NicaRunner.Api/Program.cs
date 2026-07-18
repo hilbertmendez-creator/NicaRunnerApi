@@ -61,7 +61,11 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 // Add services to the container.
 builder.Services.AddControllers()
-    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -411,4 +415,28 @@ static string NormalizePostgresConnectionString(string connectionString)
     // Prefer (no Require): Render expone Postgres con SSL, pero exigirlo
     // rompería contra un Postgres local sin SSL (ej. Docker en dev/test).
     return $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
+}
+
+/// <summary>
+/// Sqlite y Npgsql devuelven DateTime con Kind=Unspecified (no preservan el
+/// Kind al leer), y System.Text.Json serializa eso sin sufijo "Z" — el
+/// navegador interpreta la hora como LOCAL en vez de UTC, causando un desfase
+/// de 6h en Nicaragua. Todas las columnas DateTime de la app almacenan
+/// instantes UTC, así que Unspecified se re-etiqueta como Utc sin conversión;
+/// Local (poco común) sí se convierte. Se aplica también a DateTime? porque
+/// System.Text.Json envuelve automáticamente los converters de tipos de valor
+/// para su forma Nullable<T>.
+/// </summary>
+sealed class UtcDateTimeConverter : JsonConverter<DateTime>
+{
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => reader.GetDateTime();
+
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+    {
+        var utc = value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            : value.ToUniversalTime();
+        writer.WriteStringValue(utc);
+    }
 }

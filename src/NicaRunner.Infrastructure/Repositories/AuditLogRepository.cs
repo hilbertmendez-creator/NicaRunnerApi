@@ -25,7 +25,7 @@ public class AuditLogRepository(NicaRunnerDbContext context) : IAuditLogReposito
         if (beforeUtc is { } before)
             query = query.Where(a => a.CreatedAt < before); // paginación keyset (sin OFFSET)
 
-        var rows = await query
+        return await query
             .OrderByDescending(a => a.CreatedAt)
             .Take(Math.Clamp(limit, 1, 200))
             .Select(a => new AuditLogDto(
@@ -39,11 +39,5 @@ public class AuditLogRepository(NicaRunnerDbContext context) : IAuditLogReposito
                 a.Autor.Nombre,
                 a.CreatedAt))
             .ToListAsync(ct);
-
-        // Sqlite/Postgres devuelven CreatedAt con Kind=Unspecified (no preservan el
-        // Kind), y System.Text.Json serializa eso sin sufijo "Z" — el navegador lo
-        // interpretaría como hora LOCAL en vez de UTC (AC-8 rompería en 6h en NI).
-        // Se corrige acá, acotado a esta bitácora, sin tocar serialización global.
-        return rows.ConvertAll(r => r with { CreatedAt = DateTime.SpecifyKind(r.CreatedAt, DateTimeKind.Utc) });
     }
 }
