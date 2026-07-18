@@ -92,7 +92,17 @@ builder.Services.AddSwaggerGen(options =>
         Description = "JWT token from POST /api/auth/login"
     });
 });
-builder.Services.AddSignalR();
+var signalRBuilder = builder.Services.AddSignalR();
+var redisConn = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConn))
+{
+    // Backplane necesario para que los mensajes de SignalR lleguen a clientes
+    // conectados a otra instancia cuando la API escala horizontalmente (el
+    // plan free de Render corre una sola instancia, así que hoy esto queda
+    // inactivo — se activa solo seteando ConnectionStrings__Redis). Ver
+    // docs/render-setup.md.
+    signalRBuilder.AddStackExchangeRedis(redisConn);
+}
 
 // URL versioning con dos rutas por controller: la legacy `/api/{resource}` y la
 // nueva `/api/v{version:apiVersion}/{resource}`. Cuando el cliente no especifica
@@ -295,11 +305,18 @@ var app = builder.Build();
 // acceso a shell fácil para correr `dotnet ef database update` antes de cada
 // deploy). En desarrollo se sigue usando `dotnet ef database update` manual
 // contra sqlite. Verificado contra un Postgres real antes de habilitar esto.
+//
+// Un rolling deploy puede tener brevemente dos instancias arrancando a la vez
+// (la vieja terminando de apagarse, la nueva healthcheck-eando), y ambas
+// correrían Migrate() en paralelo contra la misma BD. Se serializa con un
+// advisory lock de Postgres: la segunda instancia espera a que la primera
+// termine y libere el lock; su propio Migrate() posterior es un no-op seguro
+// porque EF Core ya ve las migraciones aplicadas.
 if (!app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
-    db.Database.Migrate();
+    await MigrateWithAdvisoryLockAsync(db);
 }
 
 // Seed idempotente de administradores de backoffice — corre en ambos entornos:
@@ -412,9 +429,56 @@ static string NormalizePostgresConnectionString(string connectionString)
     var database = uri.AbsolutePath.TrimStart('/');
     var port = uri.Port == -1 ? 5432 : uri.Port;
 
-    // Prefer (no Require): Render expone Postgres con SSL, pero exigirlo
-    // rompería contra un Postgres local sin SSL (ej. Docker en dev/test).
-    return $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
+    // Require (no Prefer): esta rama solo la ejercita la URI de Neon en
+    // producción (dev/test usan Sqlite), y Neon siempre soporta TLS con
+    // certificado válido — Prefer permitía degradar silenciosamente a texto
+    // plano si el handshake TLS fallaba. Sin Trust Server Certificate: Neon
+    // usa un certificado firmado por una CA pública, así que la validación
+    // default de Npgsql contra el store del sistema alcanza; confiar en
+    // cualquier certificado exponía a un MITM.
+    return $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require";
+}
+
+/// <summary>
+/// Serializa la aplicación de migraciones entre instancias concurrentes
+/// (rolling deploy) con un advisory lock de Postgres. La instancia que no
+/// consigue el lock espera; cuando lo obtiene, su propio MigrateAsync() ya no
+/// tiene nada pendiente y es un no-op.
+/// </summary>
+static async Task MigrateWithAdvisoryLockAsync(NicaRunnerDbContext db)
+{
+    const long migrationLockId = 72710051; // arbitrario, estable, exclusivo de este propósito
+
+    var connection = db.Database.GetDbConnection();
+    var openedHere = connection.State != System.Data.ConnectionState.Open;
+    if (openedHere)
+    {
+        await connection.OpenAsync();
+    }
+
+    try
+    {
+        await using (var lockCmd = connection.CreateCommand())
+        {
+            lockCmd.CommandText = $"SELECT pg_advisory_lock({migrationLockId})";
+            await lockCmd.ExecuteNonQueryAsync();
+        }
+
+        await db.Database.MigrateAsync();
+    }
+    finally
+    {
+        await using (var unlockCmd = connection.CreateCommand())
+        {
+            unlockCmd.CommandText = $"SELECT pg_advisory_unlock({migrationLockId})";
+            await unlockCmd.ExecuteNonQueryAsync();
+        }
+
+        if (openedHere)
+        {
+            await connection.CloseAsync();
+        }
+    }
 }
 
 /// <summary>
