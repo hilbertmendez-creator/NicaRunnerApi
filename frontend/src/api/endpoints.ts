@@ -11,6 +11,7 @@ import type {
   CreateRaceRequest,
   CreateRunnerRequest,
   CreateUserRequest,
+  CurrentUserDto,
   ForgotPasswordRequest,
   ImportRunnersResultDto,
   NotificationDto,
@@ -35,6 +36,11 @@ import type {
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
   const { data } = await apiClient.post<AuthResponse>('/auth/login', { email, password })
+  return data
+}
+
+export async function getCurrentUser(): Promise<CurrentUserDto> {
+  const { data } = await apiClient.get<CurrentUserDto>('/auth/me')
   return data
 }
 

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import { HubConnectionBuilder, HubConnectionState, LogLevel } from '@microsoft/signalr'
-import { getStoredToken } from '../api/client'
 
 function getHubUrl(): string {
   const apiBase = import.meta.env.VITE_API_URL ?? '/api'
@@ -23,8 +22,10 @@ export function useRaceDashboardHub(raceId: number | null, onResultsChanged: () 
   useEffect(() => {
     if (!raceId) return
 
+    // El JWT viaja en la cookie httpOnly nr_at, que el browser adjunta solo
+    // en el handshake (withCredentials) — ya no hace falta accessTokenFactory.
     const connection = new HubConnectionBuilder()
-      .withUrl(getHubUrl(), { accessTokenFactory: () => getStoredToken() ?? '' })
+      .withUrl(getHubUrl(), { withCredentials: true })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)
       .build()

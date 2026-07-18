@@ -143,6 +143,9 @@ public class AuthService(
 
     public async Task<AuthResponse> RefreshAsync(RefreshRequest request, CancellationToken ct = default)
     {
+        if (string.IsNullOrEmpty(request.RefreshToken))
+            throw new InvalidCredentialsException("Falta el refresh token.");
+
         var result = await refreshTokenService.ValidateAndRotateAsync(request.RefreshToken, ct);
         var access = jwtTokenGenerator.GenerateToken(result.User);
         return new AuthResponse(
@@ -158,7 +161,17 @@ public class AuthService(
     }
 
     public Task LogoutAsync(LogoutRequest request, CancellationToken ct = default) =>
-        refreshTokenService.LogoutAsync(request.RefreshToken, ct);
+        string.IsNullOrEmpty(request.RefreshToken)
+            ? Task.CompletedTask // sin token que revocar (ya deslogueado o cookie ausente) — idempotente
+            : refreshTokenService.LogoutAsync(request.RefreshToken, ct);
+
+    public async Task<CurrentUserDto> GetCurrentUserAsync(int userId, CancellationToken ct = default)
+    {
+        var user = await userRepository.GetByIdAsync(userId, ct)
+            ?? throw new NotFoundException($"No existe el usuario con id {userId}.");
+
+        return new CurrentUserDto(user.Id, user.Email, user.Nombre, user.Role, user.MustChangePassword);
+    }
 
     private async Task<AuthResponse> BuildAuthResponseAsync(User user, CancellationToken ct)
     {
