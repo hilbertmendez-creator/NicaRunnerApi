@@ -1,5 +1,3 @@
-Label from @nicarunner/ui. Use via `window.NicaRunnerUI.Label` (bundle loaded from the root `_ds_bundle.js`).
-
 # Label
 
 ## When to use
@@ -16,14 +14,3 @@ Set `htmlFor` to match the field's `id` — this is what associates the label wi
 ```
 
 Skipping `htmlFor` is the most common way this component gets misused — the label will still render, but clicking it won't focus the field, and screen readers won't announce the field's purpose.
-
-## Props
-
-```ts
-interface LabelProps {
-  className?: string;
-  id?: string;
-  style?: react.CSSProperties;
-  children?: React.ReactNode;
-}
-```

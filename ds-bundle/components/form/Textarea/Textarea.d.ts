@@ -5,12 +5,11 @@ import * as React from 'react';
  * @replaces textarea
  */
 export interface TextareaProps {
+  invalid?: boolean;
   className?: string;
   id?: string;
   style?: react.CSSProperties;
   children?: React.ReactNode;
-  /** Allows getting a ref to the component instance. Once the component unmounts, React will set `ref.current` to `null` (or  */
-  ref?: React.Ref;
 }
 
 export declare const Textarea: React.ComponentType<TextareaProps>;

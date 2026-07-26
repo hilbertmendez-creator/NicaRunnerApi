@@ -1,5 +1,3 @@
-LoadingText from @nicarunner/ui. Use via `window.NicaRunnerUI.LoadingText` (bundle loaded from the root `_ds_bundle.js`).
-
 # LoadingText
 
 ## When to use
@@ -13,12 +11,3 @@ Carries `role="status"` and `aria-live="polite"`, so the message is announced to
 ## Usage
 
 Default message is "Cargando..." — override `message` when a more specific label helps ("Cargando dashboard...", "Guardando cambios..."). Keep it short; this isn't a progress-percentage indicator, it's a "something is happening" signal.
-
-## Props
-
-```ts
-interface LoadingTextProps {
-  message?: string;
-  className?: string;
-}
-```

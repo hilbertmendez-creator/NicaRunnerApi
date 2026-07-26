@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { LoadingText } from './LoadingText'
 
 export interface Column<T> {
   header: string
@@ -11,9 +12,22 @@ interface DataTableProps<T> {
   data: T[]
   rowKey: (row: T) => string | number
   emptyState?: ReactNode
+  isLoading?: boolean
+  loadingMessage?: string
 }
 
-export function DataTable<T>({ columns, data, rowKey, emptyState }: DataTableProps<T>) {
+export function DataTable<T>({
+  columns,
+  data,
+  rowKey,
+  emptyState,
+  isLoading = false,
+  loadingMessage,
+}: DataTableProps<T>) {
+  if (isLoading) {
+    return <LoadingText message={loadingMessage} />
+  }
+
   if (data.length === 0 && emptyState) {
     return <>{emptyState}</>
   }
@@ -29,20 +43,24 @@ export function DataTable<T>({ columns, data, rowKey, emptyState }: DataTablePro
           <div
             key={rowKey(row)}
             className="p-3"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)' }}
+            style={{
+              background: 'var(--bg-card, #ffffff)',
+              border: '1px solid var(--bd-card, #e4e4e7)',
+              borderRadius: 'var(--radius-card, 0.5rem)',
+            }}
           >
             {labeledColumns.map((col, idx) => (
               <div key={idx} className="flex items-start justify-between gap-3 py-1 text-sm">
-                <span className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-th)' }}>
+                <span className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-th, #71717a)' }}>
                   {col.header}
                 </span>
-                <span className={`text-right ${col.className ?? ''}`} style={{ color: 'var(--text-hi)' }}>
+                <span className={`text-right ${col.className ?? ''}`} style={{ color: 'var(--text-hi, #18181b)' }}>
                   {col.render(row)}
                 </span>
               </div>
             ))}
             {actionColumns.length > 0 && (
-              <div className="mt-2 flex justify-end gap-2 border-t pt-2" style={{ borderColor: 'var(--bd-row)' }}>
+              <div className="mt-2 flex justify-end gap-2 border-t pt-2" style={{ borderColor: 'var(--bd-row, #e4e4e7)' }}>
                 {actionColumns.map((col, idx) => (
                   <div key={idx}>{col.render(row)}</div>
                 ))}
@@ -55,16 +73,20 @@ export function DataTable<T>({ columns, data, rowKey, emptyState }: DataTablePro
       {/* Tabla — sm y mayores */}
       <div
         className="hidden overflow-x-auto sm:block"
-        style={{ border: '1px solid var(--bd-card)', background: 'var(--bg-card)' }}
+        style={{ border: '1px solid var(--bd-card, #e4e4e7)', background: 'var(--bg-card, #ffffff)' }}
       >
         <table className="w-full border-collapse text-left text-sm">
-          <thead>
+          <thead className="sticky top-0">
             <tr
               className="text-xs uppercase tracking-wide"
-              style={{ borderBottom: '1px solid var(--bd)', background: 'var(--bg-th)', color: 'var(--text-th)' }}
+              style={{
+                borderBottom: '1px solid var(--bd, #e4e4e7)',
+                background: 'var(--bg-th, #fafafa)',
+                color: 'var(--text-th, #71717a)',
+              }}
             >
               {columns.map((col, idx) => (
-                <th key={idx} className={`h-8 px-3 font-medium ${col.className ?? ''}`}>
+                <th key={idx} scope="col" className={`h-8 px-3 font-medium ${col.className ?? ''}`}>
                   {col.header}
                 </th>
               ))}
@@ -75,7 +97,7 @@ export function DataTable<T>({ columns, data, rowKey, emptyState }: DataTablePro
               <tr
                 key={rowKey(row)}
                 className="row-hover h-9"
-                style={{ borderBottom: '1px solid var(--bd-row)', color: 'var(--text-hi)' }}
+                style={{ borderBottom: '1px solid var(--bd-row, #e4e4e7)', color: 'var(--text-hi, #18181b)' }}
               >
                 {columns.map((col, idx) => (
                   <td key={idx} className={`px-3 align-middle ${col.className ?? ''}`}>

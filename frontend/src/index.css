@@ -12,14 +12,17 @@
   --color-official-50: #ecfdf5;
   --color-official-200: #a7f3d0;
   --color-official-600: #059669;
+  --color-official-700: #047857;
 
   --color-dispute-50: #fffbeb;
   --color-dispute-200: #fde68a;
   --color-dispute-600: #d97706;
+  --color-dispute-700: #b45309;
 
   --color-critical-50: #fef2f2;
   --color-critical-200: #fecaca;
   --color-critical-600: #dc2626;
+  --color-critical-700: #b91c1c;
 }
 
 body {

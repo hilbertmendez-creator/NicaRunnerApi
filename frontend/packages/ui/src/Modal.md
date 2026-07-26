@@ -1,5 +1,3 @@
-Modal from @nicarunner/ui. Use via `window.NicaRunnerUI.Modal` (bundle loaded from the root `_ds_bundle.js`).
-
 # Modal
 
 ## When to use
@@ -20,14 +18,3 @@ Modal's card background/border/radius come from `--bg-card`, `--bd-card`, `--rad
 ## Sizing
 
 `maxWidth` accepts `"md"` (default) or `"lg"` — pick `"lg"` only when the content genuinely needs the extra width (e.g. a form with side-by-side fields); default to `"md"` otherwise to avoid an oversized dialog for short content.
-
-## Props
-
-```ts
-interface ModalProps {
-  onClose: () => void;
-  children: React.ReactNode;
-  maxWidth?: "md" | "lg";
-  labelledBy?: string;
-}
-```
