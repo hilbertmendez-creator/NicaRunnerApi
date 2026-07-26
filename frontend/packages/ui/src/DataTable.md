@@ -1,5 +1,3 @@
-DataTable from @nicarunner/ui. Use via `window.NicaRunnerUI.DataTable` (bundle loaded from the root `_ds_bundle.js`).
-
 # DataTable
 
 ## When to use
@@ -25,16 +23,3 @@ The primary way to show tabular data (runners, results, categories). Below the `
 ## Theming note
 
 Card background/border/header shading come from app-level theme tokens (`--bg-card`, `--bd-card`, `--bg-th`, `--text-hi`, `--text-th`, `--bd-row`, `--bd`) with built-in fallbacks — see Modal's docs for the same note.
-
-## Props
-
-```ts
-interface DataTableProps {
-  columns: Column<T>[];
-  data: T[];
-  rowKey: (row: T) => string | number;
-  emptyState?: React.ReactNode;
-  isLoading?: boolean;
-  loadingMessage?: string;
-}
-```

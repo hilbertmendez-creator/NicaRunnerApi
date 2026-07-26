@@ -1,5 +1,3 @@
-Button from @nicarunner/ui. Use via `window.NicaRunnerUI.Button` (bundle loaded from the root `_ds_bundle.js`).
-
 # Button
 
 ## When to use
@@ -24,16 +22,3 @@ Don't use more than one `primary` button per screen or dialog — it should alwa
 | `info` | Navigation, view details |
 
 Size prop: `md` (default) or `sm`. Use `sm` inside dense contexts (table row actions, compact toolbars), `md` everywhere else.
-
-## Props
-
-```ts
-interface ButtonProps {
-  variant?: "primary" | "secondary" | "destructive" | "info";
-  size?: "sm" | "md";
-  className?: string;
-  id?: string;
-  style?: react.CSSProperties;
-  children?: React.ReactNode;
-}
-```

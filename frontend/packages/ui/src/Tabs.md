@@ -1,5 +1,3 @@
-Tabs from @nicarunner/ui. Use via `window.NicaRunnerUI.Tabs` (bundle loaded from the root `_ds_bundle.js`).
-
 # Tabs
 
 ## When to use
@@ -17,14 +15,3 @@ Fully implements the WAI-ARIA tabs pattern, not just visual styling:
 ## Usage
 
 `tabs` is `{ id, label }[]`; `activeTab` and `onChange` are controlled — this component holds no internal state, so keep `activeTab` in sync with whatever drives the panel content.
-
-## Props
-
-```ts
-interface TabsProps {
-  tabs: TabItem[];
-  activeTab: string;
-  onChange: (id: string) => void;
-  className?: string;
-}
-```

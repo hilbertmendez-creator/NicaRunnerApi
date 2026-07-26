@@ -1,5 +1,3 @@
-Input from @nicarunner/ui. Use via `window.NicaRunnerUI.Input` (bundle loaded from the root `_ds_bundle.js`).
-
 # Input
 
 ## When to use
@@ -19,15 +17,3 @@ Pair it with a visible error message (e.g. an `ErrorAlert` or inline text) — `
 ## Accessibility
 
 Always pair with a `<Label htmlFor="the-input-id">` — this component doesn't render its own label. `forwardRef` is supported, so it composes with form libraries that need a ref (react-hook-form, etc.) without extra wiring.
-
-## Props
-
-```ts
-interface InputProps {
-  invalid?: boolean;
-  className?: string;
-  id?: string;
-  style?: react.CSSProperties;
-  children?: React.ReactNode;
-}
-```

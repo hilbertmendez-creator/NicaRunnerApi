@@ -1,5 +1,3 @@
-ErrorAlert from @nicarunner/ui. Use via `window.NicaRunnerUI.ErrorAlert` (bundle loaded from the root `_ds_bundle.js`).
-
 # ErrorAlert
 
 ## When to use
@@ -19,12 +17,3 @@ Always give the user something they can act on, not just a description of what b
 - Avoid: "Error." / "Something went wrong." — names nothing, suggests no next step.
 
 There is no retry button built in — if the failed action is retryable, add one alongside the message rather than relying on the user to re-trigger it manually.
-
-## Props
-
-```ts
-interface ErrorAlertProps {
-  message: string;
-  className?: string;
-}
-```

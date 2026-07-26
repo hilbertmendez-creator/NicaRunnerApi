@@ -5,12 +5,11 @@ import * as React from 'react';
  * @replaces input
  */
 export interface InputProps {
+  invalid?: boolean;
   className?: string;
   id?: string;
   style?: react.CSSProperties;
   children?: React.ReactNode;
-  /** Allows getting a ref to the component instance. Once the component unmounts, React will set `ref.current` to `null` (or  */
-  ref?: React.Ref;
 }
 
 export declare const Input: React.ComponentType<InputProps>;

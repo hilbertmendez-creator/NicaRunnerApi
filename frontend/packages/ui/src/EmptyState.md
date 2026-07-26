@@ -1,5 +1,3 @@
-EmptyState from @nicarunner/ui. Use via `window.NicaRunnerUI.EmptyState` (bundle loaded from the root `_ds_bundle.js`).
-
 # EmptyState
 
 ## When to use
@@ -18,13 +16,3 @@ Skip `action` only when there's genuinely nothing the user can do right now (e.g
 ## Copy guidance
 
 Keep `message` specific to what's empty and why, not a generic "No data." — "Sin resultados capturados todavía." tells the user this is expected/temporary, not an error.
-
-## Props
-
-```ts
-interface EmptyStateProps {
-  message: string;
-  className?: string;
-  action?: { label: string; onClick: () => void; };
-}
-```

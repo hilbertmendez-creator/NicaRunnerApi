@@ -4,7 +4,7 @@ export function Label({ className = '', style, ...rest }: LabelHTMLAttributes<HT
   return (
     <label
       className={`mb-1 block text-sm font-medium ${className}`}
-      style={{ color: 'var(--text-lo)', ...style }}
+      style={{ color: 'var(--text-lo, #52525b)', ...style }}
       {...rest}
     />
   )
