@@ -21,11 +21,16 @@ public class ResultServiceIdempotencyTests
     private void RaceExists(int raceId = 1)
     {
         _races.Setup(r => r.GetByIdAsync(raceId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Race { Id = raceId, Nombre = "Test", AdminId = 1 });
+            .ReturnsAsync(new Race
+            {
+                Id = raceId,
+                Nombre = "Test",
+                AdminId = 1,
+                RaceStartUtc = new DateTime(2026, 6, 29, 9, 0, 0, DateTimeKind.Utc)
+            });
     }
 
-    private static CreateResultRequest MakeRequest(string? dorsal = null) =>
-        new(dorsal, new DateTime(2026, 6, 29, 10, 0, 0, DateTimeKind.Utc));
+    private static CreateResultRequest MakeRequest(string? dorsal = null) => new(dorsal);
 
     // POST sin Idempotency-Key: comportamiento legacy preservado. IdempotencyKey
     // queda NULL en el Result persistido y nunca se consulta GetByIdempotencyKeyAsync.
@@ -199,33 +204,38 @@ public class ResultServiceIdempotencyTests
             () => BuildService().CreateAsync(1, MakeRequest(), capturistaId: 5));
     }
 
-    // El tiempo de la request (2026-06-29 10:00 UTC, ver MakeRequest) queda
-    // antes del inicio real de la carrera → debe rechazarse.
+    // El servidor es la única fuente del instante de llegada: el request no
+    // lleva ningún tiempo, así que no hay valor de cliente que validar ni
+    // rechazar por estar en el pasado o en el futuro. TiempoLlegada sale del
+    // reloj del servidor en el momento del POST.
     [Fact]
-    public async Task Create_TiempoAnteriorAlInicioDeLaCarrera_LanzaValidationException()
+    public async Task Create_FijaTiempoLlegadaConElRelojDelServidor()
     {
-        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(new Race
-        {
-            Id = 1,
-            Nombre = "Test",
-            AdminId = 1,
-            RaceStartUtc = new DateTime(2026, 6, 29, 11, 0, 0, DateTimeKind.Utc)
-        });
+        RaceExists(1);
+        var before = DateTime.UtcNow;
+        Result? added = null;
+        _results.Setup(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>()))
+            .Callback<Result, CancellationToken>((r, _) => { added = r; r.Id = 1; })
+            .Returns(Task.CompletedTask);
+        _results.Setup(r => r.GetByIdAsync(1, 1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => added);
+
+        await BuildService().CreateAsync(1, MakeRequest(), capturistaId: 5);
+        var after = DateTime.UtcNow;
+
+        Assert.NotNull(added);
+        Assert.InRange(added!.TiempoLlegada, before, after);
+    }
+
+    // Sin RaceStartUtc no hay contra qué medir una llegada: la carrera nunca arrancó.
+    [Fact]
+    public async Task Create_CarreraSinArrancar_LanzaValidationException()
+    {
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Race { Id = 1, Nombre = "Test", AdminId = 1 });
 
         await Assert.ThrowsAsync<ValidationException>(
             () => BuildService().CreateAsync(1, MakeRequest(), capturistaId: 5));
-
-        _results.Verify(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Create_TiempoFuturo_LanzaValidationException()
-    {
-        RaceExists();
-        var futureRequest = new CreateResultRequest(null, DateTime.UtcNow.AddDays(1));
-
-        await Assert.ThrowsAsync<ValidationException>(
-            () => BuildService().CreateAsync(1, futureRequest, capturistaId: 5));
 
         _results.Verify(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>()), Times.Never);
     }

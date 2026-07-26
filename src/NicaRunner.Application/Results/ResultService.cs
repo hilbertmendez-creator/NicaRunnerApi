@@ -26,7 +26,12 @@ public class ResultService(
                 return ToDto(existing);
         }
 
-        ValidateTiempoLlegada(race, request.TiempoLlegada);
+        // El chequeo de "el tiempo no puede ser anterior al inicio" se volvió innecesario: el
+        // servidor ya no acepta un tiempo del cliente, así que no hay nada que pueda estar
+        // desfasado hacia atrás. Pero sigue faltando esto: sin RaceStartUtc, no hay contra qué
+        // medir la llegada en absoluto.
+        if (race.RaceStartUtc is null)
+            throw new ValidationException("La carrera todavía no arrancó.");
 
         Runner? runner = null;
         if (!string.IsNullOrWhiteSpace(request.Dorsal))
@@ -38,12 +43,15 @@ public class ResultService(
                 throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
         }
 
+        // El servidor es la única fuente de verdad para el instante de llegada: lo toma de su
+        // propio reloj al recibir el request, en vez de confiar en el reloj del celular del
+        // juez (que puede estar desincronizado de forma distinta en cada dispositivo).
         var result = new Result
         {
             RaceId = raceId,
             RunnerId = runner?.Id,
             Dorsal = runner?.Dorsal,
-            TiempoLlegada = request.TiempoLlegada,
+            TiempoLlegada = DateTime.UtcNow,
             CategoryId = runner?.CategoryId,
             CapturistaId = capturistaId,
             IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey
