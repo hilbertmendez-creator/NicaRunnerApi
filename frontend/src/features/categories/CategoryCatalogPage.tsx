@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
-import { deleteCategoryCatalogEntry, getCategoryCatalog } from '../../api/endpoints'
+import { deleteCategoryCatalogEntry, getCategoryAudit, getCategoryCatalog } from '../../api/endpoints'
 import type { CategoryDto } from '../../api/types'
 import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import { CategoryCatalogFormModal } from './CategoryCatalogFormModal'
+import { EntityAuditHistory } from '../../components/EntityAuditHistory'
 
 export function CategoryCatalogPage() {
   const [categories, setCategories] = useState<CategoryDto[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<CategoryDto | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [auditingCategory, setAuditingCategory] = useState<CategoryDto | null>(null)
 
   function reload() {
     setLoading(true)
@@ -48,6 +50,9 @@ export function CategoryCatalogPage() {
         <div className="flex gap-2">
           <Button size="sm" onClick={() => setEditing(cat)}>
             Editar
+          </Button>
+          <Button size="sm" onClick={() => setAuditingCategory(cat)}>
+            Historial
           </Button>
           <Button size="sm" variant="destructive" onClick={() => handleDelete(cat)}>
             Eliminar
@@ -97,6 +102,14 @@ export function CategoryCatalogPage() {
             setEditing(null)
             reload()
           }}
+        />
+      )}
+
+      {auditingCategory && (
+        <EntityAuditHistory
+          title={`Auditoría — categoría "${auditingCategory.nombreCategoria}"`}
+          load={() => getCategoryAudit(auditingCategory.id)}
+          onClose={() => setAuditingCategory(null)}
         />
       )}
     </div>

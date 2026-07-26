@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Notifications.EmailTemplates;
@@ -12,7 +13,8 @@ public class UserManagementService(
     IUserRepository userRepository,
     IPasswordHasher passwordHasher,
     IEnumerable<INotificationSender> notificationSenders,
-    IEmailTemplateRenderer emailTemplateRenderer) : IUserManagementService
+    IEmailTemplateRenderer emailTemplateRenderer,
+    IAuditService auditService) : IUserManagementService
 {
     private const string TempPasswordAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -73,10 +75,30 @@ public class UserManagementService(
                 throw new ForbiddenException("No se puede cambiar el rol de un usuario administrador semilla.");
         }
 
+        // Diff de valores viejos (aún en memoria, sin query extra) antes de mutar.
+        var changes = new List<FieldChange>();
+
+        if (request.Nombre is { } nombreRaw)
+        {
+            var nombre = nombreRaw.Trim();
+            if (nombre.Length == 0)
+                throw new ValidationException("El nombre no puede estar vacío.");
+            changes.Add(new FieldChange("Nombre", user.Nombre, nombre));
+            user.Nombre = nombre;
+        }
         if (request.Role is { } role)
+        {
+            changes.Add(new FieldChange("Role", AuditValue.Of(user.Role), AuditValue.Of(role)));
             user.Role = role;
+        }
         if (request.IsActive is { } isActive)
+        {
+            changes.Add(new FieldChange("IsActive", AuditValue.Of(user.IsActive), AuditValue.Of(isActive)));
             user.IsActive = isActive;
+        }
+
+        // Encola solo lo que cambió; se persiste junto al usuario en el mismo SaveChanges.
+        auditService.TrackChanges(AuditEntityTypes.User, user.Id, currentUserId, changes);
 
         await userRepository.SaveChangesAsync(ct);
         return ToDto(user);

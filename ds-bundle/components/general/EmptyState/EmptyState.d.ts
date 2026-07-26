@@ -6,6 +6,7 @@ import * as React from 'react';
 export interface EmptyStateProps {
   message: string;
   className?: string;
+  action?: { label: string; onClick: () => void; };
 }
 
 export declare const EmptyState: React.ComponentType<EmptyStateProps>;

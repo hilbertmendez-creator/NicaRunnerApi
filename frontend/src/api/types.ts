@@ -3,6 +3,18 @@ export type UserRole = 'Capturista' | 'Administrador' | 'Lector'
 export interface AuthResponse {
   token: string
   expiresAtUtc: string
+  refreshToken: string
+  refreshExpiresAtUtc: string
+  userId: number
+  email: string
+  nombre: string
+  role: UserRole
+  mustChangePassword: boolean
+}
+
+// Respuesta de GET /auth/me — usada por el cliente web para saber si hay
+// sesión activa al cargar la app (no puede leer la cookie httpOnly con JS).
+export interface CurrentUserDto {
   userId: number
   email: string
   nombre: string
@@ -42,6 +54,19 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
   role?: UserRole
   isActive?: boolean
+  nombre?: string
+}
+
+export interface AuditLogDto {
+  id: number
+  entityType: string
+  entityId: number
+  campo: string
+  valorAnterior: string | null
+  valorNuevo: string | null
+  autorId: number
+  autorNombre: string
+  createdAt: string
 }
 
 export type RaceStatus = 'Planeada' | 'EnCurso' | 'Terminada'

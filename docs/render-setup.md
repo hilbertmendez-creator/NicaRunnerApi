@@ -83,6 +83,18 @@ con el valor viejo hasta que Render redeploye), después el secret de GitHub.
 Ventana de riesgo breve durante la cual el cron podría fallar una vez — no
 crítico, el próximo run del día siguiente ya usa el valor nuevo.
 
+## Variable opcional: `ConnectionStrings__Redis`
+
+Solo hace falta si el plan de Render deja de ser `free` y el servicio escala a
+más de una instancia. SignalR necesita un backplane compartido para que un
+mensaje enviado desde la instancia A llegue a un cliente conectado a la
+instancia B; sin esto, notificaciones en tiempo real se pierden de forma
+intermitente al escalar horizontalmente. Con una sola instancia (plan actual)
+esta variable no es necesaria — SignalR funciona igual sin ella.
+
+Si escalás: provisionar un Redis (Render Key Value, Upstash, etc.) y setear
+`ConnectionStrings__Redis` con la connection string. La API lo detecta solo.
+
 ## Después de setear las 5
 
 Render hace **redeploy automático** al guardar variables. Esperar a que el

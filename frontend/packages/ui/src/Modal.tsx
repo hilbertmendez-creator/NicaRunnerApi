@@ -46,9 +46,9 @@ export function Modal({ onClose, children, maxWidth = 'md', labelledBy }: ModalP
         aria-labelledby={labelledBy}
         className={`w-full ${MAX_WIDTH_CLASSES[maxWidth]} max-h-[90vh] overflow-y-auto p-6`}
         style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--bd-card)',
-          borderRadius: 'var(--radius-card)',
+          background: 'var(--bg-card, #ffffff)',
+          border: '1px solid var(--bd-card, #e4e4e7)',
+          borderRadius: 'var(--radius-card, 0.5rem)',
         }}
       >
         {children}

@@ -10,10 +10,10 @@ interface MetricCardProps {
 
 const VARIANT_CLASSES: Record<MetricCardVariant, { bg: string; label: string; value: string }> = {
   gray: { bg: 'bg-white border border-zinc-200', label: 'text-zinc-500', value: 'text-zinc-900' },
-  orange: { bg: 'bg-dispute-50 border border-dispute-200', label: 'text-dispute-600', value: 'text-dispute-600' },
-  teal: { bg: 'bg-official-50 border border-official-200', label: 'text-official-600', value: 'text-official-600' },
-  amber: { bg: 'bg-dispute-50 border border-dispute-200', label: 'text-dispute-600', value: 'text-dispute-600' },
-  red: { bg: 'bg-critical-50 border border-critical-200', label: 'text-critical-600', value: 'text-critical-600' },
+  orange: { bg: 'bg-orange-50 border border-orange-300', label: 'text-orange-800', value: 'text-orange-800' },
+  teal: { bg: 'bg-official-50 border border-official-200', label: 'text-official-700', value: 'text-official-600' },
+  amber: { bg: 'bg-dispute-50 border border-dispute-200', label: 'text-dispute-700', value: 'text-dispute-600' },
+  red: { bg: 'bg-critical-50 border border-critical-200', label: 'text-critical-700', value: 'text-critical-600' },
 }
 
 const SIZE_CLASSES = {

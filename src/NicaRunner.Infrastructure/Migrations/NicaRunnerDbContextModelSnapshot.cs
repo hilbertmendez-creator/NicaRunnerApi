@@ -17,6 +17,50 @@ namespace NicaRunner.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.28");
 
+            modelBuilder.Entity("NicaRunner.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AutorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Campo")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ValorAnterior")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ValorNuevo")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AutorId");
+
+                    b.HasIndex("EntityType", "EntityId", "CreatedAt")
+                        .IsDescending(false, false, true)
+                        .HasDatabaseName("IX_AuditLog_Entity_Created");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("NicaRunner.Domain.Entities.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -478,6 +522,17 @@ namespace NicaRunner.Infrastructure.Migrations
                         .HasFilter("\"GoogleId\" IS NOT NULL");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("NicaRunner.Domain.Entities.AuditLog", b =>
+                {
+                    b.HasOne("NicaRunner.Domain.Entities.User", "Autor")
+                        .WithMany()
+                        .HasForeignKey("AutorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Autor");
                 });
 
             modelBuilder.Entity("NicaRunner.Domain.Entities.NotificationLog", b =>

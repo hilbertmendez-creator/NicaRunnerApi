@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { deleteRace, getRaces } from '../../api/endpoints'
+import { deleteRace, getRaceAudit, getRaces } from '../../api/endpoints'
 import type { RaceDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { StatusBadge } from '../../components/StatusBadge'
 import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import { RaceFormModal } from './RaceFormModal'
+import { EntityAuditHistory } from '../../components/EntityAuditHistory'
 import { pageTitle } from '../../theme/styles'
 
 export function RacesPage() {
@@ -17,6 +18,7 @@ export function RacesPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<RaceDto | null>(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [auditingRace, setAuditingRace] = useState<RaceDto | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   function reload() {
@@ -74,6 +76,9 @@ export function RacesPage() {
               <Button size="sm" onClick={() => setEditing(race)}>
                 Editar
               </Button>
+              <Button size="sm" onClick={() => setAuditingRace(race)}>
+                Historial
+              </Button>
               <Button size="sm" variant="destructive" onClick={() => handleDelete(race)}>
                 Eliminar
               </Button>
@@ -127,6 +132,14 @@ export function RacesPage() {
             setEditing(null)
             reload()
           }}
+        />
+      )}
+
+      {auditingRace && (
+        <EntityAuditHistory
+          title={`Auditoría — carrera "${auditingRace.nombre}"`}
+          load={() => getRaceAudit(auditingRace.id)}
+          onClose={() => setAuditingRace(null)}
         />
       )}
     </div>

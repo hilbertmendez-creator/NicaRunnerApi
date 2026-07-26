@@ -9,6 +9,8 @@ export interface DataTableProps<T> {
   data: T[];
   rowKey: (row: T) => string | number;
   emptyState?: React.ReactNode;
+  isLoading?: boolean;
+  loadingMessage?: string;
 }
 
 export declare const DataTable: React.ComponentType<DataTableProps>;

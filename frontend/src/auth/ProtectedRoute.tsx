@@ -7,7 +7,11 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
+
+  if (isLoading) {
+    return <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-app)' }} />
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />

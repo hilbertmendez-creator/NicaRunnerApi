@@ -4,7 +4,7 @@ using NicaRunner.Application.Common.Exceptions;
 
 namespace NicaRunner.Api.Middleware;
 
-public class ExceptionHandlingMiddleware(RequestDelegate next)
+public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -31,6 +31,11 @@ public class ExceptionHandlingMiddleware(RequestDelegate next)
         catch (ValidationException ex)
         {
             await WriteProblemAsync(context, HttpStatusCode.BadRequest, ex.Message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unhandled exception for {Method} {Path}", context.Request.Method, context.Request.Path);
+            await WriteProblemAsync(context, HttpStatusCode.InternalServerError, "An unexpected error occurred.");
         }
     }
 

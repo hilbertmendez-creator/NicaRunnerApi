@@ -33,6 +33,10 @@ publish/
 !.claude/skills/graphify/
 .claude-flow/
 .agent/
+.swarm/
+.atl/
+*.rvf
+*.rvf.lock
 
 ## graphify knowledge graph (regenerated via git hook / /graphify --update)
 graphify-out/

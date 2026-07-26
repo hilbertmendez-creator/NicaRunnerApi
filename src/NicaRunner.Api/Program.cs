@@ -12,11 +12,13 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Formatting.Compact;
+using NicaRunner.Api.Auth;
 using NicaRunner.Api.Dev;
 using NicaRunner.Api.Hubs;
 using NicaRunner.Api.Middleware;
 using NicaRunner.Application.Admin;
 using NicaRunner.Application.Auth;
+using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Interfaces;
@@ -60,7 +62,11 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 // Add services to the container.
 builder.Services.AddControllers()
-    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -87,7 +93,17 @@ builder.Services.AddSwaggerGen(options =>
         Description = "JWT token from POST /api/auth/login"
     });
 });
-builder.Services.AddSignalR();
+var signalRBuilder = builder.Services.AddSignalR();
+var redisConn = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrWhiteSpace(redisConn))
+{
+    // Backplane necesario para que los mensajes de SignalR lleguen a clientes
+    // conectados a otra instancia cuando la API escala horizontalmente (el
+    // plan free de Render corre una sola instancia, así que hoy esto queda
+    // inactivo — se activa solo seteando ConnectionStrings__Redis). Ver
+    // docs/render-setup.md.
+    signalRBuilder.AddStackExchangeRedis(redisConn);
+}
 
 // URL versioning con dos rutas por controller: la legacy `/api/{resource}` y la
 // nueva `/api/v{version:apiVersion}/{resource}`. Cuando el cliente no especifica
@@ -141,6 +157,7 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IRunnerRepository, RunnerRepository>();
 builder.Services.AddScoped<IResultRepository, ResultRepository>();
 builder.Services.AddScoped<IResultAuditRepository, ResultAuditRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IExcelRunnerParser, ExcelRunnerParser>();
 builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenRepository>();
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
@@ -159,6 +176,7 @@ builder.Services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupServi
 builder.Services.AddScoped<IPublicTokenCleanupService, PublicTokenCleanupService>();
 builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IRaceCategoryService, RaceCategoryService>();
@@ -186,19 +204,24 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
         };
 
-        // El cliente de SignalR (browser) no puede mandar el header Authorization en
-        // el handshake de WebSocket, así que manda el JWT como query string
-        // "?access_token=...". Solo se acepta ahí, y solo para el path del hub —
-        // el resto de la API sigue exigiendo el header Authorization normal.
+        // El cliente web (browser) no manda el header Authorization: el JWT
+        // viaja en la cookie httpOnly nr_at (ver AuthController). Si no vino
+        // el header, se cae a la cookie — cubre tanto la API normal como el
+        // handshake de WebSocket del hub de SignalR (el browser adjunta
+        // cookies automáticamente ahí también). La app Android y cualquier
+        // cliente que sí mande Authorization siguen priorizando el header, sin
+        // cambios — este fallback nunca pisa un header ya presente.
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var accessToken = context.Request.Query["access_token"];
-                if (!string.IsNullOrEmpty(accessToken) &&
-                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                if (!context.Request.Headers.ContainsKey("Authorization"))
                 {
-                    context.Token = accessToken;
+                    var cookieToken = context.Request.Cookies[AuthCookieNames.AccessToken];
+                    if (!string.IsNullOrEmpty(cookieToken))
+                    {
+                        context.Token = cookieToken;
+                    }
                 }
                 return Task.CompletedTask;
             }
@@ -288,11 +311,18 @@ var app = builder.Build();
 // acceso a shell fácil para correr `dotnet ef database update` antes de cada
 // deploy). En desarrollo se sigue usando `dotnet ef database update` manual
 // contra sqlite. Verificado contra un Postgres real antes de habilitar esto.
+//
+// Un rolling deploy puede tener brevemente dos instancias arrancando a la vez
+// (la vieja terminando de apagarse, la nueva healthcheck-eando), y ambas
+// correrían Migrate() en paralelo contra la misma BD. Se serializa con un
+// advisory lock de Postgres: la segunda instancia espera a que la primera
+// termine y libere el lock; su propio Migrate() posterior es un no-op seguro
+// porque EF Core ya ve las migraciones aplicadas.
 if (!app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
-    db.Database.Migrate();
+    await MigrateWithAdvisoryLockAsync(db);
 }
 
 // Seed idempotente de administradores de backoffice — corre en ambos entornos:
@@ -369,6 +399,36 @@ app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 
+// CSRF (double-submit cookie) para tráfico autenticado por cookie: si el
+// browser manda la cookie nr_at o nr_rt en un request mutante SIN header
+// Authorization, exige que el header X-CSRF-Token coincida con la cookie
+// nr_csrf (legible por JS a propósito). Clientes que sí mandan Authorization
+// (Android, scripts, admin) no dependen de cookies ambient y quedan afuera de
+// este chequeo — CSRF ataca cookies que el browser adjunta solo.
+var mutatingMethods = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "POST", "PUT", "PATCH", "DELETE" };
+app.Use(async (context, next) =>
+{
+    var request = context.Request;
+    var usaCookieAuth = !request.Headers.ContainsKey("Authorization") &&
+        (request.Cookies.ContainsKey(AuthCookieNames.AccessToken) || request.Cookies.ContainsKey(AuthCookieNames.RefreshToken));
+
+    if (mutatingMethods.Contains(request.Method) && usaCookieAuth)
+    {
+        var csrfCookie = request.Cookies[AuthCookieNames.Csrf];
+        var csrfHeader = request.Headers[AuthCookieNames.CsrfHeader].ToString();
+        if (string.IsNullOrEmpty(csrfCookie) || !string.Equals(csrfCookie, csrfHeader, StringComparison.Ordinal))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/problem+json";
+            await context.Response.WriteAsync(
+                """{"status":403,"title":"Forbidden","detail":"CSRF token invalido o ausente."}""");
+            return;
+        }
+    }
+
+    await next();
+});
+
 app.UseRateLimiter();
 
 app.MapControllers();
@@ -405,7 +465,78 @@ static string NormalizePostgresConnectionString(string connectionString)
     var database = uri.AbsolutePath.TrimStart('/');
     var port = uri.Port == -1 ? 5432 : uri.Port;
 
-    // Prefer (no Require): Render expone Postgres con SSL, pero exigirlo
-    // rompería contra un Postgres local sin SSL (ej. Docker en dev/test).
-    return $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
+    // Require (no Prefer): esta rama solo la ejercita la URI de Neon en
+    // producción (dev/test usan Sqlite), y Neon siempre soporta TLS con
+    // certificado válido — Prefer permitía degradar silenciosamente a texto
+    // plano si el handshake TLS fallaba. Sin Trust Server Certificate: Neon
+    // usa un certificado firmado por una CA pública, así que la validación
+    // default de Npgsql contra el store del sistema alcanza; confiar en
+    // cualquier certificado exponía a un MITM.
+    return $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require";
+}
+
+/// <summary>
+/// Serializa la aplicación de migraciones entre instancias concurrentes
+/// (rolling deploy) con un advisory lock de Postgres. La instancia que no
+/// consigue el lock espera; cuando lo obtiene, su propio MigrateAsync() ya no
+/// tiene nada pendiente y es un no-op.
+/// </summary>
+static async Task MigrateWithAdvisoryLockAsync(NicaRunnerDbContext db)
+{
+    const long migrationLockId = 72710051; // arbitrario, estable, exclusivo de este propósito
+
+    var connection = db.Database.GetDbConnection();
+    var openedHere = connection.State != System.Data.ConnectionState.Open;
+    if (openedHere)
+    {
+        await connection.OpenAsync();
+    }
+
+    try
+    {
+        await using (var lockCmd = connection.CreateCommand())
+        {
+            lockCmd.CommandText = $"SELECT pg_advisory_lock({migrationLockId})";
+            await lockCmd.ExecuteNonQueryAsync();
+        }
+
+        await db.Database.MigrateAsync();
+    }
+    finally
+    {
+        await using (var unlockCmd = connection.CreateCommand())
+        {
+            unlockCmd.CommandText = $"SELECT pg_advisory_unlock({migrationLockId})";
+            await unlockCmd.ExecuteNonQueryAsync();
+        }
+
+        if (openedHere)
+        {
+            await connection.CloseAsync();
+        }
+    }
+}
+
+/// <summary>
+/// Sqlite y Npgsql devuelven DateTime con Kind=Unspecified (no preservan el
+/// Kind al leer), y System.Text.Json serializa eso sin sufijo "Z" — el
+/// navegador interpreta la hora como LOCAL en vez de UTC, causando un desfase
+/// de 6h en Nicaragua. Todas las columnas DateTime de la app almacenan
+/// instantes UTC, así que Unspecified se re-etiqueta como Utc sin conversión;
+/// Local (poco común) sí se convierte. Se aplica también a DateTime? porque
+/// System.Text.Json envuelve automáticamente los converters de tipos de valor
+/// para su forma Nullable<T>.
+/// </summary>
+sealed class UtcDateTimeConverter : JsonConverter<DateTime>
+{
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => reader.GetDateTime();
+
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+    {
+        var utc = value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            : value.ToUniversalTime();
+        writer.WriteStringValue(utc);
+    }
 }
