@@ -243,7 +243,13 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials();
+            .AllowCredentials()
+            // El frontend (Vercel) y esta API (Render) viven en dominios distintos:
+            // JS del frontend no puede leer la cookie nr_csrf vía document.cookie
+            // entre dominios, así que se la exponemos en este header para que el
+            // cliente la guarde en memoria (ver AuthController.SetAuthCookies y el
+            // middleware de eco más abajo).
+            .WithExposedHeaders(AuthCookieNames.CsrfHeader);
     });
 });
 
@@ -429,6 +435,14 @@ var mutatingMethods = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "P
 app.Use(async (context, next) =>
 {
     var request = context.Request;
+
+    // Eco de la cookie CSRF como header en toda respuesta donde viaje: el
+    // frontend (dominio distinto al de esta API) no puede leerla vía
+    // document.cookie, así que se la devolvemos acá para que la guarde en
+    // memoria y la reenvíe como X-CSRF-Token en el próximo request mutante.
+    if (request.Cookies.TryGetValue(AuthCookieNames.Csrf, out var csrfCookieValue) && !string.IsNullOrEmpty(csrfCookieValue))
+        context.Response.Headers[AuthCookieNames.CsrfHeader] = csrfCookieValue;
+
     var usaCookieAuth = !request.Headers.ContainsKey("Authorization") &&
         (request.Cookies.ContainsKey(AuthCookieNames.AccessToken) || request.Cookies.ContainsKey(AuthCookieNames.RefreshToken));
 

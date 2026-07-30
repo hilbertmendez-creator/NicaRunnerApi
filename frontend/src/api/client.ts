@@ -9,23 +9,28 @@ export const apiClient = axios.create({
   withCredentials: true,
 })
 
-const CSRF_COOKIE_NAME = 'nr_csrf'
+const CSRF_RESPONSE_HEADER = 'x-csrf-token'
 const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete'])
 
-function readCsrfCookie(): string | null {
-  const match = document.cookie.match(new RegExp(`(?:^|; )${CSRF_COOKIE_NAME}=([^;]*)`))
-  return match ? decodeURIComponent(match[1]) : null
-}
+// El backend (Render) y este frontend (Vercel) viven en dominios distintos:
+// JS de acá no puede leer la cookie nr_csrf vía document.cookie aunque no sea
+// httpOnly (las cookies solo son legibles por script del mismo dominio que
+// las seteó). Por eso el backend además la manda como header en cada
+// respuesta autenticada — la guardamos en memoria y la reenviamos nosotros.
+let csrfToken: string | null = null
+
+apiClient.interceptors.response.use((response) => {
+  const headerValue = response.headers[CSRF_RESPONSE_HEADER]
+  if (headerValue) csrfToken = headerValue
+  return response
+})
 
 // Double-submit CSRF: el backend valida que este header coincida con el
 // valor de la cookie nr_csrf en requests mutantes autenticados por cookie.
 apiClient.interceptors.request.use((config) => {
   const method = config.method?.toLowerCase()
-  if (method && MUTATING_METHODS.has(method)) {
-    const csrfToken = readCsrfCookie()
-    if (csrfToken) {
-      config.headers['X-CSRF-Token'] = csrfToken
-    }
+  if (method && MUTATING_METHODS.has(method) && csrfToken) {
+    config.headers['X-CSRF-Token'] = csrfToken
   }
   return config
 })

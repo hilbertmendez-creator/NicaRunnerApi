@@ -121,10 +121,13 @@ public class AuthController(IAuthService authService, IHostEnvironment environme
             Expires = result.RefreshExpiresAtUtc,
         });
 
-        // No-httpOnly a propósito: el frontend la lee con JS y la reenvía como
-        // header X-CSRF-Token (patrón double-submit) en requests mutantes.
-        // Ver el middleware de validación en Program.cs.
-        Response.Cookies.Append(AuthCookieNames.Csrf, Convert.ToHexString(RandomNumberGenerator.GetBytes(32)), new CookieOptions
+        // No-httpOnly a propósito: en dev el frontend puede leerla con JS vía
+        // document.cookie; en prod (dominio distinto) no puede, así que además
+        // la exponemos en el header X-CSRF-Token de esta misma respuesta — el
+        // eco genérico de Program.cs no alcanza a cubrir este caso porque lee
+        // la cookie del request entrante, y acá recién se está rotando.
+        var csrfToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        Response.Cookies.Append(AuthCookieNames.Csrf, csrfToken, new CookieOptions
         {
             HttpOnly = false,
             Secure = isProd,
@@ -132,6 +135,7 @@ public class AuthController(IAuthService authService, IHostEnvironment environme
             Path = "/",
             Expires = result.RefreshExpiresAtUtc,
         });
+        Response.Headers[AuthCookieNames.CsrfHeader] = csrfToken;
     }
 
     private void ClearAuthCookies()
