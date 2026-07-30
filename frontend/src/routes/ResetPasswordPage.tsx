@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../api/endpoints'
 import { Button, Label, Input } from '@nicarunner/ui'
+import { isStrongPassword, PASSWORD_POLICY_HINT } from '../auth/passwordPolicy'
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
@@ -16,6 +17,11 @@ export function ResetPasswordPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
+
+    if (!isStrongPassword(newPassword)) {
+      setError(PASSWORD_POLICY_HINT)
+      return
+    }
 
     if (newPassword !== confirmPassword) {
       setError('Las contraseñas no coinciden.')
@@ -56,18 +62,19 @@ export function ResetPasswordPage() {
           id="new-password"
           type="password"
           required
-          minLength={6}
+          minLength={8}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          className="mb-4 w-full"
+          className="mb-1 w-full"
         />
+        <p className="mb-4 text-xs text-gray-500">{PASSWORD_POLICY_HINT}</p>
 
         <Label htmlFor="confirm-password">Confirmar contraseña</Label>
         <Input
           id="confirm-password"
           type="password"
           required
-          minLength={6}
+          minLength={8}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className="mb-4 w-full"

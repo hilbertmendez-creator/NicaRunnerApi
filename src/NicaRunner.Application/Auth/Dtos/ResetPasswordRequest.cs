@@ -1,7 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using NicaRunner.Application.Common.Validation;
 
 namespace NicaRunner.Application.Auth.Dtos;
 
 public record ResetPasswordRequest(
     [Required] string Token,
-    [Required, MinLength(6)] string NewPassword);
+    [Required, StrongPassword] string NewPassword);
