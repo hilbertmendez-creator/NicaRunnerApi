@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getUserAudit, getUsers, updateUser } from '../../api/endpoints'
+import { getUserAudit, getUsers, unlockUser, updateUser } from '../../api/endpoints'
 import type { UserDto, UserRole } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { Button, DataTable, LoadingText, EmptyState, Select } from '@nicarunner/ui'
@@ -16,6 +16,7 @@ export function UsersPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<UserDto | null>(null)
   const [auditingUser, setAuditingUser] = useState<UserDto | null>(null)
+  const [unlockingId, setUnlockingId] = useState<number | null>(null)
 
   function reload() {
     setLoading(true)
@@ -38,9 +39,24 @@ export function UsersPage() {
     reload()
   }
 
+  // login-lockout: "Admin Unlock". UserDto no expone LockedUntilUtc/FailedLoginCount
+  // (gap del contrato actual — ver Deviations), así que el botón se muestra siempre
+  // en vez de solo para cuentas bloqueadas; el backend trata el desbloqueo de una
+  // cuenta ya desbloqueada como no-op seguro (UserManagementService.UnlockAsync).
+  async function handleUnlock(target: UserDto) {
+    setUnlockingId(target.id)
+    try {
+      await unlockUser(target.id)
+      reload()
+    } finally {
+      setUnlockingId(null)
+    }
+  }
+
   const columns: Column<UserDto>[] = [
     { header: 'Email', render: (u) => u.email },
     { header: 'Nombre', render: (u) => u.nombre },
+    { header: 'Alias', render: (u) => u.username ?? '—' },
     {
       header: 'Rol',
       render: (u) => {
@@ -79,6 +95,15 @@ export function UsersPage() {
             </Button>
             <Button size="sm" onClick={() => setAuditingUser(u)}>
               Historial
+            </Button>
+            <Button
+              size="sm"
+              variant="info"
+              disabled={unlockingId === u.id}
+              onClick={() => handleUnlock(u)}
+              title="Limpia el bloqueo por intentos fallidos, si lo hubiera."
+            >
+              {unlockingId === u.id ? 'Desbloqueando...' : 'Desbloquear'}
             </Button>
             <Button
               size="sm"

@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react'
+import axios from 'axios'
 import { createUser, updateUser } from '../../api/endpoints'
 import type { UserDto, UserRole } from '../../api/types'
 import { Modal, Button, Label, Input, Select } from '@nicarunner/ui'
 
 const ROLE_OPTIONS: UserRole[] = ['Administrador', 'Capturista', 'Lector']
+const ALIAS_PATTERN = '^[a-z0-9._-]{3,30}$'
 
 interface UserFormModalProps {
   user: UserDto | null
@@ -15,8 +17,15 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
   const [email, setEmail] = useState('')
   const [nombre, setNombre] = useState(user?.nombre ?? '')
   const [role, setRole] = useState<UserRole>('Lector')
+  // user-management: "Admin-Editable Alias" — namespace amplio (^[a-z0-9._-]{3,30}$),
+  // se re-valida en el backend en cada edición.
+  const [username, setUsername] = useState(user?.username ?? '')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  // user-management: "Alias auto-generated on create" — el alias no existe hasta
+  // que el servidor responde; se muestra aquí en vez de cerrar el modal de inmediato,
+  // porque no hay ningún otro lugar donde el admin lo vea antes del primer refresh.
+  const [createdUser, setCreatedUser] = useState<UserDto | null>(null)
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -24,20 +33,52 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
     setSubmitting(true)
     try {
       if (user) {
-        await updateUser(user.id, { nombre })
+        await updateUser(user.id, { nombre, username: username.trim().toLowerCase() })
+        onSaved()
       } else {
-        await createUser({ email, nombre, role })
+        const created = await createUser({ email, nombre, role })
+        setCreatedUser(created)
       }
-      onSaved()
-    } catch {
-      setError(
-        user
-          ? 'No se pudo actualizar el nombre. Verifica que no esté vacío.'
-          : 'No se pudo crear el usuario. Verifica que el email no esté ya registrado.',
-      )
+    } catch (err) {
+      // user-management: "Admin edits alias to a value already taken" — el 409
+      // se distingue del resto de errores para no confundir al admin con el
+      // mensaje genérico de nombre/email.
+      if (user && axios.isAxiosError(err) && err.response?.status === 409) {
+        setError(`El alias "${username.trim().toLowerCase()}" ya está en uso por otro usuario.`)
+      } else {
+        setError(
+          user
+            ? 'No se pudo actualizar el usuario. Verifica el nombre y el formato del alias.'
+            : 'No se pudo crear el usuario. Verifica que el email no esté ya registrado.',
+        )
+      }
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (createdUser) {
+    return (
+      <Modal onClose={onSaved} labelledBy="user-form-title">
+        <h2 id="user-form-title" className="mb-4 text-base font-semibold text-zinc-900">
+          Usuario creado
+        </h2>
+        <p className="mb-3 text-sm text-zinc-700">
+          Se creó <strong>{createdUser.nombre}</strong> con el alias generado:
+        </p>
+        <p
+          className="mb-4 border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900"
+          data-testid="generated-alias"
+        >
+          {createdUser.username ?? '(sin alias — verifica la configuración del backend)'}
+        </p>
+        <div className="flex justify-end">
+          <Button type="button" variant="primary" onClick={onSaved}>
+            Entendido
+          </Button>
+        </div>
+      </Modal>
+    )
   }
 
   return (
@@ -70,6 +111,23 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
           className="mb-3 w-full"
         />
 
+        {user && (
+          <>
+            <Label htmlFor="user-username">Alias</Label>
+            <Input
+              id="user-username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              minLength={3}
+              maxLength={30}
+              pattern={ALIAS_PATTERN}
+              title="3-30 caracteres: minúsculas, números, puntos, guiones o guiones bajos"
+              className="mb-3 w-full"
+            />
+          </>
+        )}
+
         {!user && (
           <>
             <Label htmlFor="user-role">Rol</Label>
@@ -85,6 +143,9 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
                 </option>
               ))}
             </Select>
+            <p className="mb-3 text-xs text-zinc-500">
+              El alias de acceso se genera automáticamente a partir del nombre.
+            </p>
           </>
         )}
 

@@ -36,6 +36,8 @@ export interface ResetPasswordRequest {
   newPassword: string
 }
 
+// user-management: username es nullable hasta que M4 (backend) lo vuelva NOT
+// NULL — en la práctica todo usuario creado tras PR1 ya trae alias generado.
 export interface UserDto {
   id: number
   email: string
@@ -43,6 +45,7 @@ export interface UserDto {
   role: UserRole
   isActive: boolean
   createdAt: string
+  username: string | null
 }
 
 export interface CreateUserRequest {
@@ -51,10 +54,14 @@ export interface CreateUserRequest {
   role: UserRole
 }
 
+// user-management: "Admin-Editable Alias" — username usa el namespace amplio
+// (^[a-z0-9._-]{3,30}$); el backend re-valida formato y unicidad y responde 409
+// en conflicto.
 export interface UpdateUserRequest {
   role?: UserRole
   isActive?: boolean
   nombre?: string
+  username?: string
 }
 
 export interface AuditLogDto {
