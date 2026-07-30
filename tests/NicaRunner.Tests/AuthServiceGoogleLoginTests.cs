@@ -24,7 +24,7 @@ public class AuthServiceGoogleLoginTests
             .ReturnsAsync(new IssuedRefreshToken("fake-refresh", DateTime.UtcNow.AddDays(30), Guid.NewGuid()));
         return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
             _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()),
-            new AliasAssigner(_users.Object));
+            new AliasAssigner(_users.Object), Options.Create(new LockoutOptions()));
     }
 
     private void SetupTokenGenerator() =>

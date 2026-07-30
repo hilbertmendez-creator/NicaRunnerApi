@@ -27,7 +27,7 @@ public class AuthServicePasswordResetTests
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
         return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
             _refresh.Object, [_emailSender.Object], _emailRenderer, _frontendOptions,
-            new AliasAssigner(_users.Object));
+            new AliasAssigner(_users.Object), Options.Create(new LockoutOptions()));
     }
 
     [Fact]
@@ -133,7 +133,8 @@ public class AuthServicePasswordResetTests
         _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
         var service = new AuthService(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
             _refresh.Object, [_emailSender.Object], _emailRenderer,
-            Options.Create(new FrontendOptions { BaseUrl = "" }), new AliasAssigner(_users.Object));
+            Options.Create(new FrontendOptions { BaseUrl = "" }), new AliasAssigner(_users.Object),
+            Options.Create(new LockoutOptions()));
 
         await service.ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
 
@@ -148,7 +149,8 @@ public class AuthServicePasswordResetTests
         _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         var service = new AuthService(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
-            _refresh.Object, [], _emailRenderer, _frontendOptions, new AliasAssigner(_users.Object));
+            _refresh.Object, [], _emailRenderer, _frontendOptions, new AliasAssigner(_users.Object),
+            Options.Create(new LockoutOptions()));
 
         await service.ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
 

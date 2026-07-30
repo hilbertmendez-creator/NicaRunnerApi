@@ -125,6 +125,30 @@ public class UserManagementService(
         return ToDto(user);
     }
 
+    // login-lockout: "Admin Unlock" (design.md §3.3) — limpia lock + contador y
+    // audita el cambio (AuditService.TrackChanges, mismo patrón que UpdateAsync).
+    // No-op auditable: si la cuenta ya estaba desbloqueada, TrackChanges filtra
+    // internamente los campos que no cambiaron y no crea entradas vacías.
+    public async Task<UserDto> UnlockAsync(int currentUserId, int targetUserId, CancellationToken ct = default)
+    {
+        var user = await userRepository.GetByIdAsync(targetUserId, ct)
+            ?? throw new NotFoundException($"No existe el usuario con id {targetUserId}.");
+
+        var changes = new List<FieldChange>
+        {
+            new("LockedUntilUtc", user.LockedUntilUtc is { } lockedUntil ? AuditValue.Of(lockedUntil) : null, null),
+            new("FailedLoginCount", AuditValue.Of(user.FailedLoginCount), AuditValue.Of(0))
+        };
+
+        user.LockedUntilUtc = null;
+        user.FailedLoginCount = 0;
+
+        auditService.TrackChanges(AuditEntityTypes.User, user.Id, currentUserId, changes);
+
+        await userRepository.SaveChangesAsync(ct);
+        return ToDto(user);
+    }
+
     private static string GenerateTempPassword() =>
         new(RandomNumberGenerator.GetItems<char>(TempPasswordAlphabet, 12));
 

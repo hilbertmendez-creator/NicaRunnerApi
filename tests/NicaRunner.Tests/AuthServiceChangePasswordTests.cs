@@ -21,7 +21,7 @@ public class AuthServiceChangePasswordTests
     private AuthService BuildService() =>
         new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
             _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()),
-            new AliasAssigner(_users.Object));
+            new AliasAssigner(_users.Object), Options.Create(new LockoutOptions()));
 
     [Fact]
     public async Task ChangePassword_CurrentPasswordCorrecta_ActualizaHashYLimpiaFlag()
