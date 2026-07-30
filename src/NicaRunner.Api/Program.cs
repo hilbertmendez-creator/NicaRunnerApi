@@ -151,6 +151,7 @@ builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection(
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<AliasAssigner>();
 builder.Services.AddScoped<IRaceRepository, RaceRepository>();
 builder.Services.AddScoped<IRaceCategoryRepository, RaceCategoryRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -337,8 +338,13 @@ using (var seedScope = app.Services.CreateScope())
     {
         var seedUserRepository = seedScope.ServiceProvider.GetRequiredService<IUserRepository>();
         var seedPasswordHasher = seedScope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var seedAliasAssigner = seedScope.ServiceProvider.GetRequiredService<AliasAssigner>();
         var defaultAdminPassword = builder.Configuration["Seed:DefaultAdminPassword"];
-        await AdminUserSeeder.SeedAsync(seedUserRepository, seedPasswordHasher, defaultAdminPassword);
+        await AdminUserSeeder.SeedAsync(seedUserRepository, seedPasswordHasher, seedAliasAssigner, defaultAdminPassword);
+
+        // M2 (design.md §3.2): backfill de alias para filas creadas antes de esta PR.
+        // Mismo scope/repositorio que el seed de arriba — idempotente, seguro en cada deploy.
+        await UsernameBackfillService.BackfillAsync(seedUserRepository, seedAliasAssigner);
     }
     catch (Exception ex)
     {

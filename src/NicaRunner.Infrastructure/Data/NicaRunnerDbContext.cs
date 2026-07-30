@@ -128,6 +128,18 @@ public class NicaRunnerDbContext : DbContext
             .IsUnique()
             .HasFilter("\"GoogleId\" IS NOT NULL");
 
+        // Alias (Username): namespace disjoint del email (nunca contiene '@'), índice
+        // único filtrado mientras la columna es nullable — mismo patrón que GoogleId.
+        // Se reemplaza por un índice único plano en M4 (PR2) cuando pase a NOT NULL.
+        modelBuilder.Entity<User>()
+            .Property(u => u.Username)
+            .HasMaxLength(30);
+
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Username)
+            .IsUnique()
+            .HasFilter("\"Username\" IS NOT NULL");
+
         // Evitar cascade delete accidental en relaciones sensibles (auditoría, resultados)
         modelBuilder.Entity<Result>()
             .HasOne(r => r.Runner)

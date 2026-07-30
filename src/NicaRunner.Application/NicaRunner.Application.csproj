@@ -6,6 +6,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <!-- Paquete core (agnóstico de proveedor): AliasAssigner necesita DbUpdateException
+         para discriminar la colisión de Username, sin que Application dependa de
+         Sqlite/Postgres — esos paquetes de proveedor concreto siguen siendo exclusivos
+         de Infrastructure. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.*" />
   </ItemGroup>
 
   <PropertyGroup>
