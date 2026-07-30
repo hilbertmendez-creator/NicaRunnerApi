@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/auth-context'
 import { Button, Label, Input } from '@nicarunner/ui'
 import { NicaRunnerLogo } from './NicaRunnerLogo'
+import { PasswordInput } from '../components/PasswordInput'
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -81,9 +82,8 @@ export function LoginPage() {
           />
 
           <Label htmlFor="password">Contraseña</Label>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

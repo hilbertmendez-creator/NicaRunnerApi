@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../api/endpoints'
-import { Button, Label, Input } from '@nicarunner/ui'
+import { Button, Label } from '@nicarunner/ui'
 import { isStrongPassword, PASSWORD_POLICY_HINT } from '../auth/passwordPolicy'
+import { PasswordInput } from '../components/PasswordInput'
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
@@ -58,9 +59,8 @@ export function ResetPasswordPage() {
         <h1 className="mb-6 text-xl font-semibold text-gray-900">Restablecer contraseña</h1>
 
         <Label htmlFor="new-password">Nueva contraseña</Label>
-        <Input
+        <PasswordInput
           id="new-password"
-          type="password"
           required
           minLength={8}
           value={newPassword}
@@ -70,9 +70,8 @@ export function ResetPasswordPage() {
         <p className="mb-4 text-xs text-gray-500">{PASSWORD_POLICY_HINT}</p>
 
         <Label htmlFor="confirm-password">Confirmar contraseña</Label>
-        <Input
+        <PasswordInput
           id="confirm-password"
-          type="password"
           required
           minLength={8}
           value={confirmPassword}
