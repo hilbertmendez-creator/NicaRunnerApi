@@ -34,8 +34,12 @@ import type {
   UserDto,
 } from './types'
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const { data } = await apiClient.post<AuthResponse>('/auth/login', { email, password })
+// user-auth: "Unified Identifier Login" / "Backward-Compatible Login Payload" —
+// el backend acepta `identifier` (email o alias); `email` legado se mantiene
+// server-side para clientes ya publicados, pero el backoffice ya envía
+// `identifier` (design.md §4.1).
+export async function login(identifier: string, password: string): Promise<AuthResponse> {
+  const { data } = await apiClient.post<AuthResponse>('/auth/login', { identifier, password })
   return data
 }
 
@@ -252,6 +256,13 @@ export async function updateUser(id: number, request: UpdateUserRequest): Promis
 
 export async function getUserAudit(id: number): Promise<AuditLogDto[]> {
   const { data } = await apiClient.get<AuditLogDto[]>(`/users/${id}/audit`)
+  return data
+}
+
+// login-lockout: "Admin Unlock" — POST /users/{id}/unlock, admin-only, sin
+// body; limpia FailedLoginCount/LockedUntilUtc y audita (design.md §3.3/§4.4).
+export async function unlockUser(id: number): Promise<UserDto> {
+  const { data } = await apiClient.post<UserDto>(`/users/${id}/unlock`)
   return data
 }
 
