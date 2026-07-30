@@ -19,11 +19,20 @@ public class UserRepository(NicaRunnerDbContext context) : IUserRepository
     public Task<User?> GetByResetTokenAsync(string token, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.PasswordResetToken == token, ct);
 
+    // Comparación case-insensitive defensiva: el generador y el validador de alias ya
+    // fuerzan minúsculas, pero un caller (p. ej. un admin editando el campo a mano) podría
+    // enviar un valor mixto antes de que UserManagementService lo normalice.
+    public Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default) =>
+        context.Users.FirstOrDefaultAsync(u => u.Username == username.ToLowerInvariant(), ct);
+
     public Task<List<User>> GetAllAsync(CancellationToken ct = default) =>
         context.Users.OrderBy(u => u.Email).ToListAsync(ct);
 
     public Task<bool> EmailExistsAsync(string email, CancellationToken ct = default) =>
         context.Users.AnyAsync(u => u.Email == email, ct);
+
+    public Task<bool> UsernameExistsAsync(string username, CancellationToken ct = default) =>
+        context.Users.AnyAsync(u => u.Username == username.ToLowerInvariant(), ct);
 
     public async Task AddAsync(User user, CancellationToken ct = default) =>
         await context.Users.AddAsync(user, ct);

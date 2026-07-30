@@ -28,4 +28,15 @@ public class User
     public bool MustChangePassword { get; set; } = true;
     public string? PasswordResetToken { get; set; }
     public DateTime? PasswordResetTokenExpiry { get; set; }
+
+    // Alias/identificador secundario para login unificado (user-alias). Nullable hasta
+    // que M4 (PR2) lo vuelva NOT NULL una vez completado el backfill (M2, esta PR).
+    public string? Username { get; set; }
+
+    // Lockout (login-lockout, mecánica completa en PR2). Se agregan en esta migración
+    // porque comparten M1 con Username, pero AuthService.LoginAsync todavía no las lee
+    // ni las escribe hasta PR2.
+    public int FailedLoginCount { get; set; }
+    public DateTime? LockedUntilUtc { get; set; }
+    public DateTime? LastFailedLoginUtc { get; set; }
 }

@@ -20,7 +20,8 @@ public class AuthServiceLoginTests
 
     private AuthService BuildService() =>
         new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
-            _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()));
+            _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()),
+            new AliasAssigner(_users.Object));
 
     [Fact]
     public async Task Login_CredencialesCorrectas_EmiteAuthResponse()

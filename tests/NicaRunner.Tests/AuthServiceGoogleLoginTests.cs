@@ -23,7 +23,8 @@ public class AuthServiceGoogleLoginTests
         _refresh.Setup(r => r.IssueAsync(It.IsAny<User>(), null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new IssuedRefreshToken("fake-refresh", DateTime.UtcNow.AddDays(30), Guid.NewGuid()));
         return new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
-            _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()));
+            _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()),
+            new AliasAssigner(_users.Object));
     }
 
     private void SetupTokenGenerator() =>
@@ -67,6 +68,10 @@ public class AuthServiceGoogleLoginTests
         Assert.Equal(AuthProvider.Google, created!.Provider);
         Assert.Null(created.PasswordHash);
         Assert.Equal("sub-1", created.GoogleId);
+        // user-alias: "Alias Assigned on Every User-Creation Path" — sitio 2 (Google
+        // sign-in). El alta NO puede fallar por esto (design.md §3.4).
+        Assert.True(AliasGenerator.IsValidAliasFormat(created.Username!));
+        Assert.Equal("nusuario", created.Username); // "Nuevo Usuario" (2 tokens) -> n + usuario, sin inicial final
         // AtLeastOnce: BuildAuthResponseAsync persiste el refresh token vía
         // un segundo SaveChanges para reusar la misma unidad de trabajo del
         // user repository (no es un commit doble — son dos flushes EF).

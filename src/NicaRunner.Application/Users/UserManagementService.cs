@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using NicaRunner.Application.Auditing;
+using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Notifications.EmailTemplates;
@@ -14,7 +15,8 @@ public class UserManagementService(
     IPasswordHasher passwordHasher,
     IEnumerable<INotificationSender> notificationSenders,
     IEmailTemplateRenderer emailTemplateRenderer,
-    IAuditService auditService) : IUserManagementService
+    IAuditService auditService,
+    AliasAssigner aliasAssigner) : IUserManagementService
 {
     private const string TempPasswordAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -41,8 +43,9 @@ public class UserManagementService(
             IsActive = true
         };
 
-        await userRepository.AddAsync(user, ct);
-        await userRepository.SaveChangesAsync(ct);
+        // Asigna alias + agrega + persiste con reintento ante colisión TOCTOU
+        // (único camino interactivo de creación — design.md §2.2/§3.4).
+        await aliasAssigner.AddWithUniqueAliasAsync(user, ct);
 
         var emailSender = notificationSenders.FirstOrDefault(s => s.Channel == NotificationChannel.Email);
         if (emailSender is not null)
@@ -96,6 +99,24 @@ public class UserManagementService(
             changes.Add(new FieldChange("IsActive", AuditValue.Of(user.IsActive), AuditValue.Of(isActive)));
             user.IsActive = isActive;
         }
+        if (request.Username is { } usernameRaw)
+        {
+            var username = usernameRaw.Trim().ToLowerInvariant();
+            if (!AliasGenerator.IsValidAliasFormat(username))
+                throw new ValidationException("El alias no tiene un formato válido.");
+
+            // No-op si el admin reenvía el alias actual: ni 409 ni entrada de auditoría
+            // (user-management: "Admin edits alias to a value already taken" solo aplica
+            // cuando el alias pertenece a OTRO usuario).
+            if (username != user.Username)
+            {
+                if (await userRepository.UsernameExistsAsync(username, ct))
+                    throw new ConflictException($"El alias '{username}' ya está en uso.");
+
+                changes.Add(new FieldChange("Username", user.Username, username));
+                user.Username = username;
+            }
+        }
 
         // Encola solo lo que cambió; se persiste junto al usuario en el mismo SaveChanges.
         auditService.TrackChanges(AuditEntityTypes.User, user.Id, currentUserId, changes);
@@ -113,5 +134,6 @@ public class UserManagementService(
         user.Nombre,
         user.Role,
         user.IsActive,
-        user.CreatedAt);
+        user.CreatedAt,
+        user.Username);
 }

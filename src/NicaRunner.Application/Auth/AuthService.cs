@@ -17,7 +17,8 @@ public class AuthService(
     IRefreshTokenService refreshTokenService,
     IEnumerable<INotificationSender> notificationSenders,
     IEmailTemplateRenderer emailTemplateRenderer,
-    IOptions<FrontendOptions> frontendOptions) : IAuthService
+    IOptions<FrontendOptions> frontendOptions,
+    AliasAssigner aliasAssigner) : IAuthService
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
 
@@ -50,6 +51,12 @@ public class AuthService(
                     GoogleId = google.Sub,
                     Provider = AuthProvider.Google
                 };
+                // Primer sign-in de Google también crea el User inline — mismo generador
+                // que el alta manual (user-alias: "Alias Assigned on Every User-Creation
+                // Path", design.md §3.4, sitio 2). Si el nombre de perfil de Google
+                // normaliza a cero unidades, AliasGenerator cae al fallback por email y
+                // nunca lanza, así que el sign-in no puede fallar por esto.
+                await aliasAssigner.AssignAsync(user, ct);
                 await userRepository.AddAsync(user, ct);
             }
             else

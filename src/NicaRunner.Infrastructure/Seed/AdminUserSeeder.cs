@@ -1,3 +1,4 @@
+using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
@@ -11,7 +12,12 @@ namespace NicaRunner.Infrastructure.Seed;
 /// </summary>
 public static class AdminUserSeeder
 {
-    public static async Task SeedAsync(IUserRepository userRepository, IPasswordHasher passwordHasher, string? defaultPassword, CancellationToken ct = default)
+    public static async Task SeedAsync(
+        IUserRepository userRepository,
+        IPasswordHasher passwordHasher,
+        AliasAssigner aliasAssigner,
+        string? defaultPassword,
+        CancellationToken ct = default)
     {
         // Sin password configurada (Seed:DefaultAdminPassword) no hay nada seguro que
         // hashear — se omite el seed en vez de arrancar con una contraseña conocida.
@@ -27,7 +33,7 @@ public static class AdminUserSeeder
             if (existingEmails.Contains(email))
                 continue;
 
-            await userRepository.AddAsync(new User
+            var user = new User
             {
                 Email = email,
                 Nombre = email,
@@ -36,7 +42,13 @@ public static class AdminUserSeeder
                 PasswordHash = passwordHasher.Hash(defaultPassword),
                 MustChangePassword = true,
                 IsActive = true
-            }, ct);
+            };
+
+            // Sitio de creación 3 (design.md §3.4). Nombre = email no necesita manejo
+            // especial: el paso 0 del normalizador (cortar en el primer '@') ya lo cubre
+            // y produce, por ejemplo, "hilbert.mendez@gmail.com" -> "hilbertmendez".
+            await aliasAssigner.AssignAsync(user, ct);
+            await userRepository.AddAsync(user, ct);
         }
 
         await userRepository.SaveChangesAsync(ct);
