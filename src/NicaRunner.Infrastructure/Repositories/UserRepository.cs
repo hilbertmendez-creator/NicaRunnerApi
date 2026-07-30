@@ -10,6 +10,18 @@ public class UserRepository(NicaRunnerDbContext context) : IUserRepository
     public Task<User?> GetByEmailAsync(string email, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
 
+    // user-auth: "Unified Identifier Login" (design.md §3.1) — una sola query
+    // (`WHERE LOWER(Email) = @id OR Username = @id`), nunca dos lookups secuenciales
+    // (un try-email-then-try-alias filtraría por timing cuál namespace matcheó).
+    // Username ya llega normalizado en minúsculas desde el generador/UserManagementService,
+    // así que solo Email necesita el LOWER() explícito acá.
+    public Task<User?> GetByEmailOrUsernameAsync(string identifier, CancellationToken ct = default)
+    {
+        var normalized = identifier.Trim().ToLowerInvariant();
+        return context.Users.FirstOrDefaultAsync(
+            u => u.Email.ToLower() == normalized || u.Username == normalized, ct);
+    }
+
     public Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId, ct);
 

@@ -35,6 +35,11 @@ public class UsersController(
     public async Task<ActionResult<UserDto>> Update(int id, UpdateUserRequest request, CancellationToken ct) =>
         Ok(await userManagementService.UpdateAsync(GetUserId(), id, request, ct));
 
+    /// <summary>login-lockout: "Admin Unlock" — limpia el lock de una cuenta bloqueada. Solo administradores.</summary>
+    [HttpPost("{id:int}/unlock")]
+    public async Task<ActionResult<UserDto>> Unlock(int id, CancellationToken ct) =>
+        Ok(await userManagementService.UnlockAsync(GetUserId(), id, ct));
+
     /// <summary>Historial de modificaciones del usuario (más reciente primero). Solo administradores.</summary>
     [HttpGet("{id:int}/audit")]
     public async Task<ActionResult<List<AuditLogDto>>> GetAudit(

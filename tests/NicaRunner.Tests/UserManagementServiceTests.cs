@@ -321,4 +321,48 @@ public class UserManagementServiceTests
         await Assert.ThrowsAsync<ForbiddenException>(
             () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(UserRole.Lector, null)));
     }
+
+    // login-lockout: "Admin unlocks a locked account".
+    [Fact]
+    public async Task UnlockAsync_CuentaBloqueada_LimpiaEstadoYAudita()
+    {
+        var target = new User
+        {
+            Id = 2, Email = "b@b.com", Role = UserRole.Capturista, IsActive = true,
+            FailedLoginCount = 5, LockedUntilUtc = DateTime.UtcNow.AddMinutes(10)
+        };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+        var dto = await BuildService().UnlockAsync(currentUserId: 1, targetUserId: 2);
+
+        Assert.Null(target.LockedUntilUtc);
+        Assert.Equal(0, target.FailedLoginCount);
+        Assert.Equal(2, dto.Id);
+        Assert.Equal(2, _auditRepo.Entries.Count);
+        Assert.Contains(_auditRepo.Entries, e => e.Campo == "LockedUntilUtc" && e.ValorNuevo == null);
+        Assert.Contains(_auditRepo.Entries, e => e.Campo == "FailedLoginCount" && e.ValorAnterior == "5" && e.ValorNuevo == "0");
+        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // No-op auditable: nada que limpiar -> TrackChanges no genera entradas (mismo
+    // filtro "solo si cambió" que ya usa UpdateAsync).
+    [Fact]
+    public async Task UnlockAsync_CuentaYaDesbloqueada_NoRegistraAuditoria()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Role = UserRole.Capturista, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+        await BuildService().UnlockAsync(currentUserId: 1, targetUserId: 2);
+
+        Assert.Empty(_auditRepo.Entries);
+    }
+
+    [Fact]
+    public async Task UnlockAsync_UsuarioInexistente_LanzaNotFound()
+    {
+        _users.Setup(u => u.GetByIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => BuildService().UnlockAsync(currentUserId: 1, targetUserId: 99));
+    }
 }

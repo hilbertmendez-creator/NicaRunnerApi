@@ -149,6 +149,7 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
+builder.Services.Configure<LockoutOptions>(builder.Configuration.GetSection("Lockout"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<AliasAssigner>();
@@ -345,6 +346,19 @@ using (var seedScope = app.Services.CreateScope())
         // M2 (design.md §3.2): backfill de alias para filas creadas antes de esta PR.
         // Mismo scope/repositorio que el seed de arriba — idempotente, seguro en cada deploy.
         await UsernameBackfillService.BackfillAsync(seedUserRepository, seedAliasAssigner);
+
+        // M3 (design.md §3.2): audita colisiones de email que solo difieren en
+        // mayúsculas/minúsculas antes de habilitar cualquier normalización futura a
+        // minúsculas. Nunca fusiona nada — solo advierte "en voz alta" para
+        // resolución manual (user-auth: "Email Address Normalization").
+        var emailCaseCollisions = await EmailCaseDuplicateAuditService.FindCollisionsAsync(seedUserRepository);
+        foreach (var collision in emailCaseCollisions)
+        {
+            app.Logger.LogWarning(
+                "Colisión de email por mayúsculas/minúsculas: {NormalizedEmail} en usuarios {UserIds} — " +
+                "requiere resolución manual, NO se fusiona automáticamente.",
+                collision.NormalizedEmail, string.Join(", ", collision.Users.Select(u => u.UserId)));
+        }
     }
     catch (Exception ex)
     {

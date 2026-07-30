@@ -18,18 +18,70 @@ public class AuthService(
     IEnumerable<INotificationSender> notificationSenders,
     IEmailTemplateRenderer emailTemplateRenderer,
     IOptions<FrontendOptions> frontendOptions,
-    AliasAssigner aliasAssigner) : IAuthService
+    AliasAssigner aliasAssigner,
+    IOptions<LockoutOptions> lockoutOptions) : IAuthService
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
 
+    // user-auth: "Generic Authentication Failure Response" — un único mensaje para
+    // password incorrecta, identificador inexistente y cuenta bloqueada; ninguna
+    // variante del texto puede revelar cuál de los tres casos ocurrió.
+    private const string GenericLoginFailureMessage = "Credenciales inválidas.";
+
+    // Password de relleno usada solo para computar un hash "dummy" contra el que
+    // verificar cuando no hay un PasswordHash real (identificador inexistente) —
+    // mantiene el mismo perfil de timing que una cuenta real (user-auth: "Unified
+    // Identifier Login", último párrafo). Nunca se usa para autenticar nada.
+    private const string DummyPasswordSeed = "NicaRunner-Timing-Safe-Dummy-2026";
+
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
-        var user = await userRepository.GetByEmailAsync(request.Email, ct);
-        if (user is null || !user.IsActive || user.PasswordHash is null ||
-            !passwordHasher.Verify(request.Password, user.PasswordHash))
-            throw new InvalidCredentialsException("Email o contraseña incorrectos.");
+        var identifier = request.EffectiveIdentifier.Trim().ToLowerInvariant();
+        var user = await userRepository.GetByEmailOrUsernameAsync(identifier, ct);
+
+        if (user is null)
+        {
+            // login-lockout/user-auth: sin usuario que verificar, igual corremos un
+            // Verify contra un hash dummy para no delatar por timing que el
+            // identificador no existe.
+            passwordHasher.Verify(request.Password, passwordHasher.Hash(DummyPasswordSeed));
+            throw new InvalidCredentialsException(GenericLoginFailureMessage);
+        }
+
+        // login-lockout: "Already-locked account attempts login" — mismo 401 genérico
+        // sin siquiera intentar el Verify, igual que una cuenta inactiva (abajo).
+        if (IsLocked(user) || !user.IsActive || user.PasswordHash is null)
+            throw new InvalidCredentialsException(GenericLoginFailureMessage);
+
+        if (!passwordHasher.Verify(request.Password, user.PasswordHash))
+        {
+            await RegisterFailedAttemptAsync(user, ct);
+            throw new InvalidCredentialsException(GenericLoginFailureMessage);
+        }
+
+        // login-lockout: "Counter resets on success".
+        user.FailedLoginCount = 0;
+        user.LockedUntilUtc = null;
 
         return await BuildAuthResponseAsync(user, ct);
+    }
+
+    private static bool IsLocked(User user) =>
+        user.LockedUntilUtc is { } lockedUntil && lockedUntil > DateTime.UtcNow;
+
+    // login-lockout: "Failed Login Attempt Tracking" + "Temporary Account Lock".
+    // Threshold = 0 desactiva el lockout sin deploy (design.md §3.3); un lock ya
+    // vigente no se toca acá porque IsLocked ya corta antes de llegar a este punto.
+    private async Task RegisterFailedAttemptAsync(User user, CancellationToken ct)
+    {
+        user.FailedLoginCount++;
+        user.LastFailedLoginUtc = DateTime.UtcNow;
+
+        var threshold = lockoutOptions.Value.Threshold;
+        if (threshold > 0 && user.FailedLoginCount >= threshold)
+            user.LockedUntilUtc = DateTime.UtcNow.AddMinutes(lockoutOptions.Value.DurationMinutes);
+
+        await userRepository.SaveChangesAsync(ct);
     }
 
     public async Task<AuthResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken ct = default)
