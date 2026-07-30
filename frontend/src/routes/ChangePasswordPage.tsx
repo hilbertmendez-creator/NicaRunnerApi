@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { changePassword } from '../api/endpoints'
 import { useAuth } from '../auth/auth-context'
 import { Button, Label, Input } from '@nicarunner/ui'
+import { isStrongPassword, PASSWORD_POLICY_HINT } from '../auth/passwordPolicy'
 
 export function ChangePasswordPage() {
   const { clearMustChangePassword, logout } = useAuth()
@@ -17,12 +18,12 @@ export function ChangePasswordPage() {
     event.preventDefault()
     setError(null)
 
-    if (newPassword !== confirmPassword) {
-      setError('Las contraseñas nuevas no coinciden.')
+    if (!isStrongPassword(newPassword)) {
+      setError(PASSWORD_POLICY_HINT)
       return
     }
-    if (newPassword.length < 6) {
-      setError('La nueva contraseña debe tener al menos 6 caracteres.')
+    if (newPassword !== confirmPassword) {
+      setError('Las contraseñas nuevas no coinciden.')
       return
     }
 
@@ -61,18 +62,19 @@ export function ChangePasswordPage() {
           id="new-password"
           type="password"
           required
-          minLength={6}
+          minLength={8}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          className="mb-4 w-full"
+          className="mb-1 w-full"
         />
+        <p className="mb-4 text-xs text-gray-500">{PASSWORD_POLICY_HINT}</p>
 
         <Label htmlFor="confirm-password">Confirmar nueva contraseña</Label>
         <Input
           id="confirm-password"
           type="password"
           required
-          minLength={6}
+          minLength={8}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className="mb-4 w-full"
