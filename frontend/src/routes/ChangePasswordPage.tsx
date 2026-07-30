@@ -2,8 +2,9 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { changePassword } from '../api/endpoints'
 import { useAuth } from '../auth/auth-context'
-import { Button, Label, Input } from '@nicarunner/ui'
+import { Button, Label } from '@nicarunner/ui'
 import { isStrongPassword, PASSWORD_POLICY_HINT } from '../auth/passwordPolicy'
+import { PasswordInput } from '../components/PasswordInput'
 
 export function ChangePasswordPage() {
   const { clearMustChangePassword, logout } = useAuth()
@@ -48,9 +49,8 @@ export function ChangePasswordPage() {
         </p>
 
         <Label htmlFor="current-password">Contraseña temporal</Label>
-        <Input
+        <PasswordInput
           id="current-password"
-          type="password"
           required
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
@@ -58,9 +58,8 @@ export function ChangePasswordPage() {
         />
 
         <Label htmlFor="new-password">Nueva contraseña</Label>
-        <Input
+        <PasswordInput
           id="new-password"
-          type="password"
           required
           minLength={8}
           value={newPassword}
@@ -70,9 +69,8 @@ export function ChangePasswordPage() {
         <p className="mb-4 text-xs text-gray-500">{PASSWORD_POLICY_HINT}</p>
 
         <Label htmlFor="confirm-password">Confirmar nueva contraseña</Label>
-        <Input
+        <PasswordInput
           id="confirm-password"
-          type="password"
           required
           minLength={8}
           value={confirmPassword}
