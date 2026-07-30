@@ -7,7 +7,9 @@ import { NicaRunnerLogo } from './NicaRunnerLogo'
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  // user-auth: "Unified Identifier Login" — el campo acepta email o alias, ya no
+  // solo email (design.md §3.1/§4.1).
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -17,10 +19,10 @@ export function LoginPage() {
     setError(null)
     setSubmitting(true)
     try {
-      await login(email, password)
+      await login(identifier, password)
       navigate('/', { replace: true })
     } catch {
-      setError('Email o contraseña incorrectos')
+      setError('Usuario o contraseña incorrectos')
     } finally {
       setSubmitting(false)
     }
@@ -67,13 +69,14 @@ export function LoginPage() {
             Back Office
           </h1>
 
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="identifier">Email o alias</Label>
           <Input
-            id="email"
-            type="email"
+            id="identifier"
+            type="text"
+            autoComplete="username"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             className="mb-4 w-full"
           />
 
