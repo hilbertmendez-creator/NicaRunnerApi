@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using NicaRunner.Application.Auth;
@@ -21,7 +22,8 @@ public class AuthServiceChangePasswordTests
     private AuthService BuildService() =>
         new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
             _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()),
-            new AliasAssigner(_users.Object), Options.Create(new LockoutOptions()));
+            new AliasAssigner(_users.Object), Options.Create(new LockoutOptions()),
+            NullLogger<AuthService>.Instance);
 
     [Fact]
     public async Task ChangePassword_CurrentPasswordCorrecta_ActualizaHashYLimpiaFlag()
