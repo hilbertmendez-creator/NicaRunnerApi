@@ -7,8 +7,25 @@ namespace NicaRunner.Infrastructure.Repositories;
 
 public class UserRepository(NicaRunnerDbContext context) : IUserRepository
 {
-    public Task<User?> GetByEmailAsync(string email, CancellationToken ct = default) =>
-        context.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
+    // user-auth: "Email Address Normalization" (design.md §3.2) — mismo criterio
+    // case-insensitive que GetByEmailOrUsernameAsync. Sin el LOWER(), un
+    // "Hilbert@x.com" escrito con mayúsculas no encontraba la cuenta guardada como
+    // "hilbert@x.com" y el forgot-password se iba en silencio (el flujo no revela
+    // si el email existe), ni el login con Google podía enlazar la cuenta local.
+    //
+    // El índice único de Users.Email todavía es case-sensitive, así que pueden
+    // convivir filas que solo difieren en mayúsculas (M3 las audita y avisa, no las
+    // fusiona). Mientras eso siga siendo posible, ordenamos por Id para que la fila
+    // elegida sea siempre la misma —la cuenta más vieja— y no la que la base
+    // devuelva primero por casualidad.
+    public Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        return context.Users
+            .Where(u => u.Email.ToLower() == normalized)
+            .OrderBy(u => u.Id)
+            .FirstOrDefaultAsync(ct);
+    }
 
     // user-auth: "Unified Identifier Login" (design.md §3.1) — una sola query
     // (`WHERE LOWER(Email) = @id OR Username = @id`), nunca dos lookups secuenciales
