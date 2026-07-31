@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NicaRunner.Application.Auth.Dtos;
 using NicaRunner.Application.Common;
@@ -19,7 +20,8 @@ public class AuthService(
     IEmailTemplateRenderer emailTemplateRenderer,
     IOptions<FrontendOptions> frontendOptions,
     AliasAssigner aliasAssigner,
-    IOptions<LockoutOptions> lockoutOptions) : IAuthService
+    IOptions<LockoutOptions> lockoutOptions,
+    ILogger<AuthService> logger) : IAuthService
 {
     private static readonly TimeSpan ResetTokenLifetime = TimeSpan.FromMinutes(30);
 
@@ -161,7 +163,10 @@ public class AuthService(
 
         var emailSender = notificationSenders.FirstOrDefault(s => s.Channel == NotificationChannel.Email);
         if (emailSender is null)
+        {
+            logger.LogWarning("ForgotPassword: no hay INotificationSender registrado para el canal Email. Token guardado, correo omitido.");
             return;
+        }
 
         try
         {
@@ -171,15 +176,24 @@ public class AuthService(
                 resetLink,
                 (int)ResetTokenLifetime.TotalMinutes));
 
-            await emailSender.SendAsync(user.Email, rendered.Text, rendered.Subject, rendered.Html, ct);
+            var result = await emailSender.SendAsync(user.Email, rendered.Text, rendered.Subject, rendered.Html, ct);
+            if (!result.Success)
+            {
+                logger.LogWarning(
+                    "ForgotPassword: el envío del correo de reseteo a {Email} falló: {Error}",
+                    user.Email,
+                    result.ErrorMessage);
+            }
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
             // BaseUrl no configurado o URL inválida — token guardado, correo omitido.
+            logger.LogWarning(ex, "ForgotPassword: no se pudo construir el link de reseteo para {Email}. Token guardado, correo omitido.", user.Email);
         }
-        catch (TemplateRenderException)
+        catch (TemplateRenderException ex)
         {
             // Fallo interno de plantilla — no exponer al caller.
+            logger.LogError(ex, "ForgotPassword: fallo al renderizar la plantilla de correo para {Email}.", user.Email);
         }
     }
 

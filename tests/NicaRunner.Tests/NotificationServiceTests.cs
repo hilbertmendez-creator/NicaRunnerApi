@@ -136,7 +136,7 @@ public class NotificationServiceTests
         _emailSender.Setup(s => s.SendAsync("ok@test.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new NotificationSendResult(true, null));
         _emailSender.Setup(s => s.SendAsync("falla@test.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new NotificationSendResult(false, "Resend caído"));
+            .ReturnsAsync(new NotificationSendResult(false, "Proveedor de email caído"));
 
         var summary = await BuildService().ProcessPendingAsync();
 
@@ -147,6 +147,6 @@ public class NotificationServiceTests
         Assert.Equal(1, logPendiente.IntentosEnvio);
         Assert.Equal(NotificationStatus.Fallida, logReintento.Status);
         Assert.Equal(3, logReintento.IntentosEnvio);
-        Assert.Equal("Resend caído", logReintento.Error);
+        Assert.Equal("Proveedor de email caído", logReintento.Error);
     }
 }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using NicaRunner.Application.Auth;
@@ -22,7 +23,8 @@ public class AuthServiceLoginTests
     private AuthService BuildService(LockoutOptions? lockout = null) =>
         new(_users.Object, _passwordHasher.Object, _jwt.Object, _google.Object,
             _refresh.Object, [], _emailRenderer.Object, Options.Create(new FrontendOptions()),
-            new AliasAssigner(_users.Object), Options.Create(lockout ?? new LockoutOptions()));
+            new AliasAssigner(_users.Object), Options.Create(lockout ?? new LockoutOptions()),
+            NullLogger<AuthService>.Instance);
 
     private void SetupSuccessfulAuth(User user)
     {
