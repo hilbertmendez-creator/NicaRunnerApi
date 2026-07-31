@@ -432,6 +432,16 @@ app.UseAuthorization();
 // (Android, scripts, admin) no dependen de cookies ambient y quedan afuera de
 // este chequeo — CSRF ataca cookies que el browser adjunta solo.
 var mutatingMethods = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "POST", "PUT", "PATCH", "DELETE" };
+
+// Endpoints anónimos que se autentican con credenciales explícitas del body
+// (password, google id token, link de reseteo) y no con la cookie ambient:
+// no dependen de nr_at/nr_rt para autorizar nada, así que no deben exigir
+// CSRF. Sin esto, un usuario con cookies viejas/expiradas de una sesión
+// anterior (y el csrfToken en memoria del cliente perdido por haber recargado
+// la página) queda bloqueado con 403 al intentar loguearse o pedir un reset
+// de contraseña — el propio login/forgot-password es lo que debería dejarlo
+// arrancar de cero.
+var csrfExemptPaths = new[] { "/auth/login", "/auth/google-login", "/auth/forgot-password", "/auth/reset-password" };
 app.Use(async (context, next) =>
 {
     var request = context.Request;
@@ -446,7 +456,10 @@ app.Use(async (context, next) =>
     var usaCookieAuth = !request.Headers.ContainsKey("Authorization") &&
         (request.Cookies.ContainsKey(AuthCookieNames.AccessToken) || request.Cookies.ContainsKey(AuthCookieNames.RefreshToken));
 
-    if (mutatingMethods.Contains(request.Method) && usaCookieAuth)
+    var isCsrfExempt = csrfExemptPaths.Any(path =>
+        request.Path.Value?.EndsWith(path, StringComparison.OrdinalIgnoreCase) == true);
+
+    if (mutatingMethods.Contains(request.Method) && usaCookieAuth && !isCsrfExempt)
     {
         var csrfCookie = request.Cookies[AuthCookieNames.Csrf];
         var csrfHeader = request.Headers[AuthCookieNames.CsrfHeader].ToString();
