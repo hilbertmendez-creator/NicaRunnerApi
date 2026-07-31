@@ -57,8 +57,17 @@ public class UserRepository(NicaRunnerDbContext context) : IUserRepository
     public Task<List<User>> GetAllAsync(CancellationToken ct = default) =>
         context.Users.OrderBy(u => u.Email).ToListAsync(ct);
 
-    public Task<bool> EmailExistsAsync(string email, CancellationToken ct = default) =>
-        context.Users.AnyAsync(u => u.Email == email, ct);
+    // Mismo criterio case-insensitive que GetByEmailAsync. Este es el guard que
+    // usa la creación de usuarios: siendo case-sensitive dejaba nacer las
+    // colisiones que M3 después detecta y un humano tiene que resolver a mano
+    // (a@x.com y A@x.com como cuentas distintas). Normalizar acá corta el
+    // problema en el origen; las filas que ya colisionan siguen requiriendo la
+    // migración de normalización pendiente (design.md §3.2, M4).
+    public Task<bool> EmailExistsAsync(string email, CancellationToken ct = default)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        return context.Users.AnyAsync(u => u.Email.ToLower() == normalized, ct);
+    }
 
     public Task<bool> UsernameExistsAsync(string username, CancellationToken ct = default) =>
         context.Users.AnyAsync(u => u.Username == username.ToLowerInvariant(), ct);

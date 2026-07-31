@@ -57,17 +57,31 @@ function clearSession() {
   onUnauthorized?.()
 }
 
+// Endpoints anónimos donde un 401 significa "estas credenciales no sirven", no
+// "tu sesión expiró". Refrescar ahí no tiene sentido: no hay sesión que
+// renovar. Antes el login fallido caía en el retry genérico, así que cada
+// contraseña equivocada disparaba un POST /auth/refresh inútil y un
+// clearSession() antes de rechazar. Lo mismo con un link de reseteo vencido.
+// /auth/refresh está en la lista para cortar el reintento infinito.
+const NO_REFRESH_PATHS = [
+  '/auth/refresh',
+  '/auth/login',
+  '/auth/google-login',
+  '/auth/reset-password',
+]
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
 
     // Don't attempt refresh if: not a 401, already retried, or the failing
-    // request IS the refresh call (prevents infinite retry loop).
+    // request is one where refreshing can't help.
     if (
       error.response?.status !== 401 ||
+      !original ||
       original._retry ||
-      original.url?.includes('/auth/refresh')
+      NO_REFRESH_PATHS.some((path) => original.url?.includes(path))
     ) {
       return Promise.reject(error)
     }

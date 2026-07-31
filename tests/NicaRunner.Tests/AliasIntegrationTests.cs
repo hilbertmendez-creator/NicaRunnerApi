@@ -126,4 +126,30 @@ public class AliasIntegrationTests
 
         Assert.Null(await new UserRepository(db).GetByEmailAsync("otro@x.com"));
     }
+
+    // El guard de creación de usuarios: si distingue mayúsculas, deja nacer las
+    // colisiones que M3 después solo puede detectar y reportar.
+    [Theory]
+    [InlineData("hilbert@x.com")]
+    [InlineData("Hilbert@X.com")]
+    [InlineData("HILBERT@X.COM")]
+    [InlineData("  Hilbert@x.com  ")]
+    public async Task EmailExistsAsync_IgnoraMayusculasYEspacios(string consulta)
+    {
+        using var db = BuildMigratedDbContext();
+        db.Users.Add(new User { Email = "hilbert@x.com", Nombre = "H", Role = UserRole.Capturista });
+        await db.SaveChangesAsync();
+
+        Assert.True(await new UserRepository(db).EmailExistsAsync(consulta));
+    }
+
+    [Fact]
+    public async Task EmailExistsAsync_EmailInexistente_DevuelveFalse()
+    {
+        using var db = BuildMigratedDbContext();
+        db.Users.Add(new User { Email = "hilbert@x.com", Nombre = "H", Role = UserRole.Capturista });
+        await db.SaveChangesAsync();
+
+        Assert.False(await new UserRepository(db).EmailExistsAsync("otro@x.com"));
+    }
 }
