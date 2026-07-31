@@ -36,3 +36,11 @@ if [ -d .codegraph ]; then
 else
   codegraph init || true
 fi
+
+# --- gga (AI pre-commit review, installed globally by gentle-ai above) -----
+# The git hook itself lives under .git/hooks/, which git never tracks, so it
+# has to be re-linked into this checkout every session. The .gga config
+# (provider, file patterns, rules file) is committed and persists on its own.
+if command -v gga >/dev/null 2>&1; then
+  gga install || true
+fi
