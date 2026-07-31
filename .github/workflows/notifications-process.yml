@@ -50,7 +50,7 @@ jobs:
         run: |
           # --fail-with-body: sale con 22 si HTTP >= 400, imprime el body
           # de error igual (útil para debug del 401 vs 500).
-          # --max-time 120: el envío por SMTP/WhatsApp de varias notificaciones
+          # --max-time 120: el envío a Resend/WhatsApp de varias notificaciones
           # pendientes puede tardar; 2 min es margen amplio.
           RESPONSE=$(curl --fail-with-body --silent --show-error --max-time 120 \
             -X POST \

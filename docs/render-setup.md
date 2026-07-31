@@ -39,31 +39,39 @@ openssl rand -base64 64
 Pegar el resultado entero como valor. Después no se toca más, salvo emergencia
 (filtración confirmada de la llave).
 
-### 3. `Smtp__User`, `Smtp__Password`, `Smtp__FromEmail`
+### 3. `Resend__ApiKey` y `Resend__FromEmail`
 
-Envío de emails (resultados, reset de contraseña) vía SMTP de Gmail. Requiere
-una cuenta de Google con verificación en dos pasos activada, para poder
-generar un **App Password** (Google Account → Security → 2-Step Verification
-→ App passwords). No usar la contraseña normal de la cuenta — Google la
-rechaza para SMTP de terceros.
+Envío de emails (resultados, reset de contraseña) vía [Resend](https://resend.com).
 
-- `Smtp__User`: el email de Gmail que envía (ej. `hilbertmendez@gmail.com`).
-- `Smtp__Password`: el App Password de 16 caracteres generado arriba.
-- `Smtp__FromEmail`: remitente que ve el destinatario, mismo formato que
-  antes (ej. `NicaRunner <hilbertmendez@gmail.com>`). Gmail solo entrega si
-  coincide con `Smtp__User` (no se puede falsear el remitente).
+- `Resend__ApiKey`: llave de [resend.com/api-keys](https://resend.com/api-keys)
+  con scope `Send only` (no necesita más permisos).
+- `Resend__FromEmail`: remitente que ve el destinatario, formato
+  `Nombre <buzon@dominio>` — por ejemplo
+  `NicaRunner <no-reply@send.nicarunner.com>`.
+
+**El remitente tiene que pertenecer a un dominio verificado** en
+[resend.com/domains](https://resend.com/domains). Si no lo está, Resend
+responde `403 validation_error` y solo entrega a la dirección dueña de la
+cuenta — con ese error ningún usuario real recibe nada.
+
+El dominio de envío de este proyecto es `send.nicarunner.com` (subdominio, no
+la raíz: así un problema de reputación de envío queda contenido y no contamina
+`nicarunner.com`). Verificarlo requiere cargar en el DNS los registros que
+Resend genera — TXT de SPF, TXT de DKIM y un MX de bounces. En Cloudflare esos
+registros van con la nube **gris** (DNS only), no naranja.
+
+No sirve usar el subdominio de Vercel del back office
+(`*.vercel.app`): ese dominio es de Vercel, está en la
+[Public Suffix List](https://publicsuffix.org/) y no se le pueden agregar los
+registros DNS que Resend exige. Hosting HTTP e identidad de correo son cosas
+distintas.
 
 Si todavía no querés habilitar el envío real, podés dejar estas variables
-vacías — la API arranca igual, pero `POST /api/notifications/notify` y
-"olvidé mi contraseña" van a fallar el envío en silencio (ver comentario en
-`AuthService.ForgotPasswordAsync`).
-
-**Límite conocido:** una cuenta de Gmail personal permite ~500 envíos/día. Si
-eso se vuelve una restricción real (más carreras, más corredores), migrar a
-un proveedor transaccional (Resend, SES, etc.) con un dominio propio
-verificado — sin dominio propio, Resend en modo sandbox solo entrega a la
-dirección dueña de la cuenta, que fue justamente el problema que llevó a usar
-Gmail acá.
+vacías — la API arranca igual y `ResendEmailSender` corta antes de intentar el
+envío, devolviendo qué falta configurar. `POST /api/notifications/notify` lo
+reporta en la respuesta, y "olvidé mi contraseña" lo deja en los logs como
+warning (ver `AuthService.ForgotPasswordAsync`); al usuario siempre se le
+responde 200 para no permitir enumerar cuentas.
 
 ### 4. `Cors__AllowedOrigins__0`
 
