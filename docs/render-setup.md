@@ -2,9 +2,9 @@
 
 El blueprint `render.yaml` aprovisiona solo el servicio web. La base de datos
 PostgreSQL vive en [Neon](https://neon.tech) (tier gratuito permanente). Hay
-cinco variables marcadas como `sync: false` que **vos** tenés que setear desde
-el dashboard de Render una vez después del primer deploy. Sin estas, la API no
-arranca o arranca con seguridad rota.
+varias variables marcadas como `sync: false` que **vos** tenés que setear
+desde el dashboard de Render una vez después del primer deploy. Sin estas, la
+API no arranca o arranca con seguridad rota.
 
 ## Variables a configurar
 
@@ -39,14 +39,31 @@ openssl rand -base64 64
 Pegar el resultado entero como valor. Después no se toca más, salvo emergencia
 (filtración confirmada de la llave).
 
-### 3. `Resend__ApiKey`
+### 3. `Smtp__User`, `Smtp__Password`, `Smtp__FromEmail`
 
-Llave de [Resend](https://resend.com/api-keys) para el envío de emails de
-resultados. Crear una llave con scope `Send only` (no necesita más permisos).
+Envío de emails (resultados, reset de contraseña) vía SMTP de Gmail. Requiere
+una cuenta de Google con verificación en dos pasos activada, para poder
+generar un **App Password** (Google Account → Security → 2-Step Verification
+→ App passwords). No usar la contraseña normal de la cuenta — Google la
+rechaza para SMTP de terceros.
 
-Si todavía no usás Resend en producción y querés posponer el envío real, podés
-dejar esta variable vacía — la API arranca igual, pero `POST /api/notifications/notify`
-va a fallar con error explícito.
+- `Smtp__User`: el email de Gmail que envía (ej. `hilbertmendez@gmail.com`).
+- `Smtp__Password`: el App Password de 16 caracteres generado arriba.
+- `Smtp__FromEmail`: remitente que ve el destinatario, mismo formato que
+  antes (ej. `NicaRunner <hilbertmendez@gmail.com>`). Gmail solo entrega si
+  coincide con `Smtp__User` (no se puede falsear el remitente).
+
+Si todavía no querés habilitar el envío real, podés dejar estas variables
+vacías — la API arranca igual, pero `POST /api/notifications/notify` y
+"olvidé mi contraseña" van a fallar el envío en silencio (ver comentario en
+`AuthService.ForgotPasswordAsync`).
+
+**Límite conocido:** una cuenta de Gmail personal permite ~500 envíos/día. Si
+eso se vuelve una restricción real (más carreras, más corredores), migrar a
+un proveedor transaccional (Resend, SES, etc.) con un dominio propio
+verificado — sin dominio propio, Resend en modo sandbox solo entrega a la
+dirección dueña de la cuenta, que fue justamente el problema que llevó a usar
+Gmail acá.
 
 ### 4. `Cors__AllowedOrigins__0`
 
@@ -95,7 +112,7 @@ esta variable no es necesaria — SignalR funciona igual sin ella.
 Si escalás: provisionar un Redis (Render Key Value, Upstash, etc.) y setear
 `ConnectionStrings__Redis` con la connection string. La API lo detecta solo.
 
-## Después de setear las 5
+## Después de setearlas
 
 Render hace **redeploy automático** al guardar variables. Esperar a que el
 servicio quede en estado `Live` y verificar:

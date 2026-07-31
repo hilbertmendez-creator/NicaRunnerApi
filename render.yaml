@@ -31,11 +31,16 @@ services:
         value: "60"
       - key: Jwt__RefreshExpiryDays
         value: "30"
-      - key: Resend__ApiKey
+      # Cuenta de Gmail usada para enviar correos vía SMTP (ver
+      # docs/render-setup.md). Requiere un App Password de Google, no la
+      # contraseña normal de la cuenta.
+      - key: Smtp__User
         sync: false
-      - key: Resend__FromEmail
-        value: "NicaRunner <onboarding@resend.dev>"
-      - key: Resend__Subject
+      - key: Smtp__Password
+        sync: false
+      - key: Smtp__FromEmail
+        sync: false
+      - key: Smtp__Subject
         value: "Tu resultado en NicaRunner"
       - key: GoogleAuth__ClientId
         value: "450796447742-hi3dpbuo0i6k5jua6u31rqpgf7dpm06b.apps.googleusercontent.com"

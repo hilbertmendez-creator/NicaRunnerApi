@@ -146,7 +146,7 @@ builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
 });
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Resend"));
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
 builder.Services.Configure<LockoutOptions>(builder.Configuration.GetSection("Lockout"));
@@ -165,11 +165,7 @@ builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenReposi
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
-builder.Services.AddHttpClient<ResendEmailSender>(client =>
-{
-    client.BaseAddress = new Uri("https://api.resend.com/");
-});
-builder.Services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<ResendEmailSender>());
+builder.Services.AddScoped<INotificationSender, SmtpEmailSender>();
 builder.Services.AddScoped<INotificationSender, StubWhatsAppSender>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
@@ -268,7 +264,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // Rate limiting para los endpoints sin autenticación más expuestos a abuso:
-// login/forgot-password (fuerza bruta, agotar cuota de envío de Resend) y
+// login/forgot-password (fuerza bruta, agotar cuota de envío de email) y
 // resultados públicos (fuerza bruta del token). Particionado por IP del
 // cliente, fixed window, sin cola — de nada sirve encolar un login.
 builder.Services.AddRateLimiter(options =>
