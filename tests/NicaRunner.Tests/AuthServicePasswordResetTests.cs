@@ -99,6 +99,67 @@ public class AuthServicePasswordResetTests
         _refresh.Verify(r => r.RevokeAllForUserAsync(1, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    // login-lockout: regresión — el reseteo debe levantar el bloqueo por intentos
+    // fallidos, o LoginAsync sigue cortando en IsLocked antes del Verify.
+    [Fact]
+    public async Task ResetPassword_CuentaBloqueada_LimpiaElBloqueo()
+    {
+        var user = new User
+        {
+            Id = 1,
+            Email = "a@b.com",
+            PasswordHash = "hash-vieja",
+            PasswordResetToken = "token-123",
+            PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(10),
+            FailedLoginCount = 5,
+            LockedUntilUtc = DateTime.UtcNow.AddMinutes(15),
+            LastFailedLoginUtc = DateTime.UtcNow.AddMinutes(-1)
+        };
+        _users.Setup(u => u.GetByResetTokenAsync("token-123", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _passwordHasher.Setup(p => p.Hash("nueva-segura")).Returns("hash-nueva");
+
+        await BuildService().ResetPasswordAsync(new ResetPasswordRequest("token-123", "nueva-segura"));
+
+        Assert.Equal(0, user.FailedLoginCount);
+        Assert.Null(user.LockedUntilUtc);
+        Assert.Null(user.LastFailedLoginUtc);
+    }
+
+    // login-lockout: regresión end-to-end del bug reportado — resetear estando
+    // bloqueado y poder entrar en seguida con la contraseña nueva.
+    [Fact]
+    public async Task ResetPassword_LuegoLogin_ConCuentaBloqueada_PermiteEntrar()
+    {
+        var user = new User
+        {
+            Id = 1,
+            Email = "a@b.com",
+            Nombre = "Ana",
+            Role = UserRole.Administrador,
+            IsActive = true,
+            PasswordHash = "hash-vieja",
+            PasswordResetToken = "token-123",
+            PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(10),
+            FailedLoginCount = 5,
+            LockedUntilUtc = DateTime.UtcNow.AddMinutes(15)
+        };
+        _users.Setup(u => u.GetByResetTokenAsync("token-123", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _users.Setup(u => u.GetByEmailOrUsernameAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _passwordHasher.Setup(p => p.Hash("nueva-segura")).Returns("hash-nueva");
+        _passwordHasher.Setup(p => p.Verify("nueva-segura", "hash-nueva")).Returns(true);
+        _jwt.Setup(j => j.GenerateToken(user)).Returns(new GeneratedToken("access-token", DateTime.UtcNow.AddHours(1)));
+        _refresh.Setup(r => r.IssueAsync(user, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IssuedRefreshToken("refresh-token", DateTime.UtcNow.AddDays(30), Guid.NewGuid()));
+
+        var service = BuildService();
+        await service.ResetPasswordAsync(new ResetPasswordRequest("token-123", "nueva-segura"));
+        var result = await service.LoginAsync(new LoginRequest("a@b.com", null, "nueva-segura"));
+
+        Assert.Equal("access-token", result.Token);
+        Assert.Equal(0, user.FailedLoginCount);
+        Assert.Null(user.LockedUntilUtc);
+    }
+
     [Fact]
     public async Task ResetPassword_TokenExpirado_LanzaInvalidCredentials()
     {

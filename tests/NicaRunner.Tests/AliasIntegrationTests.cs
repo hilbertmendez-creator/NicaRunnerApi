@@ -80,4 +80,76 @@ public class AliasIntegrationTests
         Assert.Equal("hmendezv", primero.Username);
         Assert.Equal("hmendezv2", segundo.Username);
     }
+
+    // user-auth: "Email Address Normalization" — contra base real porque el punto
+    // es justamente cómo compara el motor, que un mock no puede reproducir.
+    [Theory]
+    [InlineData("hilbert@x.com")]
+    [InlineData("Hilbert@X.com")]
+    [InlineData("HILBERT@X.COM")]
+    [InlineData("  Hilbert@x.com  ")]
+    public async Task GetByEmailAsync_IgnoraMayusculasYEspacios(string consulta)
+    {
+        using var db = BuildMigratedDbContext();
+        db.Users.Add(new User { Email = "hilbert@x.com", Nombre = "H", Role = UserRole.Capturista });
+        await db.SaveChangesAsync();
+
+        var encontrado = await new UserRepository(db).GetByEmailAsync(consulta);
+
+        Assert.NotNull(encontrado);
+        Assert.Equal("hilbert@x.com", encontrado!.Email);
+    }
+
+    // Mientras el índice único de Email siga siendo case-sensitive pueden convivir
+    // filas que solo difieren en mayúsculas. La búsqueda tiene que devolver siempre
+    // la misma —la más vieja— y no la que la base saque primero por casualidad.
+    [Fact]
+    public async Task GetByEmailAsync_ConColisionPorMayusculas_DevuelveLaCuentaMasVieja()
+    {
+        using var db = BuildMigratedDbContext();
+        db.Users.Add(new User { Email = "hilbert@x.com", Nombre = "Vieja", Role = UserRole.Capturista });
+        db.Users.Add(new User { Email = "HILBERT@x.com", Nombre = "Nueva", Role = UserRole.Capturista });
+        await db.SaveChangesAsync();
+
+        var users = new UserRepository(db);
+
+        Assert.Equal("Vieja", (await users.GetByEmailAsync("hilbert@x.com"))!.Nombre);
+        Assert.Equal("Vieja", (await users.GetByEmailAsync("HILBERT@x.com"))!.Nombre);
+    }
+
+    [Fact]
+    public async Task GetByEmailAsync_EmailInexistente_DevuelveNull()
+    {
+        using var db = BuildMigratedDbContext();
+        db.Users.Add(new User { Email = "hilbert@x.com", Nombre = "H", Role = UserRole.Capturista });
+        await db.SaveChangesAsync();
+
+        Assert.Null(await new UserRepository(db).GetByEmailAsync("otro@x.com"));
+    }
+
+    // El guard de creación de usuarios: si distingue mayúsculas, deja nacer las
+    // colisiones que M3 después solo puede detectar y reportar.
+    [Theory]
+    [InlineData("hilbert@x.com")]
+    [InlineData("Hilbert@X.com")]
+    [InlineData("HILBERT@X.COM")]
+    [InlineData("  Hilbert@x.com  ")]
+    public async Task EmailExistsAsync_IgnoraMayusculasYEspacios(string consulta)
+    {
+        using var db = BuildMigratedDbContext();
+        db.Users.Add(new User { Email = "hilbert@x.com", Nombre = "H", Role = UserRole.Capturista });
+        await db.SaveChangesAsync();
+
+        Assert.True(await new UserRepository(db).EmailExistsAsync(consulta));
+    }
+
+    [Fact]
+    public async Task EmailExistsAsync_EmailInexistente_DevuelveFalse()
+    {
+        using var db = BuildMigratedDbContext();
+        db.Users.Add(new User { Email = "hilbert@x.com", Nombre = "H", Role = UserRole.Capturista });
+        await db.SaveChangesAsync();
+
+        Assert.False(await new UserRepository(db).EmailExistsAsync("otro@x.com"));
+    }
 }

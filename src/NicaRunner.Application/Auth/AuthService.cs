@@ -142,6 +142,13 @@ public class AuthService(
         user.PasswordHash = passwordHasher.Hash(request.NewPassword);
         user.MustChangePassword = false;
 
+        // login-lockout: mismo criterio que ResetPasswordAsync. Con un JWT
+        // todavía válido se puede cambiar la contraseña estando bloqueado para
+        // login, así que el cambio también tiene que levantar el bloqueo.
+        user.FailedLoginCount = 0;
+        user.LockedUntilUtc = null;
+        user.LastFailedLoginUtc = null;
+
         // Un refresh token robado no debe seguir sirviendo una vez que el
         // usuario cambia su contraseña.
         await refreshTokenService.RevokeAllForUserAsync(user.Id, ct);
@@ -207,6 +214,15 @@ public class AuthService(
         user.PasswordResetToken = null;
         user.PasswordResetTokenExpiry = null;
         user.MustChangePassword = false;
+
+        // login-lockout: el reseteo también levanta el bloqueo por intentos
+        // fallidos. Sin esto, quien resetea justo después de agotar el umbral
+        // sigue rebotando en el IsLocked de LoginAsync (que corta antes del
+        // Verify) con el mismo mensaje genérico, aunque la contraseña nueva
+        // sea correcta.
+        user.FailedLoginCount = 0;
+        user.LockedUntilUtc = null;
+        user.LastFailedLoginUtc = null;
 
         // Un refresh token robado no debe seguir sirviendo una vez que la
         // víctima recupera su cuenta.

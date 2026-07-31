@@ -1,9 +1,39 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import { useAuth } from '../auth/auth-context'
 import { Button, Label, Input } from '@nicarunner/ui'
 import { NicaRunnerLogo } from './NicaRunnerLogo'
 import { PasswordInput } from '../components/PasswordInput'
+
+const CREDENCIALES_INVALIDAS = 'Usuario o contraseña incorrectos'
+
+/**
+ * Traduce el fallo del login a un mensaje honesto. Antes cualquier excepción se
+ * reportaba como credenciales inválidas, así que una API caída, un problema de
+ * red o un 500 mandaban al usuario a reescribir una contraseña que estaba bien
+ * — y ocultaban la causa real a quien tuviera que diagnosticarlo.
+ *
+ * Para el 401 seguimos mostrando el mensaje genérico que manda el backend: es
+ * deliberadamente ambiguo entre contraseña incorrecta, cuenta bloqueada y cuenta
+ * inactiva para no permitir enumerar usuarios. Eso no se toca acá.
+ */
+function describirErrorDeLogin(error: unknown): string {
+  if (!axios.isAxiosError(error)) return 'No pudimos iniciar sesión. Intentá de nuevo.'
+
+  if (!error.response) {
+    return 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.'
+  }
+
+  const { status, data } = error.response
+  const detalle = typeof data?.detail === 'string' ? data.detail.trim() : ''
+
+  if (status === 401) return detalle || CREDENCIALES_INVALIDAS
+  if (status === 429) return detalle || 'Demasiados intentos. Esperá un momento e intentá de nuevo.'
+  if (status >= 500) return 'El servidor tuvo un problema. Intentá de nuevo en unos minutos.'
+
+  return detalle || 'No pudimos iniciar sesión. Intentá de nuevo.'
+}
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -22,8 +52,8 @@ export function LoginPage() {
     try {
       await login(identifier, password)
       navigate('/', { replace: true })
-    } catch {
-      setError('Usuario o contraseña incorrectos')
+    } catch (err) {
+      setError(describirErrorDeLogin(err))
     } finally {
       setSubmitting(false)
     }
