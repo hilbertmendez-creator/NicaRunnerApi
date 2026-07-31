@@ -31,12 +31,17 @@ publish/
 .claude/helpers/
 .claude/skills/*
 !.claude/skills/graphify/
+.claude/mcp/
+.claude/output-styles/
 .claude-flow/
 .agent/
 .swarm/
 .atl/
 *.rvf
 *.rvf.lock
+
+## CodeGraph knowledge graph (regenerated per session via SessionStart hook)
+.codegraph/
 
 ## graphify knowledge graph (regenerated via git hook / /graphify --update)
 graphify-out/
