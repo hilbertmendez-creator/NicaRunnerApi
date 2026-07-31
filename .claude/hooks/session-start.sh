@@ -44,3 +44,13 @@ fi
 if command -v gga >/dev/null 2>&1; then
   gga install || true
 fi
+
+# --- impeccable (design critique skill) -------------------------------------
+# The npx installer (`npx impeccable install`) pulls its skill bundle from
+# impeccable.style, which this environment's egress policy blocks outright.
+# The plugin-marketplace route only needs GitHub, so use that instead. Both
+# the marketplace clone and the plugin cache live under ~/.claude/plugins/
+# (not the repo), so they need reinstalling each session even though
+# .claude/settings.json already records "impeccable@impeccable" as enabled.
+claude plugin marketplace add pbakaus/impeccable || true
+claude plugin install impeccable@impeccable --scope project || true
