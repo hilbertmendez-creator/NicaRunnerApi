@@ -10,6 +10,19 @@ fi
 
 export PATH="$HOME/go/bin:$PATH"
 
+# The export above only affects this hook's own subprocess. engram's MCP
+# server is registered as a Claude Code plugin (installed by gentle-ai below)
+# whose .mcp.json uses a bare `command: "engram"` — resolved via PATH at
+# spawn time by the *main* Claude Code process, which never sees this
+# subprocess's exported PATH. Without persisting it to $CLAUDE_ENV_FILE, the
+# binary lands in $HOME/go/bin correctly but the running session (both
+# later Bash tool calls and the engram MCP server spawn) can't find it,
+# silently breaking engram memory for the rest of the session even though
+# this hook reports success.
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  echo "export PATH=\"$HOME/go/bin:\$PATH\"" >> "$CLAUDE_ENV_FILE"
+fi
+
 # --- engram (persistent memory) -------------------------------------------
 # Install first and put it on PATH: gentle-ai's own installer tries to fetch
 # engram's release from the GitHub API, which 403s on this shared egress IP.
