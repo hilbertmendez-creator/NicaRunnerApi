@@ -39,31 +39,43 @@ openssl rand -base64 64
 Pegar el resultado entero como valor. Después no se toca más, salvo emergencia
 (filtración confirmada de la llave).
 
-### 3. `Smtp__User`, `Smtp__Password`, `Smtp__FromEmail`
+### 3. `SendGrid__ApiKey`, `SendGrid__FromEmail`
 
-Envío de emails (resultados, reset de contraseña) vía SMTP de Gmail. Requiere
-una cuenta de Google con verificación en dos pasos activada, para poder
-generar un **App Password** (Google Account → Security → 2-Step Verification
-→ App passwords). No usar la contraseña normal de la cuenta — Google la
-rechaza para SMTP de terceros.
+Envío de emails (resultados, reset de contraseña) vía la API HTTP de
+[SendGrid](https://sendgrid.com), usando **Single Sender Verification** — se
+verifica una sola dirección de email, sin necesitar un dominio propio ni
+configurar DNS.
 
-- `Smtp__User`: el email de Gmail que envía (ej. `hilbertmendez@gmail.com`).
-- `Smtp__Password`: el App Password de 16 caracteres generado arriba.
-- `Smtp__FromEmail`: remitente que ve el destinatario, mismo formato que
-  antes (ej. `NicaRunner <hilbertmendez@gmail.com>`). Gmail solo entrega si
-  coincide con `Smtp__User` (no se puede falsear el remitente).
+> **Por qué no SMTP de Gmail ni Resend:** se probaron ambos antes de llegar
+> acá. Resend en modo sandbox (sin dominio verificado) solo entrega a la
+> dirección dueña de la cuenta — confirmado con un 403 en un envío real.
+> SMTP directo con Gmail (puerto 587) se probó después: la conexión saliente
+> se cuelga en Render (confirmado: 502 después de exactamente 30s, el
+> timeout del proxy) en vez de fallar rápido — parece un puerto SMTP
+> filtrado en la red del plan free. SendGrid usa HTTPS normal (mismo
+> mecanismo que ya funciona con Resend), así que no tiene ese problema.
+
+**Setup:**
+
+1. Crear cuenta gratis en [sendgrid.com](https://sendgrid.com) (100
+   emails/día gratis para siempre).
+2. Dashboard → **Settings → Sender Authentication → Single Sender
+   Verification** → Create New Sender, con el email que va a aparecer como
+   remitente (puede ser tu Gmail personal). SendGrid manda un correo de
+   confirmación a esa dirección — hay que abrirlo y confirmar antes de que
+   el sender quede verificado.
+3. Dashboard → **Settings → API Keys → Create API Key**, con permiso
+   **Mail Send** (no hace falta Full Access).
+4. En Render:
+   - `SendGrid__ApiKey`: la API key del paso 3.
+   - `SendGrid__FromEmail`: el email verificado en el paso 2 (tiene que
+     coincidir exacto — SendGrid rechaza el envío si el remitente no está
+     verificado).
 
 Si todavía no querés habilitar el envío real, podés dejar estas variables
 vacías — la API arranca igual, pero `POST /api/notifications/notify` y
-"olvidé mi contraseña" van a fallar el envío en silencio (ver comentario en
-`AuthService.ForgotPasswordAsync`).
-
-**Límite conocido:** una cuenta de Gmail personal permite ~500 envíos/día. Si
-eso se vuelve una restricción real (más carreras, más corredores), migrar a
-un proveedor transaccional (Resend, SES, etc.) con un dominio propio
-verificado — sin dominio propio, Resend en modo sandbox solo entrega a la
-dirección dueña de la cuenta, que fue justamente el problema que llevó a usar
-Gmail acá.
+"olvidé mi contraseña" van a fallar el envío en silencio (queda logueado,
+ver comentario en `AuthService.ForgotPasswordAsync`).
 
 ### 4. `Cors__AllowedOrigins__0`
 

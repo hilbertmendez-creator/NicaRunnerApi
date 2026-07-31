@@ -146,7 +146,7 @@ builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
 });
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
-builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.Configure<SendGridOptions>(builder.Configuration.GetSection("SendGrid"));
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
 builder.Services.Configure<LockoutOptions>(builder.Configuration.GetSection("Lockout"));
@@ -165,7 +165,11 @@ builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenReposi
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
-builder.Services.AddScoped<INotificationSender, SmtpEmailSender>();
+builder.Services.AddHttpClient<SendGridEmailSender>(client =>
+{
+    client.BaseAddress = new Uri("https://api.sendgrid.com/");
+});
+builder.Services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<SendGridEmailSender>());
 builder.Services.AddScoped<INotificationSender, StubWhatsAppSender>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
