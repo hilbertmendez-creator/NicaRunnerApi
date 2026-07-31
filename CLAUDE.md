@@ -21,6 +21,17 @@
 npm run build && npm test
 ```
 
+## Engram memory persistence
+
+Engram's database lives outside the repo (`~/.engram/engram.db`), so remote
+sessions lose it unless it's synced into git. `.claude/settings.json`
+auto-exports new memories to `.engram/` on every prompt, and
+`.claude/hooks/session-start.sh` re-imports `.engram/` on session start —
+but that only closes the loop if `.engram/` itself reaches a commit. When
+making a real work commit and `.engram/` has pending changes (`git status
+--short .engram/`), include it in that commit. Don't create commits solely
+to sync memory.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

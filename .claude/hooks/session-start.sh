@@ -18,6 +18,16 @@ if ! command -v engram >/dev/null 2>&1; then
   go install github.com/Gentleman-Programming/engram/cmd/engram@latest
 fi
 
+# engram's actual memory database lives at ~/.engram/engram.db (home dir),
+# not in the repo, so it's just as ephemeral as everything else here. Reload
+# whatever was last committed to the project's .engram/ export directory
+# (see the UserPromptSubmit export step in .claude/settings.json) so past
+# decisions/bugfixes/conventions are searchable again this session.
+cd "${CLAUDE_PROJECT_DIR:-$PWD}"
+if [ -d .engram ]; then
+  engram sync --import || true
+fi
+
 # --- gentle-ai (persona, skills, SDD workflow, review agents, engram wiring)
 if ! command -v gentle-ai >/dev/null 2>&1; then
   go install github.com/gentleman-programming/gentle-ai/v2/cmd/gentle-ai@latest
