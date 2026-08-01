@@ -171,8 +171,14 @@ public class ResultService(
 
     private async Task RecalculatePositionsAsync(int raceId, int categoryId, CancellationToken ct)
     {
+        // enlaces-publicos-resultados design.md Decisión 4: desempate (TiempoLlegada, Id)
+        // — antes solo ordenaba por TiempoLlegada, así que dos resultados con el mismo
+        // instante recibían una Posicion arbitraria (orden estable = orden de llegada de
+        // la query, no reproducible). Debe coincidir EXACTO con el desempate de
+        // GetPlacingCountsAsync (ResultRepository) para que esta Posicion guardada nunca
+        // contradiga el placing derivado que ve el enlace público de detalle del corredor.
         var results = await resultRepository.GetAllByCategoryAsync(raceId, categoryId, ct);
-        var ordered = results.OrderBy(r => r.TiempoLlegada).ToList();
+        var ordered = results.OrderBy(r => r.TiempoLlegada).ThenBy(r => r.Id).ToList();
 
         for (var i = 0; i < ordered.Count; i++)
             ordered[i].Posicion = i + 1;

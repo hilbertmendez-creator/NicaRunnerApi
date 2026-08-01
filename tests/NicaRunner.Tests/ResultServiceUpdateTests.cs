@@ -73,6 +73,49 @@ public class ResultServiceUpdateTests
         _results.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // design.md Decisión 4 / Write-Path Risk Callout (tasks.md): RecalculatePositionsAsync
+    // ordenaba solo por TiempoLlegada, sin desempate — dos resultados con el mismo
+    // instante recibían un Posicion arbitrario y no reproducible (dependiente del orden
+    // que EF devolviera esa corrida en particular). El desempate (TiempoLlegada, Id) debe
+    // coincidir EXACTO con el que usa GetPlacingCountsAsync (ResultRepository) para que la
+    // Posicion guardada nunca contradiga el placing derivado que ve el enlace público.
+    // El mock devuelve el Id más alto PRIMERO a propósito: si el código solo preservara el
+    // orden de entrada en vez de ordenar de verdad, este test lo detectaría.
+    [Fact]
+    public async Task Update_ResultadosConTiempoEmpatado_DesempataPorIdAscendente()
+    {
+        RaceExists();
+        var tiempoEmpatado = DateTime.UtcNow.AddHours(-1);
+
+        var existing = new Result
+        {
+            Id = 20, RaceId = 1, RunnerId = 5, Dorsal = "101",
+            TiempoLlegada = DateTime.UtcNow.AddHours(-2), CategoryId = 2, CapturistaId = 9
+        };
+        var otroEmpatado = new Result
+        {
+            Id = 10, RaceId = 1, RunnerId = 6, Dorsal = "102",
+            TiempoLlegada = tiempoEmpatado, CategoryId = 2, CapturistaId = 9
+        };
+        _results.Setup(r => r.GetByIdAsync(1, 20, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+
+        var runner = new Runner { Id = 5, RaceId = 1, Dorsal = "101", CategoryId = 2, Nombre = "Juan" };
+        _runners.Setup(r => r.GetByDorsalAsync(1, "101", It.IsAny<CancellationToken>())).ReturnsAsync(runner);
+
+        // Orden de entrada deliberadamente invertido (Id 20 antes que Id 10) — si
+        // RecalculatePositionsAsync no ordenara de verdad por (TiempoLlegada, Id), este
+        // test pasaría por casualidad con el orden "correcto" al revés.
+        _results.Setup(r => r.GetAllByCategoryAsync(1, 2, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([existing, otroEmpatado]);
+
+        var request = new UpdateResultRequest("101", tiempoEmpatado, "Empate de prueba");
+        await BuildService().UpdateAsync(1, 20, request, editorId: 3);
+
+        // Id 10 (menor) debe quedar antes que Id 20 (mayor) en el empate.
+        Assert.Equal(1, otroEmpatado.Posicion);
+        Assert.Equal(2, existing.Posicion);
+    }
+
     [Fact]
     public async Task Update_TiempoFuturo_LanzaValidationException()
     {
