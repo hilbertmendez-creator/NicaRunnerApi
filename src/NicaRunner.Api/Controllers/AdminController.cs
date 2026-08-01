@@ -57,6 +57,8 @@ public class AdminController(
         if (!IsAuthorized("notifications/process-pending"))
             return Unauthorized();
 
+        // El barrido periódico lo hace PendingNotificationsWorker in-process;
+        // este endpoint queda para disparos manuales (on-call, debug).
         var result = await notificationService.ProcessPendingAsync(ct);
         logger.LogInformation(
             "Admin notifications sweep: {Procesadas} procesadas, {Enviadas} enviadas, {Fallidas} fallidas.",
