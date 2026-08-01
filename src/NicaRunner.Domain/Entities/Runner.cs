@@ -22,6 +22,14 @@ public class Runner
     public int CategoryId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// Identificador opaco y permanente para el enlace público de detalle del corredor
+    /// (GET /api/public/corredor/{PublicShareKey}). Nullable durante la ventana de
+    /// backfill/deploy — ver RunnerShareKeyBackfillService y el índice único filtrado
+    /// en NicaRunnerDbContext.
+    /// </summary>
+    public string? PublicShareKey { get; set; }
+
     public Race Race { get; set; } = null!;
     public Category Category { get; set; } = null!;
     public ICollection<Result> Results { get; set; } = new List<Result>();
