@@ -1,24 +1,23 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 
-export type Theme = 'dark' | 'light' | 'brand'
+export type Theme = 'light' | 'dark'
 
 interface ThemeCtx {
   theme: Theme
   setTheme: (t: Theme) => void
 }
 
-const STORAGE_KEY = 'nr_theme'
+const STORAGE_KEY = 'nicarunner-theme'
 
-const ThemeContext = createContext<ThemeCtx>({ theme: 'dark', setTheme: () => {} })
+const ThemeContext = createContext<ThemeCtx>({ theme: 'light', setTheme: () => {} })
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem(STORAGE_KEY) as Theme) ?? 'dark'
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored === 'dark' ? 'dark' : 'light'
   })
 
-  // Aplica el tema al <html> para que los tokens [data-theme] apliquen
-  // a toda la app sin envolver el layout existente en un wrapper.
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])

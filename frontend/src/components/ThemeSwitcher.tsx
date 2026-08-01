@@ -1,11 +1,4 @@
 import { useTheme } from '../hooks/useTheme'
-import type { Theme } from '../hooks/useTheme'
-
-const THEMES: { value: Theme; label: string }[] = [
-  { value: 'dark', label: '⬛ Control' },
-  { value: 'light', label: '☀ Limpio' },
-  { value: 'brand', label: '◆ Marca' },
-]
 
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme()
@@ -13,32 +6,34 @@ export function ThemeSwitcher() {
     <div
       style={{
         display: 'flex',
-        gap: 2,
-        padding: 3,
         background: 'var(--bg-app)',
         border: '1px solid var(--bd)',
-        borderRadius: 9,
+        borderRadius: 6,
+        padding: 2,
+        gap: 1,
       }}
     >
-      {THEMES.map((t) => (
+      {(['light', 'dark'] as const).map((t) => (
         <button
-          key={t.value}
+          key={t}
           type="button"
-          onClick={() => setTheme(t.value)}
+          onClick={() => setTheme(t)}
           style={{
-            padding: '4px 9px',
-            fontSize: 10.5,
-            fontWeight: theme === t.value ? 600 : 400,
-            color: theme === t.value ? 'var(--accent)' : 'var(--text-xs)',
-            background: theme === t.value ? 'var(--accent-bg)' : 'transparent',
+            height: 24,
+            padding: '0 8px',
+            borderRadius: 4,
+            fontSize: 10,
+            fontWeight: 500,
             border: 'none',
-            borderRadius: 6,
             cursor: 'pointer',
             fontFamily: 'Inter, system-ui',
-            transition: 'all .15s',
+            transition: 'all .12s',
+            color: theme === t ? 'var(--tx-hi)' : 'var(--tx-lo)',
+            background: theme === t ? 'var(--bg-card)' : 'transparent',
+            boxShadow: theme === t ? 'var(--shadow-sm)' : 'none',
           }}
         >
-          {t.label}
+          {t === 'light' ? 'Claro' : 'Oscuro'}
         </button>
       ))}
     </div>
