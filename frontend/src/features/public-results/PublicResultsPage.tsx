@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { getPublicResults } from '../../api/endpoints'
 import type { PublicRaceResultsDto } from '../../api/types'
 
@@ -9,6 +9,7 @@ function formatTime(iso: string) {
 
 export function PublicResultsPage() {
   const { token } = useParams<{ token: string }>()
+  const navigate = useNavigate()
   const [data, setData] = useState<PublicRaceResultsDto | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -78,14 +79,31 @@ export function PublicResultsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {cat.resultados.map((res) => (
-                      <tr key={res.runnerId} style={{ borderTop: '1px solid var(--bd-row)', color: 'var(--text-hi)' }}>
-                        <td className="py-1.5">{res.posicion}</td>
-                        <td className="py-1.5">{res.dorsal}</td>
-                        <td className="py-1.5">{res.nombre}</td>
-                        <td className="py-1.5">{formatTime(res.tiempoLlegada)}</td>
-                      </tr>
-                    ))}
+                    {cat.resultados.map((res) => {
+                      // spec.md "Conditional Return-to-Results Link": el token viaja por
+                      // router state, nunca en la URL — un visitante que abre el enlace
+                      // compartido directamente (sin state) nunca ve el link de regreso.
+                      // Filas sin ShareKey (backfill pendiente) quedan no-clicables.
+                      const clickable = res.shareKey !== null
+                      return (
+                        <tr
+                          key={res.runnerId}
+                          onClick={clickable
+                            ? () => navigate(`/corredor/${res.shareKey}`, { state: { fromToken: token } })
+                            : undefined}
+                          style={{
+                            borderTop: '1px solid var(--bd-row)',
+                            color: 'var(--text-hi)',
+                            cursor: clickable ? 'pointer' : 'default',
+                          }}
+                        >
+                          <td className="py-1.5">{res.posicion}</td>
+                          <td className="py-1.5">{res.dorsal}</td>
+                          <td className="py-1.5">{res.nombre}</td>
+                          <td className="py-1.5">{formatTime(res.tiempoLlegada)}</td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </section>
