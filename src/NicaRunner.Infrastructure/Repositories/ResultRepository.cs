@@ -49,6 +49,37 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
             .Include(r => r.Capturista)
             .FirstOrDefaultAsync(r => r.RaceId == raceId && r.IdempotencyKey == idempotencyKey, ct);
 
+    // design.md Decisión 3: seek único por el índice filtrado IX_Results_RaceId_RunnerId.
+    public Task<Result?> GetByRunnerWithCategoryAsync(int raceId, int runnerId, CancellationToken ct = default) =>
+        context.Results
+            .Include(r => r.Category)
+            .FirstOrDefaultAsync(r => r.RaceId == raceId && r.RunnerId == runnerId, ct);
+
+    // design.md Decisión 3: los cuatro agregados en UNA sola consulta —
+    // GroupBy(_ => 1) traduce a un solo SELECT con COUNT(...) FILTER/CASE por columna,
+    // sin materializar ninguna fila de Result. Desempate (TiempoLlegada, Id) idéntico al
+    // de RecalculatePositionsAsync (ResultService.cs) para que la posición derivada acá
+    // nunca contradiga la Posicion guardada.
+    public async Task<PlacingCounts> GetPlacingCountsAsync(int raceId, int categoryId, DateTime tiempoLlegada, int resultId, CancellationToken ct = default)
+    {
+        var counts = await context.Results
+            .Where(r => r.RaceId == raceId && r.RunnerId != null && r.CategoryId != null)
+            .GroupBy(_ => 1)
+            .Select(g => new PlacingCounts(
+                g.Count(r => r.CategoryId == categoryId &&
+                    (r.TiempoLlegada < tiempoLlegada || (r.TiempoLlegada == tiempoLlegada && r.Id < resultId))),
+                g.Count(r => r.CategoryId == categoryId),
+                g.Count(r =>
+                    r.TiempoLlegada < tiempoLlegada || (r.TiempoLlegada == tiempoLlegada && r.Id < resultId)),
+                g.Count()))
+            .FirstOrDefaultAsync(ct);
+
+        // Sin filas en la carrera (caso imposible en la práctica — este método solo se
+        // llama cuando ya se resolvió un Result existente) o carrera vacía: agregados en
+        // cero en vez de lanzar.
+        return counts ?? new PlacingCounts(0, 0, 0, 0);
+    }
+
     public async Task AddAsync(Result result, CancellationToken ct = default) =>
         await context.Results.AddAsync(result, ct);
 
