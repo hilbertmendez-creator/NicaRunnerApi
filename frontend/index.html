@@ -1,18 +1,78 @@
 <!doctype html>
-<html lang="en">
+<html lang="es-NI" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        var theme = 'light';
+        try {
+          var raw = localStorage.getItem('nr_theme');
+          var mapped = raw === 'brand' ? 'light' : raw;
+          theme = mapped === 'light' || mapped === 'dark' ? mapped : 'light';
+          document.documentElement.dataset.theme = theme;
+        } catch (e) {
+          /* storage unavailable — the static data-theme="light" on <html> already stands */
+        }
+        try {
+          localStorage.setItem('nr_theme', theme);
+        } catch (e) {
+          /* write-back failed — the resolved theme is already applied to the DOM */
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Fragment+Mono&display=swap"
       rel="stylesheet"
     />
-    <title>frontend</title>
+    <title>NicaRunner — Resultados de carreras</title>
   </head>
   <body>
+    <!--
+    THESIS: A race result is a record that must survive being contested, so
+    NicaRunner is a bound official register, not a dashboard. It refuses the
+    SaaS-admin default — rounded cards on a neutral wash with one blue accent —
+    and the neon telemetry cockpit equally. A register never erases: a rejected
+    time is struck through and stays on the page beside the one that replaced it,
+    because the argument is the evidence.
+
+    OWN-WORLD: Ruled folio stock, cold and machine-white — never cream, ivory,
+    parchment or sepia, and never a serif. Structure inverts the web table: the
+    COLUMN rules are strong and printed in register green, the line rules are
+    feint; comparison here is column-wise. Every entry carries a narrow margin
+    column for observaciones. Radii are zero. No soft shadows — overlays are
+    sheets laid on the page with one hard rule edge. Two inks do the work: ink
+    for the record, correction red for strikes, amendments and disputa. Stamp
+    violet officializes, applied as a struck seal over the entry, never a pill
+    beside it. Pencil ochre marks the margin of an entry not yet stamped. Focus
+    is the clerk's ruled guide — a 2px ink rule and a ground shift, not a colored
+    ring. Archivo sets the register's printed furniture, condensed for column
+    heads; Fragment Mono sets everything entered and compared — times, dorsales,
+    deltas, folios. Dark mode is the carbon copy, not a black screen: ink ground,
+    rules printed lighter, entries in warm near-white.
+
+    STORY: The operator opens the register and sees which entries are contested.
+    They read three sources across one row's ruled columns, strike the two the
+    record rejects, and stamp the one it keeps. Nothing disappears. They leave
+    able to show anyone why the published time is the published time.
+
+    FIRST VIEWPORT (1440): the bound edge runs down the left — section tabs cut
+    into it, the mark on the head rule above them. The topbar is one rule deep:
+    race context left, folio and mode control right. The page opens on a carry-
+    forward balance — corredores, resultados, disputas — set as Fragment Mono
+    figures in ruled columns, not four cards. The register itself follows, column
+    rules full height. The primary action sits at the right end of the topbar rule.
+
+    FORM: The bound official register (el libro de actas). Position #6 on the
+    ordered candidate list, assigned by seed 4feca700. Grounded rank 1 (the ruled
+    measurement field) was refused by the roll and is not built.
+
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the
+    finish review, the verdict, and DESIGN.md
+    -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

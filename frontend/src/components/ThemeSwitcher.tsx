@@ -4,7 +4,6 @@ import type { Theme } from '../hooks/useTheme'
 const THEMES: { value: Theme; label: string }[] = [
   { value: 'dark', label: '⬛ Control' },
   { value: 'light', label: '☀ Limpio' },
-  { value: 'brand', label: '◆ Marca' },
 ]
 
 export function ThemeSwitcher() {

@@ -5,7 +5,7 @@
   "globalName": "NicaRunnerUI",
   "buildCmd": "cd frontend/packages/ui && npm run build",
   "cssEntry": "./nicarunner-ds.css",
-  "runtimeFontPrefixes": ["Inter", "JetBrains Mono"],
+  "runtimeFontPrefixes": ["Archivo", "Fragment Mono"],
   "readmeHeader": ".design-sync/conventions.md",
   "overrides": {
     "Modal": { "cardMode": "single", "viewport": "700x500" },
