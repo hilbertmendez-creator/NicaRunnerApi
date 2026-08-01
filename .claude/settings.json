@@ -5,17 +5,6 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
-  "permissions": {
-    "allow": [
-      "mcp__codegraph__*",
-      "mcp__engram__*",
-      "mcp__context7__*"
-    ],
-    "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)"
-    ]
-  },
   "hooks": {
     "PreToolUse": [
       {
