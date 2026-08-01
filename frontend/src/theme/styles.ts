@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react'
 /**
  * Estilos compartidos basados en los tokens de tema (index.css).
  * Usar estos en vez de clases Tailwind con colores hardcodeados para
- * que todo respete los 3 temas (dark / light / brand).
+ * que todo respete los 2 temas (dark / light).
  */
 
 export const pageTitle: CSSProperties = {
