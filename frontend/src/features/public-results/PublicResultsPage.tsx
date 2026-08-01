@@ -83,23 +83,34 @@ export function PublicResultsPage() {
                       // spec.md "Conditional Return-to-Results Link": el token viaja por
                       // router state, nunca en la URL — un visitante que abre el enlace
                       // compartido directamente (sin state) nunca ve el link de regreso.
-                      // Filas sin ShareKey (backfill pendiente) quedan no-clicables.
+                      // Filas sin ShareKey (backfill pendiente) quedan no-clicables, pero
+                      // deben explicarlo: de lo contrario un corredor que hace clic en su
+                      // propia fila no entiende por qué no pasa nada.
                       const clickable = res.shareKey !== null
+                      const explicacionSinEnlace = 'El enlace individual de este corredor todavía no está disponible.'
                       return (
                         <tr
                           key={res.runnerId}
                           onClick={clickable
                             ? () => navigate(`/corredor/${res.shareKey}`, { state: { fromToken: token } })
                             : undefined}
+                          title={clickable ? undefined : explicacionSinEnlace}
                           style={{
                             borderTop: '1px solid var(--bd-row)',
-                            color: 'var(--text-hi)',
+                            color: clickable ? 'var(--text-hi)' : 'var(--text-lo)',
                             cursor: clickable ? 'pointer' : 'default',
                           }}
                         >
                           <td className="py-1.5">{res.posicion}</td>
                           <td className="py-1.5">{res.dorsal}</td>
-                          <td className="py-1.5">{res.nombre}</td>
+                          <td className="py-1.5">
+                            {res.nombre}
+                            {!clickable && (
+                              <span className="ml-2 text-xs" style={{ color: 'var(--text-lo)' }}>
+                                (enlace no disponible aún)
+                              </span>
+                            )}
+                          </td>
                           <td className="py-1.5">{formatTime(res.tiempoLlegada)}</td>
                         </tr>
                       )
