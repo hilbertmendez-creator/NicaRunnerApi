@@ -356,6 +356,13 @@ using (var seedScope = app.Services.CreateScope())
         // Mismo scope/repositorio que el seed de arriba — idempotente, seguro en cada deploy.
         await UsernameBackfillService.BackfillAsync(seedUserRepository, seedAliasAssigner);
 
+        // enlaces-publicos-resultados design.md Decisión 2: backfill de PublicShareKey
+        // para corredores creados antes de esta migración (o insertados por una
+        // instancia vieja durante la ventana de deploy). Mismo scope/patrón que el
+        // backfill de arriba — idempotente, seguro en cada boot.
+        var seedRunnerRepository = seedScope.ServiceProvider.GetRequiredService<IRunnerRepository>();
+        await RunnerShareKeyBackfillService.BackfillAsync(seedRunnerRepository);
+
         // M3 (design.md §3.2): audita colisiones de email que solo difieren en
         // mayúsculas/minúsculas antes de habilitar cualquier normalización futura a
         // minúsculas. Nunca fusiona nada — solo advierte "en voz alta" para

@@ -24,6 +24,15 @@ public class RunnerRepository(NicaRunnerDbContext context) : IRunnerRepository
             .OrderBy(r => r.Dorsal)
             .ToListAsync(ct);
 
+    // design.md Decisión 2: usada por RunnerShareKeyBackfillService. Filtra a nivel de
+    // base (WHERE "PublicShareKey" IS NULL) en vez de traer toda la tabla y filtrar en
+    // memoria — Runners puede crecer mucho más que Users a lo largo de varias carreras.
+    public Task<List<Runner>> GetAllWithoutShareKeyAsync(CancellationToken ct = default) =>
+        context.Runners
+            .Where(r => r.PublicShareKey == null)
+            .OrderBy(r => r.Id)
+            .ToListAsync(ct);
+
     public Task<bool> DorsalExistsAsync(int raceId, string dorsal, int? excludeRunnerId = null, CancellationToken ct = default) =>
         context.Runners.AnyAsync(
             r => r.RaceId == raceId && r.Dorsal == dorsal && r.Id != excludeRunnerId,
