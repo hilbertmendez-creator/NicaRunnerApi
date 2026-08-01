@@ -309,6 +309,7 @@ export interface PublicRunnerResultDto {
   dorsal: string
   posicion: number
   tiempoLlegada: string
+  shareKey: string | null
 }
 
 export interface PublicCategoryResultsDto {
@@ -332,4 +333,24 @@ export interface PublicRunnerDetailDto {
   dorsal: string
   posicion: number
   tiempoLlegada: string
+}
+
+// Enlace público permanente de detalle del corredor (GET /public/corredor/{shareKey}).
+// Nullable-honesto — igual que el DTO del backend, ningún campo usa un valor centinela.
+export interface PublicRunnerShareDto {
+  raceName: string
+  slogan: string
+  fechaCarrera: string
+  nombre: string
+  apellidos: string | null
+  club: string | null
+  dorsal: string
+  nombreCategoria: string
+  distancia: number
+  tiempoLlegadaUtc: string | null
+  tiempoTranscurridoSegundos: number | null
+  posicionCategoria: number | null
+  totalCategoria: number | null
+  posicionGeneral: number | null
+  totalGeneral: number | null
 }
