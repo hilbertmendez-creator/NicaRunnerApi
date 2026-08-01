@@ -73,6 +73,12 @@
 
   /* Public-surface override point (set by [data-surface="public"], see later slices) */
   --surface-lead: transparent;
+
+  /* Fixed light/dark stock swatches for the ThemeSwitcher pictogram — these
+     show the two grounds themselves and stay constant regardless of which
+     theme is currently active (unlike --nr-ladder-*, which flips per theme). */
+  --switch-stock-light: oklch(98% 0.008 150);
+  --switch-stock-dark: oklch(12% 0.008 150);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -197,4 +203,63 @@ body {
   border-radius: 50%;
   background: #22C55E;
   animation: pulse-live 1.4s var(--ease-page) infinite;
+}
+
+/* ── ThemeSwitcher — a two-cell control showing both stocks, a plate marks
+   the active one. Focus is not a color: a 2px ink rule plus a ground shift. */
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+  background: transparent;
+  border: var(--rule-line) solid var(--nr-rule);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+.theme-switch:focus-visible {
+  outline: var(--rule-head) solid var(--nr-text);
+  outline-offset: 2px;
+  background: var(--nr-field-focus);
+}
+.theme-switch-track {
+  position: relative;
+  display: flex;
+  width: 32px;
+  height: 16px;
+  flex-shrink: 0;
+  border: var(--rule-line) solid var(--nr-rule-strong);
+}
+.theme-switch-cell {
+  width: 16px;
+  height: 100%;
+}
+.theme-switch-cell-light {
+  background: var(--switch-stock-light);
+}
+.theme-switch-cell-dark {
+  background: var(--switch-stock-dark);
+}
+.theme-switch-plate {
+  position: absolute;
+  inset: -2px auto -2px -2px;
+  width: 16px;
+  border: var(--rule-head) solid var(--nr-text);
+  transition: transform var(--dur-1) var(--ease-page);
+  pointer-events: none;
+}
+.theme-switch-plate-dark {
+  transform: translateX(16px);
+}
+.theme-switch-label {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  font-stretch: condensed;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--nr-text-muted);
 }
