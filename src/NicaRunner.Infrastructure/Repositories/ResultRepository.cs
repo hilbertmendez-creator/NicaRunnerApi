@@ -62,8 +62,14 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
     // nunca contradiga la Posicion guardada.
     public async Task<PlacingCounts> GetPlacingCountsAsync(int raceId, int categoryId, DateTime tiempoLlegada, int resultId, CancellationToken ct = default)
     {
+        // Sin r.CategoryId != null acá: esa condición pertenece solo a los agregados de
+        // categoría (ya filtrados abajo por r.CategoryId == categoryId, que por sí solo
+        // excluye las filas sin categoría). Aplicarla también a la base excluía la propia
+        // fila del resultado consultado de RaceTotal cuando su CategoryId es null, mientras
+        // otras filas categorizadas seguían contando en RaceAhead — PosicionGeneral podía
+        // superar TotalGeneral (design.md Decisión 7).
         var counts = await context.Results
-            .Where(r => r.RaceId == raceId && r.RunnerId != null && r.CategoryId != null)
+            .Where(r => r.RaceId == raceId && r.RunnerId != null)
             .GroupBy(_ => 1)
             .Select(g => new PlacingCounts(
                 g.Count(r => r.CategoryId == categoryId &&

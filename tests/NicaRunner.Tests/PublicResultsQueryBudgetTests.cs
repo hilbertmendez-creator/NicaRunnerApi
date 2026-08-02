@@ -1,7 +1,9 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Moq;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.PublicResults;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Data;
 using NicaRunner.Infrastructure.Repositories;
@@ -171,5 +173,56 @@ public class PublicResultsQueryBudgetTests
         await resultRepository.GetPlacingCountsAsync(foundRunner.RaceId, foundResult!.CategoryId!.Value, foundResult.TiempoLlegada, foundResult.Id);
 
         Assert.Equal(3, interceptor.Count - before);
+    }
+
+    // Regresión: GetPlacingCountsAsync filtraba también r.CategoryId != null en la base
+    // WHERE compartida por los cuatro agregados. Cuando el propio Result del corredor no
+    // tiene CategoryId (dorsal aún sin resolver a categoría), esa fila se excluía de
+    // RaceTotal (el denominador) pero seguía contando en RaceAhead vía otras filas
+    // categorizadas — PosicionGeneral podía superar TotalGeneral ("2 de 1"). Contra Sqlite
+    // real, no un mock, porque el defecto vivía en el WHERE de la consulta SQL. Sembrado
+    // 100% vía EF (SaveChangesAsync) — nunca SQL crudo, ya que Sqlite guarda DateTime como
+    // TEXT y compara lexicográficamente el formato exacto que use el converter de EF.
+    [Fact]
+    public async Task GetRunnerByShareKeyAsync_ResultadoSinCategoria_PlacingGeneralNuncaSuperaElTotal()
+    {
+        var (db, _) = BuildMigratedDbContext();
+        using var _db = db;
+        var (race, cat1, cat2) = await SeedRaceAsync(db);
+        var capturista = await db.Users.FirstAsync(u => u.Role == UserRole.Capturista);
+
+        var r1 = NewRunner(race.Id, cat1.Id, "1");
+        var r2 = NewRunner(race.Id, cat1.Id, "2");
+        var r3 = NewRunner(race.Id, cat2.Id, "3", shareKey: "claveSinCategoriaXXXXX");
+        db.Runners.AddRange(r1, r2, r3);
+        await db.SaveChangesAsync();
+
+        var t0 = new DateTime(2026, 6, 1, 10, 0, 0, DateTimeKind.Utc);
+        var res1 = NewResult(race.Id, r1.Id, cat1.Id, capturista.Id, t0); // 1er lugar general
+        var resSinCategoria = new Result
+        {
+            RaceId = race.Id, RunnerId = r3.Id, CategoryId = null, CapturistaId = capturista.Id,
+            Dorsal = "3", TiempoLlegada = t0.AddMinutes(2), Posicion = 0
+        }; // 2do lugar general, categoría todavía sin resolver en el Result
+        var res2 = NewResult(race.Id, r2.Id, cat1.Id, capturista.Id, t0.AddMinutes(5)); // 3er lugar general
+        db.Results.AddRange(res1, resSinCategoria, res2);
+        await db.SaveChangesAsync();
+
+        var service = new PublicResultService(
+            Mock.Of<IPublicResultTokenRepository>(),
+            Mock.Of<IRaceRepository>(),
+            Mock.Of<IRaceCategoryRepository>(),
+            new RunnerRepository(db),
+            new ResultRepository(db));
+
+        var dto = await service.GetRunnerByShareKeyAsync("claveSinCategoriaXXXXX");
+
+        // Invariante roto por el defecto: la posición general nunca puede superar el total.
+        Assert.True(dto.PosicionGeneral <= dto.TotalGeneral,
+            $"PosicionGeneral ({dto.PosicionGeneral}) no puede superar TotalGeneral ({dto.TotalGeneral})");
+        Assert.Equal(2, dto.PosicionGeneral); // solo res1 llegó antes que resSinCategoria
+        Assert.Equal(3, dto.TotalGeneral); // los tres resultados de la carrera, incluida la fila sin categoría
+        Assert.Null(dto.PosicionCategoria);
+        Assert.Null(dto.TotalCategoria);
     }
 }
