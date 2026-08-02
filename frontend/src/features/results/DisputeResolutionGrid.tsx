@@ -16,6 +16,8 @@ interface DisputeRow {
   estado: EstadoTiempo
   /** Punto de control ingresado manualmente y aún no confirmado por el servidor. Ausente = sincronizado. */
   manualSync?: ManualSyncState
+  capturista?: string
+  capturaNote?: string
 }
 
 const CONNECTION_CYCLE: ConnectionState[] = ['online', 'syncing', 'offline']
@@ -28,28 +30,34 @@ const ESTADO_LABEL: Record<EstadoTiempo, string> = {
 
 const ESTADO_STYLE: Record<EstadoTiempo, CSSProperties> = {
   oficial: {
-    background: 'var(--badge-ok-bg)',
-    color: 'var(--badge-ok-text)',
-    border: '1px solid var(--badge-ok-bd)',
+    background: 'var(--ok-bg)',
+    color: 'var(--ok-tx)',
+    border: '1px solid var(--ok-bd)',
   },
   revision: {
-    background: 'var(--badge-pr-bg)',
-    color: 'var(--badge-pr-text)',
-    border: '1px solid var(--badge-pr-bd)',
+    background: 'var(--wn-bg)',
+    color: 'var(--wn-tx)',
+    border: '1px solid var(--wn-bd)',
   },
   disputa: {
-    background: 'var(--badge-er-bg)',
-    color: 'var(--badge-er-text)',
-    border: '1px solid var(--badge-er-bd)',
+    background: 'var(--er-bg)',
+    color: 'var(--er-tx)',
+    border: '1px solid var(--er-bd)',
   },
 }
 
+const ROW_TINT: Record<EstadoTiempo, string> = {
+  oficial:  'var(--row-ok)',
+  revision: 'var(--row-wn)',
+  disputa:  'var(--row-er)',
+}
+
 const MOCK_ROWS: DisputeRow[] = [
-  { id: 1, dorsal: 118, corredor: 'Ana Pérez', chipRfid: 2531.4, puntoControl: 2531.9, camara: 2531.6, estado: 'oficial' },
-  { id: 2, dorsal: 205, corredor: 'Luis Gómez', chipRfid: 2559.1, puntoControl: 2565.8, camara: 2560.0, estado: 'revision', manualSync: 'pending' },
-  { id: 3, dorsal: 342, corredor: 'Karla Solís', chipRfid: 2601.0, puntoControl: 2601.2, camara: null, estado: 'disputa' },
-  { id: 4, dorsal: 87, corredor: 'José Martínez', chipRfid: 2410.7, puntoControl: 2411.0, camara: 2410.9, estado: 'oficial' },
-  { id: 5, dorsal: 156, corredor: 'María Reyes', chipRfid: null, puntoControl: 2622.3, camara: 2621.8, estado: 'disputa', manualSync: 'error' },
+  { id: 1, dorsal: 118, corredor: 'Ana Pérez',     chipRfid: 2531.4, puntoControl: 2531.9, camara: 2531.6, estado: 'oficial',  capturista: 'M. López' },
+  { id: 2, dorsal: 205, corredor: 'Luis Gómez',    chipRfid: 2559.1, puntoControl: 2565.8, camara: 2560.0, estado: 'revision', manualSync: 'pending', capturista: 'R. García', capturaNote: '2 capturas' },
+  { id: 3, dorsal: 342, corredor: 'Karla Solís',   chipRfid: 2601.0, puntoControl: 2601.2, camara: null,   estado: 'disputa',  capturista: 'M. López' },
+  { id: 4, dorsal: 87,  corredor: 'José Martínez', chipRfid: 2410.7, puntoControl: 2411.0, camara: 2410.9, estado: 'oficial',  capturista: 'R. García' },
+  { id: 5, dorsal: 156, corredor: 'María Reyes',   chipRfid: null,   puntoControl: 2622.3, camara: 2621.8, estado: 'disputa',  manualSync: 'error', capturista: 'M. López', capturaNote: 'sin chip' },
 ]
 
 function formatTiempo(seconds: number | null) {
@@ -96,8 +104,8 @@ export function DisputeResolutionGrid() {
         className="sticky top-0 z-10 flex h-11 items-center gap-3 px-3"
         style={{
           background: 'var(--bg-card)',
-          border: '1px solid var(--bd-card)',
-          borderRadius: 'var(--radius-card)',
+          border: '1px solid var(--bd)',
+          borderRadius: 'var(--r-card)',
         }}
       >
         <input
@@ -116,16 +124,16 @@ export function DisputeResolutionGrid() {
               style={
                 filtro === opt
                   ? {
-                      background: 'var(--chip-a-bg)',
-                      border: '1px solid var(--chip-a-bd)',
-                      color: 'var(--chip-a-text)',
-                      borderRadius: 'var(--radius-btn)',
+                      background: 'var(--ac-bg)',
+                      border: '1px solid var(--ac-dim)',
+                      color: 'var(--ac)',
+                      borderRadius: 'var(--r-btn)',
                     }
                   : {
                       background: 'var(--bg-input)',
                       border: '1px solid var(--bd)',
-                      color: 'var(--text-xs)',
-                      borderRadius: 'var(--radius-btn)',
+                      color: 'var(--tx-lo)',
+                      borderRadius: 'var(--r-btn)',
                     }
               }
             >
@@ -133,7 +141,7 @@ export function DisputeResolutionGrid() {
             </button>
           ))}
         </div>
-        <span className="ml-auto text-xs" style={{ color: 'var(--text-xs)' }}>
+        <span className="ml-auto text-xs" style={{ color: 'var(--tx-lo)' }}>
           {visibleRows.length} resultados
         </span>
         <span className="h-4 w-px" style={{ background: 'var(--bd)' }} />
@@ -147,14 +155,14 @@ export function DisputeResolutionGrid() {
               className="text-xs uppercase tracking-wide"
               style={{
                 background: 'var(--bg-th)',
-                color: 'var(--text-th)',
+                color: 'var(--tx-th)',
                 borderBottom: '1px solid var(--bd)',
               }}
             >
               <th className="h-8 px-3 font-medium">Dorsal</th>
               <th className="h-8 px-3 font-medium">Corredor</th>
               <th className="h-8 px-3 font-medium">Chip RFID</th>
-              <th className="h-8 px-3 font-medium">Punto control</th>
+              <th className="h-8 px-3 font-medium">Capturista (juez)</th>
               <th className="h-8 px-3 font-medium">Cámara</th>
               <th className="h-8 px-3 font-medium">Diferencia</th>
               <th className="h-8 px-3 font-medium">Estado</th>
@@ -165,48 +173,68 @@ export function DisputeResolutionGrid() {
             {visibleRows.map((row) => {
               const diff = diferencia(row.chipRfid, row.puntoControl)
               const isCritical = diff !== null && diff > 3
-              const syncBorderColor =
-                row.manualSync === 'pending'
-                  ? 'var(--accent)'
-                  : row.manualSync === 'error'
-                    ? 'var(--conflict-bd)'
-                    : 'transparent'
               return (
                 <tr
                   key={row.id}
-                  className="row-hover h-9"
+                  className="row-hover"
                   style={{
-                    borderBottom: '1px solid var(--bd-row)',
-                    borderLeft: `2px solid ${syncBorderColor}`,
+                    height: 42,
+                    borderBottom: '1px solid var(--bd-inner)',
+                    background: ROW_TINT[row.estado],
                   }}
                 >
-                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--text-hi)' }}>{row.dorsal}</td>
-                  <td className="px-3" style={{ color: 'var(--text-hi)' }}>{row.corredor}</td>
-                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--text-lo)' }}>{formatTiempo(row.chipRfid)}</td>
-                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--text-lo)' }}>
-                    <span className="inline-flex items-center gap-1.5">
-                      {row.manualSync && (
-                        <span
-                          title={
-                            row.manualSync === 'pending'
-                              ? 'Edición manual pendiente de sincronizar'
-                              : 'Error al sincronizar — reintentando'
-                          }
-                          className={`h-1.5 w-1.5 rounded-full ${row.manualSync === 'pending' ? 'motion-safe:animate-pulse' : ''}`}
-                          style={{
-                            background:
-                              row.manualSync === 'pending' ? 'var(--accent)' : 'var(--conflict-bd)',
-                          }}
-                        />
-                      )}
-                      {formatTiempo(row.puntoControl)}
-                    </span>
+                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-hi)' }}>{row.dorsal}</td>
+                  <td className="px-3" style={{ color: 'var(--tx-hi)' }}>{row.corredor}</td>
+                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-md)' }}>{formatTiempo(row.chipRfid)}</td>
+                  <td className="px-3" style={{ verticalAlign: 'middle' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <span
+                        style={{
+                          fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: 'var(--tx-hi)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        {row.manualSync && (
+                          <span
+                            title={row.manualSync === 'pending' ? 'Pendiente de sincronizar' : 'Error de sincronización'}
+                            className={row.manualSync === 'pending' ? 'motion-safe:animate-pulse' : ''}
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              flexShrink: 0,
+                              display: 'inline-block',
+                              background: row.manualSync === 'pending' ? 'var(--ac)' : 'var(--er-bd)',
+                            }}
+                          />
+                        )}
+                        {formatTiempo(row.puntoControl)}
+                      </span>
+                      <span style={{ fontSize: 10.5, color: 'var(--tx-lo)' }}>
+                        {row.capturista ?? '—'}
+                        {(row.capturaNote ?? (row.manualSync === 'pending' ? 'sincronizando…' : row.manualSync === 'error' ? 'error sync' : undefined)) && (
+                          <span
+                            style={{
+                              marginLeft: 4,
+                              color: row.estado === 'disputa' ? 'var(--er-tx)' : 'var(--wn-tx)',
+                            }}
+                          >
+                            · {row.capturaNote ?? (row.manualSync === 'pending' ? 'sincronizando…' : 'error sync')}
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--text-lo)' }}>{formatTiempo(row.camara)}</td>
+                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-md)' }}>{formatTiempo(row.camara)}</td>
                   <td
                     className="px-3 font-mono tabular-nums"
                     style={{
-                      color: isCritical ? 'var(--conflict-text)' : 'var(--text-xs)',
+                      color: isCritical ? 'var(--er-tx)' : 'var(--tx-lo)',
                       fontWeight: isCritical ? 600 : 400,
                     }}
                   >
@@ -215,7 +243,7 @@ export function DisputeResolutionGrid() {
                   <td className="px-3">
                     <span
                       className="px-2 py-0.5 text-xs font-medium"
-                      style={{ ...ESTADO_STYLE[row.estado], borderRadius: 'var(--radius-badge)' }}
+                      style={{ ...ESTADO_STYLE[row.estado], borderRadius: 'var(--r-badge)' }}
                     >
                       {ESTADO_LABEL[row.estado]}
                     </span>
@@ -227,10 +255,10 @@ export function DisputeResolutionGrid() {
                         onClick={() => setEstado(row.id, 'oficial')}
                         className="h-6 px-2 text-xs font-medium"
                         style={{
-                          background: 'var(--badge-ok-bg)',
-                          border: '1px solid var(--badge-ok-bd)',
-                          color: 'var(--badge-ok-text)',
-                          borderRadius: 'var(--radius-btn)',
+                          background: 'var(--ok-bg)',
+                          border: '1px solid var(--ok-bd)',
+                          color: 'var(--ok-tx)',
+                          borderRadius: 'var(--r-btn)',
                         }}
                       >
                         Oficial
@@ -240,10 +268,10 @@ export function DisputeResolutionGrid() {
                         onClick={() => setEstado(row.id, 'disputa')}
                         className="h-6 px-2 text-xs font-medium"
                         style={{
-                          background: 'var(--badge-er-bg)',
-                          border: '1px solid var(--badge-er-bd)',
-                          color: 'var(--badge-er-text)',
-                          borderRadius: 'var(--radius-btn)',
+                          background: 'var(--er-bg)',
+                          border: '1px solid var(--er-bd)',
+                          color: 'var(--er-tx)',
+                          borderRadius: 'var(--r-btn)',
                         }}
                       >
                         Disputa

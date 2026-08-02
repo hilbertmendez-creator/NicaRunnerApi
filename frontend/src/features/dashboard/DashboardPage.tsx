@@ -6,20 +6,55 @@ import { ConnectionStatusBadge, type ConnectionState } from '../../components/Co
 import { getDashboard, getStandings } from '../../api/endpoints'
 import { usePolling } from '../../hooks/usePolling'
 import { useRaceDashboardHub } from '../../hooks/useRaceDashboardHub'
-import { MetricCard, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import { DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import { KpiBar } from './KpiBar'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
 
 const POLL_INTERVAL_MS = 5000
+
+type PillRole = 'blue' | 'ok' | 'warn' | 'error'
+
+const PILL_COLORS: Record<PillRole, { bg: string; bd: string; tx: string }> = {
+  blue:  { bg: 'var(--in-bg)',  bd: 'var(--in-bd)',  tx: 'var(--in-tx)'  },
+  ok:    { bg: 'var(--ok-bg)',  bd: 'var(--ok-bd)',  tx: 'var(--ok-tx)'  },
+  warn:  { bg: 'var(--wn-bg)',  bd: 'var(--wn-bd)',  tx: 'var(--wn-tx)'  },
+  error: { bg: 'var(--er-bg)',  bd: 'var(--er-bd)',  tx: 'var(--er-tx)'  },
+}
+
+function MetricPill({ label, role }: { label: string; role: PillRole }) {
+  const c = PILL_COLORS[role]
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        fontSize: 10.5,
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '.4px',
+        padding: '3px 8px',
+        borderRadius: 20,
+        background: c.bg,
+        border: `1px solid ${c.bd}`,
+        color: c.tx,
+        marginBottom: 4,
+        fontFamily: 'Inter, system-ui',
+      }}
+    >
+      {label}
+    </span>
+  )
+}
 const MONO = 'font-mono tabular-nums'
 
 const cardStyle: CSSProperties = {
   background: 'var(--bg-card)',
-  border: '1px solid var(--bd-card)',
-  borderRadius: 'var(--radius-card)',
+  border: '1px solid var(--bd)',
+  borderRadius: 'var(--r-card)',
   padding: 14,
 }
-const cardTitleStyle: CSSProperties = { color: 'var(--text-hi)' }
+const cardTitleStyle: CSSProperties = { color: 'var(--tx-hi)' }
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-NI', { hour12: false })
@@ -97,10 +132,40 @@ export function DashboardPage() {
 
       {dashboard.data && (
         <>
+          <KpiBar
+            items={[
+              { label: 'Tiempo en curso', value: '—' },
+              { label: 'Ritmo promedio', value: '—' },
+              { label: 'Chip llegadas', value: String(dashboard.data.totalConTiempo), trend: `▲ de ${dashboard.data.totalInscritos} inscritos` },
+              { label: 'Pendientes', value: String(dashboard.data.totalPendientes), trendColor: dashboard.data.totalPendientes > 0 ? 'var(--wn-tx)' : undefined },
+              { label: 'Cámara ok', value: '—' },
+              { label: 'Último dorsal', value: '—' },
+            ]}
+          />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <MetricCard label="Inscritos" value={dashboard.data.totalInscritos} variant="orange" />
-            <MetricCard label="Con tiempo" value={dashboard.data.totalConTiempo} variant="teal" />
-            <MetricCard label="Pendientes" value={dashboard.data.totalPendientes} variant="amber" />
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--bd)', borderRadius: 'var(--r-card)', padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+              <MetricPill label="Inscritos" role="blue" />
+              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--tx-hi)', letterSpacing: '-.6px', lineHeight: 1, fontFeatureSettings: '"tnum"', fontFamily: '"IBM Plex Mono", ui-monospace, monospace' }}>
+                {dashboard.data.totalInscritos}
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--bd)', borderRadius: 'var(--r-card)', padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+              <MetricPill label="Con tiempo" role="ok" />
+              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--ok-tx)', letterSpacing: '-.6px', lineHeight: 1, fontFeatureSettings: '"tnum"', fontFamily: '"IBM Plex Mono", ui-monospace, monospace' }}>
+                {dashboard.data.totalConTiempo}
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--bd)', borderRadius: 'var(--r-card)', padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+              <MetricPill label="Pendientes" role="warn" />
+              <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--wn-tx)', letterSpacing: '-.6px', lineHeight: 1, fontFeatureSettings: '"tnum"', fontFamily: '"IBM Plex Mono", ui-monospace, monospace' }}>
+                {dashboard.data.totalPendientes}
+              </div>
+              {dashboard.data.totalPendientes > 0 && (
+                <div style={{ fontSize: 11, color: 'var(--tx-lo)', marginTop: 2 }}>requieren atención</div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">

@@ -1,289 +1,402 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/auth-context'
 import { ThemeSwitcher } from './ThemeSwitcher'
-import logoEmblem from '../assets/logo-emblem.png'
 
 interface NavItem {
-  to: string
+  path: string
   label: string
+  badge?: boolean
   icon: string
-  end?: boolean
+  adminOnly?: boolean
 }
 
-const NAV_GROUPS: { group: string; items: NavItem[] }[] = [
+const NAV: Array<NavItem | 'sep'> = [
   {
-    group: 'Inicio',
-    items: [
-      { to: '/', label: 'Dashboard', icon: '▦', end: true },
-      { to: '/carreras', label: 'Carreras', icon: '★' },
-    ],
+    path: '/',
+    label: 'Dashboard',
+    icon: '<rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/>',
   },
   {
-    group: 'Datos',
-    items: [{ to: '/resultados', label: 'Resultados', icon: '▦' }],
+    path: '/carreras',
+    label: 'Carreras',
+    icon: '<path d="M3 3h10M3 6h7M3 9h8M3 12h5"/><circle cx="12.5" cy="10.5" r="2.5"/><path d="M12.5 8.5V7"/>',
   },
   {
-    group: 'Reportes',
-    items: [
-      { to: '/notificaciones', label: 'Notificaciones', icon: '🔔' },
-      { to: '/enlaces', label: 'Enlaces públicos', icon: '↗' },
-    ],
+    path: '/resultados',
+    label: 'Resultados',
+    icon: '<path d="M2 4h12M2 8h8M2 12h10"/>',
+  },
+  {
+    path: '/resultados',
+    label: 'Controversias',
+    badge: true,
+    icon: '<path d="M8 2L9.5 6h4.5l-3.6 2.6 1.4 4.4L8 10.4 4.2 13 5.6 8.6 2 6h4.5z"/>',
+  },
+  'sep',
+  {
+    path: '/usuarios',
+    label: 'Usuarios',
+    adminOnly: true,
+    icon: '<path d="M2 11a4 4 0 018 0"/><circle cx="6" cy="5" r="2.5"/><path d="M11 7l1.5 1.5L15 6"/>',
+  },
+  {
+    path: '/categorias',
+    label: 'Categorías',
+    adminOnly: true,
+    icon: '<path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="7" cy="12" r="1.5" fill="currentColor" stroke="none"/>',
   },
 ]
 
-const ADMIN_ONLY_NAV_ITEMS = [
-  { to: '/usuarios', label: 'Usuarios' },
-  { to: '/categorias', label: 'Categorías' },
-] as const
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'Dashboard',
+  '/carreras': 'Carreras',
+  '/resultados': 'Resultados',
+  '/notificaciones': 'Notificaciones',
+  '/usuarios': 'Usuarios',
+  '/categorias': 'Categorías',
+  '/enlaces': 'Enlaces',
+}
 
 export function AppLayout() {
   const { user, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+
   const initials = (user?.nombre ?? '?')
     .split(' ')
-    .map((part) => part[0])
+    .map((p) => p[0])
     .slice(0, 2)
     .join('')
     .toUpperCase()
 
+  const pageTitle = PAGE_TITLES[location.pathname] ?? 'NicaRunner'
+
+  const visibleNav = NAV.filter((item) => {
+    if (item === 'sep') return true
+    if (item.adminOnly) return user?.role === 'Administrador'
+    return true
+  })
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-app)' }}>
-      {/* ── Overlay (solo móvil/tablet, sidebar abierto) ── */}
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,.5)',
+            zIndex: 30,
+          }}
         />
       )}
 
-      {/* ── Sidebar ── */}
+      {/* Sidebar */}
       <aside
-        className={`sidebar-inner fixed inset-y-0 left-0 z-40 transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`nr-sidebar ${sidebarOpen ? 'open' : 'closed'}`}
         style={{
-          width: 220,
+          width: 52,
           flexShrink: 0,
+          background: 'var(--bg-sb)',
           display: 'flex',
           flexDirection: 'column',
-          borderRight: '1px solid var(--bd)',
-          background: 'var(--bg-sidebar)',
+          alignItems: 'center',
+          padding: '12px 0',
+          gap: 2,
+          borderRight: '1px solid rgba(255,255,255,.06)',
+          zIndex: 20,
         }}
       >
         {/* Logo */}
-        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid var(--bd)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src={logoEmblem} alt="NicaRunner" style={{ width: 24, height: 24, borderRadius: 5 }} />
-              <span style={{ font: '700 13px Inter', color: 'var(--sb-text)' }}>NicaRunner</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(false)}
-              aria-label="Cerrar menú"
-              className="lg:hidden"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--sb-muted)',
-                fontSize: 18,
-                lineHeight: 1,
-                cursor: 'pointer',
-                padding: 4,
-              }}
-            >
-              ✕
-            </button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-            <span className="dot-live" />
-            <span style={{ font: '400 10px Inter', color: 'var(--sb-muted)' }}>Sistema en línea</span>
-          </div>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 7,
+            background: 'var(--ac)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 14,
+            flexShrink: 0,
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M2 13L6 3l3 6 2-3 3 7" />
+          </svg>
         </div>
 
         {/* Nav */}
-        <nav style={{ padding: 8, flex: 1, overflowY: 'auto' }}>
-          {NAV_GROUPS.map((grp) => (
-            <div key={grp.group}>
-              <div
-                style={{
-                  padding: '5px 8px',
-                  font: '500 9px Inter',
-                  color: 'var(--sb-muted)',
-                  letterSpacing: '.7px',
-                  textTransform: 'uppercase',
-                  margin: '8px 0 2px',
-                }}
-              >
-                {grp.group}
-              </div>
-              {grp.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  onClick={() => setSidebarOpen(false)}
-                  style={({ isActive }) => ({
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 9,
-                    padding: isActive ? '6px 9px 6px 7px' : '7px 9px',
-                    borderRadius: 6,
-                    borderLeft: isActive ? '2.5px solid var(--sb-active-bd)' : '2.5px solid transparent',
-                    background: isActive ? 'var(--sb-active-bg)' : 'transparent',
-                    textDecoration: 'none',
-                    marginBottom: 1,
-                    color: isActive ? 'var(--sb-text)' : 'var(--sb-muted)',
-                    font: `${isActive ? 600 : 500} 12.5px Inter`,
-                  })}
-                >
-                  <span style={{ width: 16, textAlign: 'center' }}>{item.icon}</span>
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                </NavLink>
-              ))}
-            </div>
-          ))}
+        <nav
+          aria-label="Navegación principal"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            flex: 1,
+            width: '100%',
+            padding: '0 8px',
+          }}
+        >
+          {visibleNav.map((item, i) => {
+            if (item === 'sep') {
+              return (
+                <div
+                  key={`sep-${i}`}
+                  style={{
+                    width: 24,
+                    height: 1,
+                    background: 'rgba(255,255,255,.07)',
+                    margin: '6px auto',
+                  }}
+                />
+              )
+            }
 
-          {user?.role === 'Administrador' && (
-            <div>
-              <div
-                style={{
-                  padding: '5px 8px',
-                  font: '500 9px Inter',
-                  color: 'var(--sb-muted)',
-                  letterSpacing: '.7px',
-                  textTransform: 'uppercase',
-                  margin: '8px 0 2px',
-                }}
-              >
-                Administración
-              </div>
-              {ADMIN_ONLY_NAV_ITEMS.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setSidebarOpen(false)}
-                  style={({ isActive }) => ({
+            const isActive =
+              item.path === '/'
+                ? location.pathname === '/'
+                : item.label === 'Controversias'
+                ? false
+                : location.pathname.startsWith(item.path)
+
+            return (
+              <div key={`${item.path}-${item.label}`} style={{ margin: '0 auto' }}>
+                <button
+                  type="button"
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-label={item.label}
+                  onClick={() => {
+                    navigate(item.path)
+                    setSidebarOpen(false)
+                  }}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 7,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 9,
-                    padding: isActive ? '6px 9px 6px 7px' : '7px 9px',
-                    borderRadius: 6,
-                    borderLeft: isActive ? '2.5px solid var(--sb-active-bd)' : '2.5px solid transparent',
-                    background: isActive ? 'var(--sb-active-bg)' : 'transparent',
-                    textDecoration: 'none',
-                    marginBottom: 1,
-                    color: isActive ? 'var(--sb-text)' : 'var(--sb-muted)',
-                    font: `${isActive ? 600 : 500} 12.5px Inter`,
-                  })}
+                    justifyContent: 'center',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: isActive ? 'var(--ac-bg)' : 'transparent',
+                    color: isActive ? 'var(--ac)' : 'rgba(255,255,255,.45)',
+                    transition: 'background .12s',
+                    position: 'relative',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,.07)'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+                  }}
                 >
-                  <span style={{ width: 16, textAlign: 'center' }}>⚙</span>
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                </NavLink>
-              ))}
-            </div>
-          )}
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    dangerouslySetInnerHTML={{ __html: item.icon }}
+                  />
+                  {item.badge && (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        top: -2,
+                        right: -2,
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: '#EF4444',
+                        border: '1.5px solid var(--bg-sb)',
+                      }}
+                    />
+                  )}
+                  {/* Tooltip — inside button so button:hover > .sb-tooltip selector works */}
+                  <span
+                    className="sb-tooltip"
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      left: 'calc(100% + 8px)',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: '#1E293B',
+                      color: '#E2E8F0',
+                      fontSize: 11,
+                      fontWeight: 500,
+                      padding: '4px 8px',
+                      borderRadius: 5,
+                      whiteSpace: 'nowrap',
+                      pointerEvents: 'none',
+                      zIndex: 100,
+                      fontFamily: 'Inter, system-ui',
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </button>
+              </div>
+            )
+          })}
         </nav>
 
-        {/* User + logout */}
-        <div style={{ padding: 12, borderTop: '1px solid var(--bd)', display: 'flex', alignItems: 'center', gap: 9 }}>
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              background: 'var(--accent-bg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ font: '600 10px Inter', color: 'var(--accent)' }}>{initials}</span>
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                font: '500 11.5px Inter',
-                color: 'var(--sb-text)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {user?.nombre}
-            </div>
-            <div style={{ font: '400 10px Inter', color: 'var(--sb-muted)' }}>{user?.role ?? 'Usuario'}</div>
-          </div>
-          <button
-            type="button"
-            onClick={logout}
-            title="Salir"
-            style={{
-              padding: '4px 8px',
-              background: 'transparent',
-              border: '1px solid var(--gh-bd)',
-              borderRadius: 'var(--radius-btn)',
-              font: '400 10.5px Inter',
-              color: 'var(--gh-text)',
-              cursor: 'pointer',
-            }}
-          >
-            Salir
-          </button>
-        </div>
+        {/* Avatar */}
+        <button
+          type="button"
+          title={user?.nombre ?? 'Mi cuenta'}
+          aria-label="Cerrar sesión"
+          onClick={logout}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 10,
+            fontWeight: 600,
+            color: 'rgba(255,255,255,.7)',
+            marginTop: 'auto',
+            cursor: 'pointer',
+            border: 'none',
+            fontFamily: 'Inter, system-ui',
+          }}
+        >
+          {initials}
+        </button>
       </aside>
 
-      {/* ── Right column ── */}
+      {/* Main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Topbar */}
-        <div
+        <header
           style={{
-            height: 56,
-            background: 'var(--bg-topbar)',
+            height: 52,
+            background: 'var(--bg-tb)',
             borderBottom: '1px solid var(--bd)',
             display: 'flex',
             alignItems: 'center',
-            padding: '0 22px',
+            padding: '0 20px',
             gap: 12,
             flexShrink: 0,
           }}
         >
+          {/* Mobile hamburger */}
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
             aria-label="Abrir menú"
-            className="lg:hidden"
+            className="mobile-menu-btn"
             style={{
+              display: 'none',
+              width: 30,
+              height: 30,
+              borderRadius: 6,
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: 'none',
               background: 'transparent',
-              border: '1px solid var(--gh-bd)',
-              borderRadius: 'var(--radius-btn)',
-              color: 'var(--gh-text)',
-              fontSize: 16,
-              lineHeight: 1,
               cursor: 'pointer',
-              padding: '6px 10px',
-              flexShrink: 0,
+              color: 'var(--tx-md)',
             }}
           >
-            ☰
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M2 4h11M2 7.5h11M2 11h11" />
+            </svg>
           </button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '600 14px Inter', color: 'var(--text-hi)' }}>NicaRunner Backoffice</div>
-            <div
-              className="hidden sm:block"
-              style={{ font: '400 10.5px Inter', color: 'var(--text-xs)', marginTop: 1 }}
+
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx-hi)', fontFamily: 'Inter, system-ui' }}>
+            {pageTitle}
+          </span>
+
+          {/* Race selector */}
+          <button
+            type="button"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              background: 'var(--bg-input)',
+              border: '1px solid var(--bd)',
+              borderRadius: 'var(--r-btn)',
+              padding: '4px 10px 4px 8px',
+              fontSize: 12,
+              fontWeight: 500,
+              color: 'var(--tx-hi)',
+              cursor: 'pointer',
+              fontFamily: 'Inter, system-ui',
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', flexShrink: 0, display: 'inline-block' }} />
+            Maratón Managua 2025
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+              <path d="M2 3.5l3 3 3-3" />
+            </svg>
+          </button>
+
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ThemeSwitcher />
+            <div style={{ height: 18, width: 1, background: 'var(--bd)', margin: '0 4px' }} />
+            {/* Notification bell */}
+            <button
+              type="button"
+              aria-label="Notificaciones"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'var(--tx-md)',
+                position: 'relative',
+              }}
             >
-              Gestión de competencias de atletismo
-            </div>
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <path d="M7.5 2a1 1 0 00-1 1V3.5A4 4 0 004.5 7c0 2 0 3-1 4h8c-1-1-1-2-1-4a4 4 0 00-2-3.5V3a1 1 0 00-1-1zM6 11a1.5 1.5 0 003 0" />
+              </svg>
+              <span
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: 5,
+                  right: 5,
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#EF4444',
+                  border: '1.5px solid var(--bg-tb)',
+                }}
+              />
+            </button>
           </div>
-          <ThemeSwitcher />
-        </div>
+        </header>
 
         {/* Content */}
-        <main style={{ flex: 1, overflow: 'auto' }} className="p-4 sm:p-6">
+        <main style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
           <Outlet />
         </main>
       </div>

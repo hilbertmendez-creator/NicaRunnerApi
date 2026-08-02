@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: 'Inter', system-ui, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
   --color-slate-blue-950: #0b1220;
   --color-slate-blue-900: #0f172a;
@@ -49,191 +49,138 @@ body {
   to   { width: var(--prog-width, 72%); }
 }
 
-/* ── TEMA: CONTROL (oscuro) ── */
+/* ── THEME: DARK ── */
 [data-theme="dark"] {
-  --bg-app:        #0A1322;
-  --bg-sidebar:    #0F1D32;
-  --bg-topbar:     #0D1928;
-  --bg-card:       #0D1928;
-  --bg-hover:      rgba(255,255,255,.018);
-  --bg-input:      rgba(255,255,255,.04);
-  --bg-th:         #0A1826;
-  --bd:            rgba(66,165,245,.10);
-  --bd-card:       rgba(66,165,245,.13);
-  --bd-row:        rgba(66,165,245,.07);
-  --bd-conflict:   rgba(217,58,58,.22);
-  --text-hi:       #E8F4FF;
-  --text-lo:       #6A8DAB;
-  --text-xs:       #3D5A73;
-  --text-th:       #2E4A66;
-  --accent:        #42A5F5;
-  --accent-bg:     rgba(66,165,245,.12);
-  --accent-dim:    rgba(66,165,245,.20);
-  --sb-text:       #42A5F5;
-  --sb-muted:      #5B7A9A;
-  --sb-active-bg:  rgba(66,165,245,.13);
-  --sb-active-bd:  #42A5F5;
-  --tab-active:    #42A5F5;
-  --mono:          #42A5F5;
-  --pr-bg:         rgba(66,165,245,.13);
-  --pr-bd:         rgba(66,165,245,.22);
-  --pr-text:       #42A5F5;
-  --gh-bd:         rgba(66,165,245,.18);
-  --gh-text:       #6A8DAB;
-  --badge-ok-bg:   rgba(46,158,91,.16);
-  --badge-ok-bd:   rgba(46,158,91,.3);
-  --badge-ok-text: #3DBE6E;
-  --badge-er-bg:   rgba(217,58,58,.2);
-  --badge-er-bd:   rgba(217,58,58,.32);
-  --badge-er-text: #D93A3A;
-  --badge-pr-bg:   rgba(66,165,245,.12);
-  --badge-pr-bd:   rgba(66,165,245,.2);
-  --badge-pr-text: #42A5F5;
-  --badge-cl-bg:   rgba(91,122,154,.12);
-  --badge-cl-text: #5B7A9A;
-  --gold:          #D4AF37;
-  --silver:        #9CA3AF;
-  --bronze:        #B87333;
-  --conflict-bg:   rgba(217,58,58,.07);
-  --conflict-bd:   #D93A3A;
-  --conflict-text: #D93A3A;
-  --chip-a-bg:     rgba(66,165,245,.18);
-  --chip-a-bd:     #42A5F5;
-  --chip-a-text:   #42A5F5;
-  --pb-track:      #0A1826;
-  --pb-fill-from:  #1565FF;
-  --pb-fill-to:    #42A5F5;
-  --radius-card:   8px;
-  --radius-btn:    5px;
-  --radius-badge:  3px;
+  --bg-app:   #080E1A;
+  --bg-sb:    #070C16;
+  --bg-tb:    #0D1522;
+  --bg-card:  #0D1522;
+  --bg-hover: rgba(255,255,255,.03);
+  --bg-input: rgba(255,255,255,.04);
+  --bg-th:    rgba(255,255,255,.03);
+  --bd:       rgba(255,255,255,.07);
+  --bd-inner: rgba(255,255,255,.04);
+
+  --tx-hi:  #E2E8F0;
+  --tx-md:  #5B7A99;
+  --tx-lo:  #2D4460;
+  --tx-th:  #2D4460;
+
+  --ac:     #3B82F6;
+  --ac-bg:  rgba(59,130,246,.12);
+  --ac-dim: rgba(59,130,246,.2);
+
+  --ok-bg:  rgba(22,163,74,.1);   --ok-bd:  rgba(22,163,74,.2);   --ok-tx:  #4ADE80;
+  --wn-bg:  rgba(217,119,6,.1);   --wn-bd:  rgba(217,119,6,.2);   --wn-tx:  #FBBF24;
+  --er-bg:  rgba(220,38,38,.1);   --er-bd:  rgba(220,38,38,.2);   --er-tx:  #F87171;
+  --in-bg:  rgba(59,130,246,.1);  --in-bd:  rgba(59,130,246,.2);  --in-tx:  #60A5FA;
+
+  --row-ok: rgba(22,163,74,.04);
+  --row-wn: rgba(245,158,11,.06);
+  --row-er: rgba(220,38,38,.06);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+  --shadow-md: 0 1px 3px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.3);
+
+  --r-card:  7px;
+  --r-btn:   6px;
+  --r-badge: 20px;
+
+  /* backward compat — existing components keep working */
+  --bg-sidebar: var(--bg-sb);
+  --bg-topbar:  var(--bg-tb);
+  --text-hi:    var(--tx-hi);
+  --text-lo:    var(--tx-md);
+  --text-xs:    var(--tx-lo);
+  --text-th:    var(--tx-th);
+  --bd-card:    var(--bd);
+  --bd-row:     var(--bd-inner);
+  --accent:     var(--ac);
+  --accent-bg:  var(--ac-bg);
+  --accent-dim: var(--ac-dim);
+  --radius-card:  var(--r-card);
+  --radius-btn:   var(--r-btn);
+  --radius-badge: var(--r-badge);
+  --chip-a-bg:    var(--ac-bg);
+  --chip-a-bd:    var(--ac-dim);
+  --chip-a-text:  var(--ac);
+  --badge-ok-bg:   var(--ok-bg);  --badge-ok-bd:   var(--ok-bd);  --badge-ok-text:  var(--ok-tx);
+  --badge-pr-bg:   var(--wn-bg);  --badge-pr-bd:   var(--wn-bd);  --badge-pr-text:  var(--wn-tx);
+  --badge-er-bg:   var(--er-bg);  --badge-er-bd:   var(--er-bd);  --badge-er-text:  var(--er-tx);
+  --conflict-bd:   var(--er-bd);
+  --conflict-text: var(--er-tx);
+  --sb-text:      var(--ac);
+  --sb-muted:     var(--tx-md);
+  --sb-active-bg: var(--ac-bg);
+  --sb-active-bd: var(--ac);
+  --mono:         var(--ac);
 }
 
-/* ── TEMA: LIMPIO (claro) ── */
+/* ── THEME: LIGHT (default) ── */
 [data-theme="light"] {
-  --bg-app:        #F7F9FC;
-  --bg-sidebar:    #FFFFFF;
-  --bg-topbar:     #FFFFFF;
-  --bg-card:       #FFFFFF;
-  --bg-hover:      #FAFBFC;
-  --bg-input:      #F7F9FC;
-  --bg-th:         #F7F9FC;
-  --bd:            #E8ECEF;
-  --bd-card:       #E8ECEF;
-  --bd-row:        #F0F2F5;
-  --bd-conflict:   #FECACA;
-  --text-hi:       #11243F;
-  --text-lo:       #5B6B82;
-  --text-xs:       #9AA5B1;
-  --text-th:       #9AA5B1;
-  --accent:        #0D47A1;
-  --accent-bg:     #EEF3FF;
-  --accent-dim:    #BFDBFE;
-  --sb-text:       #0D47A1;
-  --sb-muted:      #5B6B82;
-  --sb-active-bg:  #EEF3FF;
-  --sb-active-bd:  #0D47A1;
-  --tab-active:    #0D47A1;
-  --mono:          #0D47A1;
-  --pr-bg:         #0D47A1;
-  --pr-bd:         #0D47A1;
-  --pr-text:       #FFFFFF;
-  --gh-bd:         #E8ECEF;
-  --gh-text:       #5B6B82;
-  --badge-ok-bg:   #F0FDF4;
-  --badge-ok-bd:   #BBF7D0;
-  --badge-ok-text: #15803D;
-  --badge-er-bg:   #FEF2F2;
-  --badge-er-bd:   #FECACA;
-  --badge-er-text: #DC2626;
-  --badge-pr-bg:   #FFF7ED;
-  --badge-pr-bd:   #FED7AA;
-  --badge-pr-text: #D97706;
-  --badge-cl-bg:   #F7F9FC;
-  --badge-cl-text: #9AA5B1;
-  --gold:          #D97706;
-  --silver:        #6B7280;
-  --bronze:        #B87333;
-  --conflict-bg:   #FFF5F5;
-  --conflict-bd:   #DC2626;
-  --conflict-text: #DC2626;
-  --chip-a-bg:     #EEF3FF;
-  --chip-a-bd:     #93C5FD;
-  --chip-a-text:   #1D4ED8;
-  --pb-track:      #EEF3FF;
-  --pb-fill-from:  #42A5F5;
-  --pb-fill-to:    #0D47A1;
-  --radius-card:   8px;
-  --radius-btn:    6px;
-  --radius-badge:  20px;
-}
+  --bg-app:   #F4F6FA;
+  --bg-sb:    #1C2333;
+  --bg-tb:    #FFFFFF;
+  --bg-card:  #FFFFFF;
+  --bg-hover: #F8FAFC;
+  --bg-input: #F8FAFC;
+  --bg-th:    #F8FAFC;
+  --bd:       #E2E8F0;
+  --bd-inner: #F1F5F9;
 
-/* ── TEMA: MARCA NicaRunner ── */
-[data-theme="brand"] {
-  --bg-app:        #F5F9FF;
-  --bg-sidebar:    #0D47A1;
-  --bg-topbar:     #FFFFFF;
-  --bg-card:       #FFFFFF;
-  --bg-hover:      #FAFCFF;
-  --bg-input:      #FFFFFF;
-  --bg-th:         #F5F9FF;
-  --bd:            #E3F0FF;
-  --bd-card:       #D6EAFF;
-  --bd-row:        #EBF4FF;
-  --bd-conflict:   #FECACA;
-  --text-hi:       #11243F;
-  --text-lo:       #5B6B82;
-  --text-xs:       #9AA5B1;
-  --text-th:       #5B6B82;
-  --accent:        #1565FF;
-  --accent-bg:     #EEF3FF;
-  --accent-dim:    #D6EAFF;
-  --sb-text:       #FFFFFF;
-  --sb-muted:      rgba(255,255,255,.60);
-  --sb-active-bg:  rgba(255,255,255,.15);
-  --sb-active-bd:  rgba(255,255,255,.5);
-  --tab-active:    #1565FF;
-  --mono:          #0D47A1;
-  --pr-bg:         #1565FF;
-  --pr-bd:         transparent;
-  --pr-text:       #FFFFFF;
-  --gh-bd:         #D6EAFF;
-  --gh-text:       #0D47A1;
-  --badge-ok-bg:   #ECFDF5;
-  --badge-ok-bd:   #6EE7B7;
-  --badge-ok-text: #059669;
-  --badge-er-bg:   #FEF2F2;
-  --badge-er-bd:   #FECACA;
-  --badge-er-text: #DC2626;
-  --badge-pr-bg:   #EEF3FF;
-  --badge-pr-bd:   #BFDBFE;
-  --badge-pr-text: #1D4ED8;
-  --badge-cl-bg:   #F5F9FF;
-  --badge-cl-text: #5B6B82;
-  --gold:          #D97706;
-  --silver:        #6B7280;
-  --bronze:        #B87333;
-  --conflict-bg:   #FFF5F5;
-  --conflict-bd:   #DC2626;
-  --conflict-text: #DC2626;
-  --chip-a-bg:     #1565FF;
-  --chip-a-bd:     transparent;
-  --chip-a-text:   #FFFFFF;
-  --pb-track:      #DBEAFE;
-  --pb-fill-from:  #42A5F5;
-  --pb-fill-to:    #1565FF;
-  --radius-card:   14px;
-  --radius-btn:    10px;
-  --radius-badge:  20px;
-}
+  --tx-hi:  #0F172A;
+  --tx-md:  #475569;
+  --tx-lo:  #94A3B8;
+  --tx-th:  #94A3B8;
 
-/* Sidebar gradiente solo en tema brand */
-[data-theme="brand"] .sidebar-inner {
-  background: linear-gradient(160deg, #0D47A1 0%, #08306B 100%) !important;
-}
+  --ac:     #2563EB;
+  --ac-bg:  #EFF6FF;
+  --ac-dim: #BFDBFE;
 
-/* Botón primario con gradiente en tema brand */
-[data-theme="brand"] .btn-primary {
-  background: linear-gradient(90deg, #42A5F5, #1565FF) !important;
+  --ok-bg:  #F0FDF4;   --ok-bd:  #BBF7D0;  --ok-tx:  #15803D;
+  --wn-bg:  #FFFBEB;   --wn-bd:  #FDE68A;  --wn-tx:  #92400E;
+  --er-bg:  #FEF2F2;   --er-bd:  #FECACA;  --er-tx:  #DC2626;
+  --in-bg:  #EFF6FF;   --in-bd:  #BFDBFE;  --in-tx:  #1D4ED8;
+
+  --row-ok: rgba(22,163,74,.03);
+  --row-wn: rgba(245,158,11,.05);
+  --row-er: rgba(220,38,38,.05);
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 1px 3px rgba(0,0,0,.07),0 2px 8px rgba(0,0,0,.04);
+
+  --r-card:  7px;
+  --r-btn:   6px;
+  --r-badge: 20px;
+
+  /* backward compat */
+  --bg-sidebar: var(--bg-sb);
+  --bg-topbar:  var(--bg-tb);
+  --text-hi:    var(--tx-hi);
+  --text-lo:    var(--tx-md);
+  --text-xs:    var(--tx-lo);
+  --text-th:    var(--tx-th);
+  --bd-card:    var(--bd);
+  --bd-row:     var(--bd-inner);
+  --accent:     var(--ac);
+  --accent-bg:  var(--ac-bg);
+  --accent-dim: var(--ac-dim);
+  --radius-card:  var(--r-card);
+  --radius-btn:   var(--r-btn);
+  --radius-badge: var(--r-badge);
+  --chip-a-bg:    var(--ac-bg);
+  --chip-a-bd:    var(--ac-dim);
+  --chip-a-text:  var(--ac);
+  --badge-ok-bg:   var(--ok-bg);  --badge-ok-bd:   var(--ok-bd);  --badge-ok-text:  var(--ok-tx);
+  --badge-pr-bg:   var(--wn-bg);  --badge-pr-bd:   var(--wn-bd);  --badge-pr-text:  var(--wn-tx);
+  --badge-er-bg:   var(--er-bg);  --badge-er-bd:   var(--er-bd);  --badge-er-text:  var(--er-tx);
+  --conflict-bd:   var(--er-bd);
+  --conflict-text: var(--er-tx);
+  --sb-text:      var(--ac);
+  --sb-muted:     var(--tx-md);
+  --sb-active-bg: var(--ac-bg);
+  --sb-active-bd: var(--ac);
+  --mono:         var(--ac);
 }
 
 /* Progress bar usando custom properties */
@@ -265,4 +212,44 @@ body {
   border-radius: 50%;
   background: #22C55E;
   animation: pulse-live 1.4s ease-in-out infinite;
+}
+
+/* ── AppLayout v2 ── */
+.sb-tooltip { opacity: 0; transition: opacity .12s; }
+button:hover > .sb-tooltip { opacity: 1; }
+
+@media (max-width: 640px) {
+  .mobile-menu-btn { display: flex !important; }
+  .nr-sidebar {
+    position: fixed !important;
+    top: 0; left: 0; bottom: 0;
+    width: 200px !important;
+    z-index: 40;
+    align-items: flex-start !important;
+    padding-left: 8px !important;
+    transition: transform .2s;
+  }
+  .nr-sidebar.closed { transform: translateX(-100%); }
+  .nr-sidebar.open   { transform: translateX(0); }
+}
+@media (min-width: 641px) {
+  .nr-sidebar { transform: none !important; }
+}
+
+/* ── Focus rings (WCAG AA) ── */
+:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Responsive grid breakpoints ── */
+@media (max-width: 900px) {
+  .nr-content-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
