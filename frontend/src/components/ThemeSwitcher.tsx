@@ -4,6 +4,8 @@ export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme()
   return (
     <div
+      role="group"
+      aria-label="Tema"
       style={{
         display: 'flex',
         background: 'var(--bg-app)',
@@ -17,6 +19,7 @@ export function ThemeSwitcher() {
         <button
           key={t}
           type="button"
+          aria-pressed={theme === t}
           onClick={() => setTheme(t)}
           style={{
             height: 24,
