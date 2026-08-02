@@ -50,11 +50,11 @@ const MONO = 'font-mono tabular-nums'
 
 const cardStyle: CSSProperties = {
   background: 'var(--bg-card)',
-  border: '1px solid var(--bd-card)',
-  borderRadius: 'var(--radius-card)',
+  border: '1px solid var(--bd)',
+  borderRadius: 'var(--r-card)',
   padding: 14,
 }
-const cardTitleStyle: CSSProperties = { color: 'var(--text-hi)' }
+const cardTitleStyle: CSSProperties = { color: 'var(--tx-hi)' }
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-NI', { hour12: false })
