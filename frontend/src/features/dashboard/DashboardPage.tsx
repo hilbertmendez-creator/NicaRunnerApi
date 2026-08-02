@@ -7,6 +7,7 @@ import { getDashboard, getStandings } from '../../api/endpoints'
 import { usePolling } from '../../hooks/usePolling'
 import { useRaceDashboardHub } from '../../hooks/useRaceDashboardHub'
 import { MetricCard, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import { KpiBar } from './KpiBar'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
 
@@ -97,6 +98,16 @@ export function DashboardPage() {
 
       {dashboard.data && (
         <>
+          <KpiBar
+            items={[
+              { label: 'Tiempo en curso', value: '—' },
+              { label: 'Ritmo promedio', value: '—' },
+              { label: 'Chip llegadas', value: String(dashboard.data.totalConTiempo), trend: `▲ de ${dashboard.data.totalInscritos} inscritos` },
+              { label: 'Pendientes', value: String(dashboard.data.totalPendientes), trendColor: dashboard.data.totalPendientes > 0 ? 'var(--wn-tx)' : undefined },
+              { label: 'Cámara ok', value: '—' },
+              { label: 'Último dorsal', value: '—' },
+            ]}
+          />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <MetricCard label="Inscritos" value={dashboard.data.totalInscritos} variant="orange" />
             <MetricCard label="Con tiempo" value={dashboard.data.totalConTiempo} variant="teal" />
