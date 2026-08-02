@@ -6,6 +6,8 @@ interface KpiItem {
   trend?: string
   /** Color del subtítulo de tendencia; por defecto muted, nunca verde forzado. */
   trendColor?: string
+  /** live = métrica API; aspirational = sin backend, vacío honesto. */
+  kind?: 'live' | 'aspirational'
 }
 
 interface KpiBarProps {
@@ -28,44 +30,48 @@ export function KpiBar({ items }: KpiBarProps) {
         overflowX: 'auto',
       }}
     >
-      {items.map((item, i) => (
-        <div key={item.label} style={{ display: 'contents' }}>
-          {i > 0 && (
-            <div
-              style={{ width: 1, height: 28, background: 'var(--bd-inner)', flexShrink: 0 }}
-            />
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '.45px',
-                color: 'var(--tx-lo)',
-              }}
-            >
-              {item.label}
-            </span>
-            <span
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                color: item.valueColor ?? 'var(--tx-hi)',
-                fontFeatureSettings: '"tnum"',
-                fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
-              }}
-            >
-              {item.value}
-            </span>
-            {item.trend && (
-              <span style={{ fontSize: 10, color: item.trendColor ?? 'var(--tx-lo)' }}>
-                {item.trend}
-              </span>
+      {items.map((item, i) => {
+        const aspirational = item.kind === 'aspirational'
+        return (
+          <div key={item.label} style={{ display: 'contents' }}>
+            {i > 0 && (
+              <div
+                style={{ width: 1, height: 28, background: 'var(--bd-inner)', flexShrink: 0 }}
+              />
             )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '.45px',
+                  color: 'var(--tx-lo)',
+                }}
+              >
+                {item.label}
+              </span>
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  // Aspiracional: muted para no parecer lectura en vivo.
+                  color: item.valueColor ?? (aspirational ? 'var(--tx-lo)' : 'var(--tx-hi)'),
+                  fontFeatureSettings: '"tnum"',
+                  fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
+                }}
+              >
+                {item.value}
+              </span>
+              {item.trend && (
+                <span style={{ fontSize: 10, color: item.trendColor ?? 'var(--tx-lo)' }}>
+                  {item.trend}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
