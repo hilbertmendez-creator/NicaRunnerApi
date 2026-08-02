@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeProvider } from './hooks/useTheme'
+import { ActiveRaceProvider } from './hooks/useActiveRace'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { RequirePasswordChanged } from './auth/RequirePasswordChanged'
@@ -37,7 +38,13 @@ function App() {
             <Route path="/change-password" element={<ChangePasswordPage />} />
 
             <Route element={<RequirePasswordChanged />}>
-              <Route element={<AppLayout />}>
+              <Route
+                element={
+                  <ActiveRaceProvider>
+                    <AppLayout />
+                  </ActiveRaceProvider>
+                }
+              >
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/carreras" element={<RacesPage />} />
                 <Route path="/carreras/:raceId" element={<RaceDetailPage />} />

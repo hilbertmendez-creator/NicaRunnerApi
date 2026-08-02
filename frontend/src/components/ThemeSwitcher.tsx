@@ -22,10 +22,12 @@ export function ThemeSwitcher() {
           aria-pressed={theme === t}
           onClick={() => setTheme(t)}
           style={{
-            height: 24,
-            padding: '0 8px',
+            // WCAG 2.5.5 — target ≥ 44×44 CSS px
+            minHeight: 44,
+            minWidth: 44,
+            padding: '0 12px',
             borderRadius: 4,
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 500,
             border: 'none',
             cursor: 'pointer',
