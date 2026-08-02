@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { RaceSelector } from '../../components/RaceSelector'
 import { createPublicToken, getPublicTokens } from '../../api/endpoints'
 import type { PublicTokenDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
@@ -59,7 +58,6 @@ export function PublicLinksPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={pageTitle}>Enlaces públicos de resultados</h1>
-        <RaceSelector />
       </div>
 
       {canCreate && (

@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react'
-import { RaceSelector } from '../../components/RaceSelector'
 import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
 import { getDashboard, getStandings } from '../../api/endpoints'
@@ -109,19 +108,17 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>
-            {dashboard.data?.raceName ?? 'Dashboard en vivo'}
-          </h1>
-          {dashboard.data && <StatusBadge status={dashboard.data.estado} />}
-          {raceId && (
-            <ConnectionStatusBadge
-              state={connectionState(dashboard.loading, dashboard.data !== null, dashboard.error)}
-            />
-          )}
-        </div>
-        <RaceSelector />
+      {/* Race chrome vive solo en TopbarRaceSelect (ActiveRaceProvider). */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>
+          {dashboard.data?.raceName ?? 'Dashboard en vivo'}
+        </h1>
+        {dashboard.data && <StatusBadge status={dashboard.data.estado} />}
+        {raceId && (
+          <ConnectionStatusBadge
+            state={connectionState(dashboard.loading, dashboard.data !== null, dashboard.error)}
+          />
+        )}
       </div>
 
       {!raceId && <EmptyState message="Selecciona una carrera para ver su progreso." />}
