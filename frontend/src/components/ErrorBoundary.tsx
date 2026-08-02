@@ -19,23 +19,58 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('[ErrorBoundary]', error, info.componentStack)
   }
 
+  private handleRetry = () => {
+    this.setState({ error: null })
+  }
+
   render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
-          <h1 className="text-2xl font-semibold">Something went wrong</h1>
-          <p className="max-w-md text-sm text-gray-500">
-            An unexpected error occurred. Try refreshing the page. If the problem
-            persists, contact the administrator.
+        <div
+          className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center"
+          style={{ background: 'var(--bg-app)', color: 'var(--text-hi)' }}
+          role="alert"
+        >
+          <h1 className="text-2xl font-semibold">Algo salió mal</h1>
+          <p className="max-w-md text-sm" style={{ color: 'var(--text-lo)' }}>
+            Ocurrió un error inesperado. Podés reintentar o recargar la página. Si el problema
+            continúa, contactá al administrador.
           </p>
-          <button
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-            onClick={() => window.location.reload()}
-          >
-            Refresh page
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              className="px-4 py-2 text-sm font-medium text-white"
+              style={{ background: 'var(--ac)', borderRadius: 'var(--radius-btn)', border: 'none', cursor: 'pointer' }}
+              onClick={this.handleRetry}
+            >
+              Reintentar
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2 text-sm font-medium"
+              style={{
+                background: 'var(--bg-card)',
+                color: 'var(--text-hi)',
+                border: '1px solid var(--bd)',
+                borderRadius: 'var(--radius-btn)',
+                cursor: 'pointer',
+              }}
+              onClick={() => window.location.reload()}
+            >
+              Recargar página
+            </button>
+          </div>
           {import.meta.env.DEV && (
-            <pre className="mt-4 max-w-2xl overflow-auto rounded bg-gray-100 p-4 text-left text-xs text-red-600">
+            <pre
+              className="mt-4 max-w-2xl overflow-auto p-4 text-left text-xs"
+              style={{
+                background: 'var(--bg-input)',
+                color: 'var(--badge-er-text)',
+                borderRadius: 'var(--radius-card)',
+                border: '1px solid var(--bd)',
+                wordBreak: 'break-word',
+              }}
+            >
               {this.state.error.message}
               {'\n'}
               {this.state.error.stack}

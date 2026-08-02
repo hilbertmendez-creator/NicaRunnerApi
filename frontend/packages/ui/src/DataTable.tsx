@@ -46,7 +46,7 @@ export function DataTable<T>({
             style={{
               background: 'var(--bg-card, #ffffff)',
               border: '1px solid var(--bd-card, #e4e4e7)',
-              borderRadius: 'var(--radius-card, 0.5rem)',
+                  borderRadius: 'var(--radius-card, 7px)',
             }}
           >
             {labeledColumns.map((col, idx) => (
@@ -73,7 +73,11 @@ export function DataTable<T>({
       {/* Tabla — sm y mayores */}
       <div
         className="hidden overflow-x-auto sm:block"
-        style={{ border: '1px solid var(--bd-card, #e4e4e7)', background: 'var(--bg-card, #ffffff)' }}
+        style={{
+          border: '1px solid var(--bd-card, #e4e4e7)',
+          background: 'var(--bg-card, #ffffff)',
+          borderRadius: 'var(--radius-card, 7px)',
+        }}
       >
         <table className="w-full border-collapse text-left text-sm">
           <thead className="sticky top-0">

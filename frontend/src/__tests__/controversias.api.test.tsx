@@ -84,11 +84,11 @@ describe('ControversiasPage API smoke', () => {
 
     const row = (await screen.findByText('Ana Corredora')).closest('tr')
     expect(row).toBeTruthy()
-    await user.click(within(row as HTMLElement).getByRole('button', { name: 'Oficial' }))
+    await user.click(within(row as HTMLElement).getByRole('button', { name: 'Marcar oficial' }))
 
     const dialog = await screen.findByRole('dialog')
-    expect(within(dialog).getByText(/Confirmar tiempo oficial/)).toBeInTheDocument()
-    await user.click(within(dialog).getByRole('button', { name: 'Confirmar Oficial' }))
+    expect(within(dialog).getByRole('heading', { name: /Confirmar tiempo oficial/ })).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Confirmar tiempo oficial' }))
 
     await waitFor(() =>
       expect(resolveControversia).toHaveBeenCalledWith(9, 101, {
@@ -108,7 +108,7 @@ describe('ControversiasPage API smoke', () => {
 
     const row = (await screen.findByText('Ana Corredora')).closest('tr')
     expect(row).toBeTruthy()
-    await user.click(within(row as HTMLElement).getByRole('button', { name: 'Disputa' }))
+    await user.click(within(row as HTMLElement).getByRole('button', { name: 'Marcar disputa' }))
 
     await waitFor(() =>
       expect(resolveControversia).toHaveBeenCalledWith(9, 101, { estado: 'Disputa' }),

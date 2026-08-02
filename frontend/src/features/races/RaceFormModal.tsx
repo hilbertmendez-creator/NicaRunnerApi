@@ -53,7 +53,7 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
       }
       onSaved()
     } catch {
-      setError('No se pudo guardar la carrera. Verifica los datos.')
+      setError('No se pudo guardar la carrera. Verificá los datos.')
     } finally {
       setSubmitting(false)
     }
@@ -104,7 +104,7 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
             <Label>Categorías participantes</Label>
             {catalog.length === 0 && (
               <p className="text-sm" style={{ color: 'var(--text-lo)' }}>
-                No hay categorías en el catálogo todavía. Créalas primero en Administración → Categorías.
+                No hay categorías en el catálogo todavía. Creálas primero en Categorías (menú lateral).
               </p>
             )}
             <div className="flex flex-col gap-1" style={{ maxHeight: 160, overflowY: 'auto' }}>

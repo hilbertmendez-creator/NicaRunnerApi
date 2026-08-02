@@ -28,7 +28,7 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
       link.click()
       URL.revokeObjectURL(url)
     } catch {
-      setError('No se pudo descargar la plantilla. Asegúrate de que la carrera tenga categorías asignadas.')
+      setError('No se pudo descargar la plantilla. Asegurate de que la carrera tenga categorías asignadas.')
     } finally {
       setDownloading(false)
     }
@@ -37,7 +37,7 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
   async function handleUpload() {
     const file = fileInputRef.current?.files?.[0]
     if (!file) {
-      setError('Selecciona un archivo .xlsx primero.')
+      setError('Seleccioná un archivo .xlsx primero.')
       return
     }
     setError(null)
@@ -47,7 +47,7 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
       setResult(data)
       if (data.importados > 0) onImported()
     } catch {
-      setError('No se pudo procesar el archivo. Verifica el formato.')
+      setError('No se pudo procesar el archivo. Verificá el formato.')
     } finally {
       setSubmitting(false)
     }

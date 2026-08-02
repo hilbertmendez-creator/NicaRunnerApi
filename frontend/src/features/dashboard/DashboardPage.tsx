@@ -121,10 +121,10 @@ export function DashboardPage() {
         )}
       </div>
 
-      {!raceId && <EmptyState message="Selecciona una carrera para ver su progreso." />}
+      {!raceId && <EmptyState message="Elegí una carrera en la barra superior para ver su progreso." />}
 
       {raceId && dashboard.loading && !dashboard.data && (
-        <LoadingText message="Cargando dashboard..." />
+        <LoadingText message="Cargando progreso de la carrera…" />
       )}
 
       {dashboard.data && (

@@ -2,7 +2,7 @@ import { useActiveRace } from '../hooks/useActiveRace'
 import type { RaceStatus } from '../api/types'
 
 function statusDotColor(estado: RaceStatus | undefined): string {
-  if (estado === 'EnCurso') return '#22C55E'
+  if (estado === 'EnCurso') return 'var(--live-dot, #22C55E)'
   if (estado === 'Planeada') return 'var(--wn-tx)'
   if (estado === 'Terminada') return 'var(--tx-lo)'
   return 'var(--tx-lo)'
@@ -16,10 +16,11 @@ export function TopbarRaceSelect() {
     ? 'Cargando…'
     : races.length === 0
       ? 'Sin carreras'
-      : 'Elegir carrera'
+      : 'Elegí carrera'
 
   return (
     <label
+      className="nr-race-select"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -34,6 +35,8 @@ export function TopbarRaceSelect() {
         fontFamily: 'Inter, system-ui',
         minHeight: 32,
         cursor: races.length === 0 ? 'default' : 'pointer',
+        maxWidth: 'min(100%, 280px)',
+        minWidth: 0,
       }}
     >
       <span
@@ -58,10 +61,15 @@ export function TopbarRaceSelect() {
           color: 'inherit',
           font: 'inherit',
           cursor: 'inherit',
-          maxWidth: 220,
+          maxWidth: '100%',
+          minWidth: 0,
+          flex: 1,
           outline: 'none',
           appearance: 'none',
           paddingRight: 14,
+          textOverflow: 'ellipsis',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
         }}
       >
         {races.length === 0 ? (

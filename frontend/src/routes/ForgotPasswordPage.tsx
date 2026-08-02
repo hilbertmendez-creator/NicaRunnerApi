@@ -22,23 +22,33 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-2 text-xl font-semibold text-gray-900">Recuperar contraseña</h1>
+    <div className="flex min-h-screen items-center justify-center px-6" style={{ background: 'var(--bg-app)' }}>
+      <div
+        className="w-full max-w-sm p-8"
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--bd-card)',
+          borderRadius: 'var(--radius-card)',
+          boxShadow: 'var(--shadow-md)',
+        }}
+      >
+        <h1 className="mb-2 text-xl font-semibold" style={{ color: 'var(--text-hi)' }}>
+          Recuperar contraseña
+        </h1>
 
         {submitted ? (
           <>
-            <p className="mb-6 text-sm text-gray-700">
-              Si el correo <strong>{email}</strong> está registrado, enviamos un enlace para
-              restablecer la contraseña. Revisa tu bandeja de entrada.
+            <p className="mb-6 text-sm" style={{ color: 'var(--text-lo)' }}>
+              Si el correo <strong style={{ color: 'var(--text-hi)' }}>{email}</strong> está registrado,
+              enviamos un enlace para restablecer la contraseña. Revisá tu bandeja de entrada.
             </p>
-            <Link to="/login" className="text-sm text-blue-700 hover:underline">
+            <Link to="/login" className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>
               Volver al login
             </Link>
           </>
         ) : (
           <form onSubmit={handleSubmit}>
-            <p className="mb-4 text-sm text-gray-600">
+            <p className="mb-4 text-sm" style={{ color: 'var(--text-lo)' }}>
               Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
             </p>
 
@@ -55,7 +65,11 @@ export function ForgotPasswordPage() {
             <Button type="submit" variant="primary" disabled={submitting} className="mb-3 w-full">
               {submitting ? 'Enviando...' : 'Enviar enlace'}
             </Button>
-            <Link to="/login" className="block text-center text-sm text-blue-700 hover:underline">
+            <Link
+              to="/login"
+              className="block text-center text-sm hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
               Volver al login
             </Link>
           </form>

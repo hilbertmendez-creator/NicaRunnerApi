@@ -48,7 +48,7 @@ export function Modal({ onClose, children, maxWidth = 'md', labelledBy }: ModalP
         style={{
           background: 'var(--bg-card, #ffffff)',
           border: '1px solid var(--bd-card, #e4e4e7)',
-          borderRadius: 'var(--radius-card, 0.5rem)',
+          borderRadius: 'var(--radius-card, 7px)',
         }}
       >
         {children}
