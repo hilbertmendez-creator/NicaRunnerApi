@@ -48,8 +48,8 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
       } else {
         setError(
           user
-            ? 'No se pudo actualizar el usuario. Verifica el nombre y el formato del alias.'
-            : 'No se pudo crear el usuario. Verifica que el email no esté ya registrado.',
+            ? 'No se pudo actualizar el usuario. Verificá el nombre y el formato del alias.'
+            : 'No se pudo crear el usuario. Verificá que el email no esté ya registrado.',
         )
       }
     } finally {
@@ -60,14 +60,20 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
   if (createdUser) {
     return (
       <Modal onClose={onSaved} labelledBy="user-form-title">
-        <h2 id="user-form-title" className="mb-4 text-base font-semibold text-zinc-900">
+        <h2 id="user-form-title" className="mb-4 text-base font-semibold" style={{ color: 'var(--text-hi)' }}>
           Usuario creado
         </h2>
-        <p className="mb-3 text-sm text-zinc-700">
-          Se creó <strong>{createdUser.nombre}</strong> con el alias generado:
+        <p className="mb-3 text-sm" style={{ color: 'var(--text-lo)' }}>
+          Se creó <strong style={{ color: 'var(--text-hi)' }}>{createdUser.nombre}</strong> con el alias generado:
         </p>
         <p
-          className="mb-4 border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900"
+          className="mb-4 border px-3 py-2 font-mono text-sm"
+          style={{
+            borderColor: 'var(--bd)',
+            background: 'var(--bg-input)',
+            color: 'var(--text-hi)',
+            borderRadius: 'var(--radius-btn)',
+          }}
           data-testid="generated-alias"
         >
           {createdUser.username ?? '(sin alias — verifica la configuración del backend)'}
@@ -84,7 +90,7 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
   return (
     <Modal onClose={onClose} labelledBy="user-form-title">
       <form onSubmit={handleSubmit}>
-        <h2 id="user-form-title" className="mb-4 text-base font-semibold text-zinc-900">
+        <h2 id="user-form-title" className="mb-4 text-base font-semibold" style={{ color: 'var(--text-hi)' }}>
           {user ? 'Editar usuario' : 'Nuevo usuario'}
         </h2>
 
@@ -143,13 +149,17 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
                 </option>
               ))}
             </Select>
-            <p className="mb-3 text-xs text-zinc-500">
+            <p className="mb-3 text-xs" style={{ color: 'var(--text-xs)' }}>
               El alias de acceso se genera automáticamente a partir del nombre.
             </p>
           </>
         )}
 
-        {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
+        {error && (
+          <p className="mb-3 text-sm" style={{ color: 'var(--badge-er-text)' }}>
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>

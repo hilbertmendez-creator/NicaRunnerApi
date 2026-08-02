@@ -35,7 +35,7 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
       })
       onSaved()
     } catch {
-      setError('No se pudo guardar el cambio. Verifica los datos.')
+      setError('No se pudo guardar el cambio. Verificá los datos.')
     } finally {
       setSubmitting(false)
     }

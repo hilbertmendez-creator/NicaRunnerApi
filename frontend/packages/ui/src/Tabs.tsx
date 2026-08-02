@@ -24,7 +24,11 @@ export function Tabs({ tabs, activeTab, onChange, className = '' }: TabsProps) {
   }
 
   return (
-    <div role="tablist" className={`flex gap-1 border-b border-zinc-200 ${className}`}>
+    <div
+      role="tablist"
+      className={`flex gap-1 border-b ${className}`}
+      style={{ borderColor: 'var(--bd, #e4e4e7)' }}
+    >
       {tabs.map((tab, index) => {
         const isActive = tab.id === activeTab
         return (
@@ -38,11 +42,13 @@ export function Tabs({ tabs, activeTab, onChange, className = '' }: TabsProps) {
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(tab.id)}
             onKeyDown={(event) => handleKeyDown(event, index)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-1 ${
-              isActive
-                ? 'border-blue-700 text-blue-700'
-                : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-800'
-            }`}
+            className="-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ac,#1d4ed8)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-app,#fff)]"
+            style={{
+              borderBottomColor: isActive ? 'var(--ac, #1d4ed8)' : 'transparent',
+              color: isActive ? 'var(--ac, #1d4ed8)' : 'var(--text-lo, #71717a)',
+              background: 'transparent',
+              cursor: 'pointer',
+            }}
           >
             {tab.label}
           </button>

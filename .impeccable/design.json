@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-02T23:12:00.000Z",
+  "title": "Design System: nicaRunner",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#2563EB",
+        "tonalRamp": ["#0B1F4A", "#12306E", "#1A4A9C", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#DBEAFE"]
+      },
+      "signal-blue-dark": {
+        "role": "primary",
+        "displayName": "Signal Blue (Dark Theme)",
+        "canonical": "#3B82F6",
+        "tonalRamp": ["#0B1F4A", "#12306E", "#1A4A9C", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#DBEAFE"]
+      },
+      "cool-paper": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "canonical": "#F4F6FA",
+        "tonalRamp": ["#1C2333", "#334155", "#64748B", "#94A3B8", "#CBD5E1", "#E2E8F0", "#F4F6FA", "#FFFFFF"]
+      },
+      "night-console": {
+        "role": "neutral",
+        "displayName": "Night Console",
+        "canonical": "#1C2333",
+        "tonalRamp": ["#070C16", "#0D1522", "#1C2333", "#334155", "#475569", "#64748B", "#94A3B8", "#E2E8F0"]
+      },
+      "night-console-deep": {
+        "role": "neutral",
+        "displayName": "Night Console Deep",
+        "canonical": "#070C16",
+        "tonalRamp": ["#04070E", "#070C16", "#0D1522", "#1C2333", "#334155", "#64748B", "#94A3B8", "#E2E8F0"]
+      },
+      "console-on": {
+        "role": "neutral",
+        "displayName": "Console On",
+        "canonical": "#E2E8F0",
+        "tonalRamp": ["#64748B", "#94A3B8", "#CBD5E1", "#E2E8F0", "#F1F5F9", "#F8FAFC", "#FFFFFF", "#FFFFFF"]
+      },
+      "console-muted": {
+        "role": "neutral",
+        "displayName": "Console Muted",
+        "canonical": "#94A3B8",
+        "tonalRamp": ["#334155", "#475569", "#64748B", "#94A3B8", "#A8B4C4", "#CBD5E1", "#E2E8F0", "#F1F5F9"]
+      },
+      "clean-sheet": {
+        "role": "neutral",
+        "displayName": "Clean Sheet",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#0F172A", "#334155", "#64748B", "#94A3B8", "#CBD5E1", "#E2E8F0", "#F8FAFC", "#FFFFFF"]
+      },
+      "ink-slate": {
+        "role": "neutral",
+        "displayName": "Ink Slate",
+        "canonical": "#0F172A",
+        "tonalRamp": ["#020617", "#0F172A", "#1E293B", "#334155", "#475569", "#5B6B7C", "#94A3B8", "#E2E8F0"]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Ink Faint",
+        "canonical": "#5B6B7C",
+        "tonalRamp": ["#1E293B", "#334155", "#475569", "#5B6B7C", "#64748B", "#94A3B8", "#CBD5E1", "#E2E8F0"]
+      },
+      "official-green": {
+        "role": "secondary",
+        "displayName": "Official Green",
+        "canonical": "#15803D",
+        "tonalRamp": ["#052E16", "#14532D", "#15803D", "#16A34A", "#22C55E", "#4ADE80", "#BBF7D0", "#F0FDF4"]
+      },
+      "dispute-amber": {
+        "role": "tertiary",
+        "displayName": "Dispute Amber",
+        "canonical": "#92400E",
+        "tonalRamp": ["#451A03", "#78350F", "#92400E", "#B45309", "#D97706", "#FBBF24", "#FDE68A", "#FFFBEB"]
+      },
+      "critical-red": {
+        "role": "tertiary",
+        "displayName": "Critical Red",
+        "canonical": "#DC2626",
+        "tonalRamp": ["#450A0A", "#7F1D1D", "#B91C1C", "#DC2626", "#EF4444", "#F87171", "#FECACA", "#FEF2F2"]
+      },
+      "live-dot": {
+        "role": "secondary",
+        "displayName": "Live Dot",
+        "canonical": "#22C55E",
+        "tonalRamp": ["#14532D", "#15803D", "#16A34A", "#22C55E", "#4ADE80", "#86EFAC", "#BBF7D0", "#F0FDF4"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Auth and rare page titles (~20px / semibold)." },
+      "headline": { "displayName": "Headline", "purpose": "Section and public race titles." },
+      "title": { "displayName": "Title", "purpose": "Card and modal headings." },
+      "body": { "displayName": "Body", "purpose": "Default UI copy, tables, forms (14px)." },
+      "label": { "displayName": "Label", "purpose": "Badges, meta, overlines (11–12px / semibold)." },
+      "mono": { "displayName": "Mono Truth", "purpose": "Dorsals, finish times, KPI numerals (IBM Plex Mono)." }
+    },
+    "shadows": [
+      {
+        "name": "ambient-low",
+        "value": "0 1px 2px rgba(0,0,0,.05)",
+        "purpose": "Subtle resting lift on light surfaces (dark theme uses stronger rgba)."
+      },
+      {
+        "name": "ambient-mid",
+        "value": "0 1px 3px rgba(0,0,0,.07), 0 2px 8px rgba(0,0,0,.04)",
+        "purpose": "Soft card separation from Cool Paper — tactile but quiet."
+      },
+      {
+        "name": "modal-scrim",
+        "value": "rgba(0,0,0,.30)",
+        "purpose": "Dialog backdrop only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "pulse-live",
+        "value": "pulse-live 1.4s ease-in-out infinite",
+        "purpose": "Focal Operate signal: EnCurso / live race. Static green under prefers-reduced-motion."
+      },
+      {
+        "name": "ease-sidebar",
+        "value": "transform .2s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Mobile sidebar drawer open/close continuity."
+      },
+      {
+        "name": "nr-spin",
+        "value": "nr-spin 0.7s linear infinite",
+        "purpose": "Loading spinner feedback; disabled under prefers-reduced-motion."
+      },
+      {
+        "name": "tooltip-fade",
+        "value": "opacity .12s",
+        "purpose": "Collapsed sidebar icon tooltips (fine pointer + hover only)."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sidebar-drawer", "value": "640px" },
+      { "name": "content-stack", "value": "900px" },
+      { "name": "coarse-touch", "value": "pointer: coarse (≥44px targets)" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Compact solid action for primary commits in forms and dialogs.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Guardar</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 12px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; color: #fff; background: #1D4ED8; border: 1px solid #1D4ED8; border-radius: 6px; cursor: pointer; transition: background .15s ease; } .ds-btn-primary:hover { background: #1E40AF; border-color: #1E40AF; } .ds-btn-primary:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: .6; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default quiet action for most operator workflows.",
+      "html": "<button class=\"ds-btn-secondary\" type=\"button\">Cancelar</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 12px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; color: #3F3F46; background: #fff; border: 1px solid #E4E4E7; border-radius: 6px; cursor: pointer; transition: background .15s ease; } .ds-btn-secondary:hover { background: #FAFAFA; } .ds-btn-secondary:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Critical actions — wash + border, not solid alarm fills.",
+      "html": "<button class=\"ds-btn-destructive\" type=\"button\">Eliminar</button>",
+      "css": ".ds-btn-destructive { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 12px; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; color: #DC2626; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; cursor: pointer; } .ds-btn-destructive:hover { border-color: #DC2626; } .ds-btn-destructive:focus-visible { outline: 2px solid #DC2626; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "32px operator field with Signal Blue focus.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Dorsal</span><input class=\"ds-input\" type=\"text\" placeholder=\"101\" /></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 4px; font-family: Inter, system-ui, sans-serif; } .ds-field-label { font-size: 14px; font-weight: 500; color: #475569; } .ds-input { height: 32px; padding: 0 12px; font-size: 14px; color: #0F172A; background: #fff; border: 1px solid #E2E8F0; border-radius: 6px; } .ds-input:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 1px #2563EB; } .ds-input[aria-invalid=\"true\"] { border-color: #DC2626; box-shadow: 0 0 0 1px #DC2626; }"
+    },
+    {
+      "name": "Surface Card",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Clean Sheet panel with quiet ambient lift over Cool Paper.",
+      "html": "<section class=\"ds-card\"><h3 class=\"ds-card-title\">Resultados</h3><p class=\"ds-card-body\">Sin resultados capturados todavía.</p></section>",
+      "css": ".ds-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 7px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.07), 0 2px 8px rgba(0,0,0,.04); font-family: Inter, system-ui, sans-serif; } .ds-card-title { margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #0F172A; } .ds-card-body { margin: 0; font-size: 14px; color: #475569; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-status",
+      "description": "Pill status chip — Official Green example with optional live dot.",
+      "html": "<span class=\"ds-badge ds-badge-ok\"><span class=\"ds-live-dot\" aria-hidden=\"true\"></span>En curso</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 20px; font-family: Inter, system-ui, sans-serif; font-size: 11px; font-weight: 600; border: 1px solid transparent; } .ds-badge-ok { background: #F0FDF4; color: #15803D; border-color: #BBF7D0; } .ds-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; animation: ds-pulse-live 1.4s ease-in-out infinite; } @keyframes ds-pulse-live { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .3; transform: scale(.68); } } @media (prefers-reduced-motion: reduce) { .ds-live-dot { animation: none; opacity: 1; transform: none; } }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Night Console nav — inactive Console Muted; active Signal Blue on soft wash.",
+      "html": "<div class=\"ds-nav\"><a class=\"ds-nav-item\" href=\"#\">Carreras</a><a class=\"ds-nav-item ds-nav-item-active\" href=\"#\">Dashboard</a></div>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 2px; padding: 8px; background: #1C2333; border-radius: 7px; font-family: Inter, system-ui, sans-serif; } .ds-nav-item { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 8px 10px; border-radius: 6px; font-size: 13px; font-weight: 500; color: #94A3B8; text-decoration: none; } .ds-nav-item-active { color: #2563EB; background: #EFF6FF; } .ds-nav-item:hover { background: rgba(255,255,255,.07); } .ds-nav-item:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }"
+    },
+    {
+      "name": "Empty State",
+      "kind": "custom",
+      "refersTo": "card-surface",
+      "description": "Honest empty table/region — dashed frame, no fake rows.",
+      "html": "<div class=\"ds-empty\"><p class=\"ds-empty-msg\">Sin resultados capturados todavía.</p><button class=\"ds-btn-secondary\" type=\"button\">Importar Excel</button></div>",
+      "css": ".ds-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 32px; text-align: center; border: 1px dashed #E2E8F0; background: #F8FAFC; border-radius: 7px; font-family: Inter, system-ui, sans-serif; } .ds-empty-msg { margin: 0; font-size: 14px; font-weight: 500; color: #5B6B7C; } .ds-btn-secondary { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; font-size: 12px; font-weight: 500; color: #3F3F46; background: #fff; border: 1px solid #E4E4E7; border-radius: 6px; cursor: pointer; } .ds-btn-secondary:hover { background: #FAFAFA; } .ds-btn-secondary:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }"
+    },
+    {
+      "name": "Brand Mark",
+      "kind": "custom",
+      "refersTo": "nav-item-active",
+      "description": "NicaRunnerLogo via currentColor — Signal Blue on auth; never legacy purple.",
+      "html": "<div class=\"ds-brand\"><svg class=\"ds-logo\" viewBox=\"0 0 48 46\" aria-label=\"Logo de NicaRunner\"><path fill=\"currentColor\" d=\"M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z\"/></svg><span class=\"ds-brand-name\">nicaRunner</span></div>",
+      "css": ".ds-brand { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px; background: #1C2333; border-radius: 7px; color: #E2E8F0; font-family: Inter, system-ui, sans-serif; } .ds-logo { width: 64px; height: 64px; color: #2563EB; } .ds-brand-name { font-size: 20px; font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Race-Day Control Room",
+    "overview": "nicaRunner’s visual system is a race-day control room rendered as a clear, approachable corporate back office. Surfaces stay calm and readable under operational pressure: cool paper canvases, a dark console rail for navigation, soft card layering, and a single Signal Blue accent for selection and focus. Personality is corporate-clear and kind — never neon, never gaming-dark theatrics, never decorative SaaS glow.\n\nDensity favors scanability over spectacle. Operators find the active race, KPIs, tables, and dispute queues without competing chrome. Public result surfaces inherit the same token language so published standings feel continuous with the back office, not like a separate marketing skin.\n\nAnti-references confirmed with product stakeholders: dark-mode gaming aesthetics, neon accents, purple gradient SaaS kits, and decorative card stacks that invent urgency.",
+    "keyCharacteristics": [
+      "Dual theme (light default, dark operator night) driven by CSS custom properties on [data-theme]",
+      "Soft-layered cards with light ambient shadow; borders carry most structure",
+      "Signal Blue as the rare action/selection voice",
+      "Inter for UI; IBM Plex Mono for dorsals, times, and numeric truth",
+      "Semantic status chips: Official Green / Dispute Amber / Critical Red",
+      "Compact controls (32px inputs/buttons) sized for dense tables and forms"
+    ],
+    "rules": [
+      {
+        "name": "The Signal Scarcity Rule",
+        "body": "Signal Blue occupies accent, focus, and active states only — never large fills that turn the screen into a blue field.",
+        "section": "colors"
+      },
+      {
+        "name": "The Token Source Rule",
+        "body": "Never hardcode hex outside frontend/src/index.css theme blocks (or intentional @theme semantic scales). App UI consumes var(--*) / theme/styles.ts.",
+        "section": "colors"
+      },
+      {
+        "name": "The Console Ink Rule",
+        "body": "Never paint Night Console chrome with content --tx-* (paper ink). Use --sb-fg / --sb-muted / --sb-* so inactive drawer labels stay AA.",
+        "section": "colors"
+      },
+      {
+        "name": "The Mono-Is-Truth Rule",
+        "body": "IBM Plex Mono marks measurable race data. Do not use mono for marketing headlines or nav labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Quiet Lift Rule",
+        "body": "Prefer border + tonal step first; add shadow only when a surface must separate from Cool Paper. No neon glows, no multi-layer purple shadows.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Pill-For-Status Rule",
+        "body": "Pill radius (20px) is reserved for badges/chips. Do not pill primary buttons or cards.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do consume theme tokens (var(--bg-card), var(--accent), etc.) so light/dark stay coherent.",
+      "Do keep Signal Blue scarce — accents, focus, active nav, links.",
+      "Do use IBM Plex Mono for dorsals, times, and KPI numerals.",
+      "Do use Official Green / Dispute Amber / Critical Red for real status only.",
+      "Do prefer soft card lift + Hairline borders over heavy shadows.",
+      "Do use --sb-fg / --sb-muted for Night Console and auth brand panels.",
+      "Do collapse chrome honestly when data is empty (EmptyState, zero badges)."
+    ],
+    "donts": [
+      "Don't invent neon, gaming glow, purple gradients, or decorative glassmorphism.",
+      "Don't hardcode one-off hex in feature components outside the theme blocks.",
+      "Don't alias console muted text to content --tx-md (breaks AA on the dark rail).",
+      "Don't pill buttons/cards; pills are for status chips.",
+      "Don't show urgency badges, fake KPIs, or mock dispute chrome without real counts.",
+      "Don't replace Inter/Plex with display novelty fonts for “sporty” marketing energy inside the back office."
+    ]
+  }
+}

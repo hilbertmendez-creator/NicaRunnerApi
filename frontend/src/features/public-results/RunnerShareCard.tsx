@@ -20,18 +20,22 @@ export function RunnerShareCard({ data }: RunnerShareCardProps) {
   return (
     <div className="flex flex-col gap-4 p-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)' }}>
       <div>
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>{data.raceName}</h1>
-        <p className="text-sm italic" style={{ color: 'var(--text-lo)' }}>{data.slogan}</p>
+        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)', overflowWrap: 'anywhere' }}>
+          {data.raceName}
+        </h1>
+        <p className="text-sm italic" style={{ color: 'var(--text-lo)', overflowWrap: 'anywhere' }}>
+          {data.slogan}
+        </p>
         <p className="mt-1 text-xs" style={{ color: 'var(--text-xs)' }}>
           {new Date(data.fechaCarrera).toLocaleDateString('es-NI')}
         </p>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <p className="text-base font-semibold" style={{ color: 'var(--text-hi)' }}>
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="text-base font-semibold" style={{ color: 'var(--text-hi)', overflowWrap: 'anywhere' }}>
           {data.nombre}{data.apellidos ? ` ${data.apellidos}` : ''}
         </p>
-        <p className="text-sm" style={{ color: 'var(--text-lo)' }}>
+        <p className="text-sm" style={{ color: 'var(--text-lo)', overflowWrap: 'anywhere' }}>
           Dorsal {data.dorsal} · {data.nombreCategoria} ({data.distancia} km)
           {data.club ? ` · ${data.club}` : ''}
         </p>

@@ -69,7 +69,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
       }
       onSaved()
     } catch {
-      setError('No se pudo guardar el corredor. Verifica que el dorsal no esté duplicado y que la edad corresponda a la categoría.')
+      setError('No se pudo guardar el corredor. Verificá que el dorsal no esté duplicado y que la edad corresponda a la categoría.')
     } finally {
       setSubmitting(false)
     }

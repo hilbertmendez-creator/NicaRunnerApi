@@ -98,7 +98,7 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
             onChange={(e) => setSelectedCategoryId(e.target.value ? Number(e.target.value) : null)}
             disabled={availableToAssign.length === 0}
           >
-            <option value="">Selecciona una categoría del catálogo…</option>
+            <option value="">Seleccioná una categoría del catálogo…</option>
             {availableToAssign.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.codigo} — {cat.nombreCategoria}

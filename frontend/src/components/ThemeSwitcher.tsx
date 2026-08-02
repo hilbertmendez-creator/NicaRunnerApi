@@ -19,23 +19,24 @@ export function ThemeSwitcher() {
         <button
           key={t}
           type="button"
+          className="nr-theme-btn"
           aria-pressed={theme === t}
           onClick={() => setTheme(t)}
           style={{
-            // WCAG 2.5.5 — target ≥ 44×44 CSS px
-            minHeight: 44,
-            minWidth: 44,
-            padding: '0 12px',
+            height: 28,
+            minWidth: 52,
+            padding: '0 10px',
             borderRadius: 4,
             fontSize: 12,
             fontWeight: 500,
             border: 'none',
             cursor: 'pointer',
             fontFamily: 'Inter, system-ui',
-            transition: 'all .12s',
+            transition: 'background .12s, color .12s, box-shadow .12s',
             color: theme === t ? 'var(--tx-hi)' : 'var(--tx-lo)',
             background: theme === t ? 'var(--bg-card)' : 'transparent',
             boxShadow: theme === t ? 'var(--shadow-sm)' : 'none',
+            outlineOffset: 2,
           }}
         >
           {t === 'light' ? 'Claro' : 'Oscuro'}

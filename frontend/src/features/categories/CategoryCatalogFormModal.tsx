@@ -39,7 +39,7 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
       }
       onSaved()
     } catch {
-      setError('No se pudo guardar la categoría. Verifica que el código no esté repetido.')
+      setError('No se pudo guardar la categoría. Verificá que el código no esté repetido.')
     } finally {
       setSubmitting(false)
     }

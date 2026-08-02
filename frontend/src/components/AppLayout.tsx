@@ -132,7 +132,7 @@ export function AppLayout() {
           alignItems: 'center',
           padding: '12px 0',
           gap: 2,
-          borderRight: '1px solid rgba(255,255,255,.06)',
+          borderRight: '1px solid var(--sb-border)',
           zIndex: 20,
         }}
       >
@@ -147,6 +147,7 @@ export function AppLayout() {
             justifyContent: 'center',
             marginBottom: 14,
             flexShrink: 0,
+            color: '#fff',
           }}
         >
           <svg
@@ -154,7 +155,7 @@ export function AppLayout() {
             height="16"
             viewBox="0 0 16 16"
             fill="none"
-            stroke="#fff"
+            stroke="currentColor"
             strokeWidth="1.8"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -182,7 +183,7 @@ export function AppLayout() {
                   style={{
                     width: 24,
                     height: 1,
-                    background: 'rgba(255,255,255,.07)',
+                    background: 'var(--sb-sep)',
                     margin: '6px auto',
                   }}
                 />
@@ -198,9 +199,10 @@ export function AppLayout() {
               item.path === '/controversias' ? openDisputeCount > 0 : Boolean(item.badge)
 
             return (
-              <div key={`${item.path}-${item.label}`} style={{ margin: '0 auto' }}>
+              <div key={`${item.path}-${item.label}`} className="nr-nav-wrap" style={{ margin: '0 auto' }}>
                 <button
                   type="button"
+                  className="nr-nav-btn"
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={
                     item.path === '/controversias' && openDisputeCount > 0
@@ -220,13 +222,13 @@ export function AppLayout() {
                     justifyContent: 'center',
                     border: 'none',
                     cursor: 'pointer',
-                    background: isActive ? 'var(--ac-bg)' : 'transparent',
-                    color: isActive ? 'var(--ac)' : 'rgba(255,255,255,.45)',
+                    background: isActive ? 'var(--sb-active-bg)' : 'transparent',
+                    color: isActive ? 'var(--sb-text)' : 'var(--sb-muted)',
                     transition: 'background .12s',
                     position: 'relative',
                   }}
                   onMouseEnter={(e) => {
-                    if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,.07)'
+                    if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--sb-hover)'
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'
@@ -253,7 +255,7 @@ export function AppLayout() {
                         width: 8,
                         height: 8,
                         borderRadius: '50%',
-                        background: '#EF4444',
+                        background: 'var(--er-tx, #EF4444)',
                         border: '1.5px solid var(--bg-sb)',
                       }}
                     />
@@ -266,8 +268,8 @@ export function AppLayout() {
                       left: 'calc(100% + 8px)',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      background: '#1E293B',
-                      color: '#E2E8F0',
+                      background: 'var(--bg-sb)',
+                      color: 'var(--sb-fg)',
                       fontSize: 11,
                       fontWeight: 500,
                       padding: '4px 8px',
@@ -276,6 +278,8 @@ export function AppLayout() {
                       pointerEvents: 'none',
                       zIndex: 100,
                       fontFamily: 'Inter, system-ui',
+                      border: '1px solid var(--sb-sep)',
+                      boxShadow: 'var(--shadow-md)',
                     }}
                   >
                     {item.label}
@@ -291,13 +295,14 @@ export function AppLayout() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <header
+          className="nr-topbar"
           style={{
-            height: 52,
+            height: 56,
             background: 'var(--bg-tb)',
             borderBottom: '1px solid var(--bd)',
             display: 'flex',
             alignItems: 'center',
-            padding: '0 20px',
+            padding: '0 24px',
             gap: 12,
             flexShrink: 0,
           }}
@@ -306,11 +311,11 @@ export function AppLayout() {
             type="button"
             onClick={() => setSidebarOpen(true)}
             aria-label="Abrir menú"
-            className="mobile-menu-btn"
+            className="mobile-menu-btn nr-icon-btn"
             style={{
               display: 'none',
-              width: 30,
-              height: 30,
+              width: 32,
+              height: 32,
               borderRadius: 6,
               alignItems: 'center',
               justifyContent: 'center',
@@ -325,7 +330,21 @@ export function AppLayout() {
             </svg>
           </button>
 
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx-hi)', fontFamily: 'Inter, system-ui' }}>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--tx-hi)',
+              fontFamily: 'Inter, system-ui',
+              minWidth: 0,
+              flex: '0 1 auto',
+              maxWidth: '40%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+            title={pageTitle}
+          >
             {pageTitle}
           </span>
 
@@ -336,11 +355,12 @@ export function AppLayout() {
             <div style={{ height: 18, width: 1, background: 'var(--bd)', margin: '0 4px' }} />
             <button
               type="button"
+              className="nr-icon-btn"
               aria-label="Notificaciones"
               onClick={() => navigate('/notificaciones')}
               style={{
-                width: 30,
-                height: 30,
+                width: 32,
+                height: 32,
                 borderRadius: 6,
                 display: 'flex',
                 alignItems: 'center',
@@ -359,7 +379,7 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+        <main className="nr-main" style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
           <Outlet />
         </main>
       </div>

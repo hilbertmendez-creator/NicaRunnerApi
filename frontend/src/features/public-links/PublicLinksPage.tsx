@@ -3,7 +3,7 @@ import { createPublicToken, getPublicTokens } from '../../api/endpoints'
 import type { PublicTokenDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { useActiveRace } from '../../hooks/useActiveRace'
-import { Button, Label, Input } from '@nicarunner/ui'
+import { Button, Label, Input, EmptyState } from '@nicarunner/ui'
 import { pageTitle, card, textLo, tableWrap } from '../../theme/styles'
 
 function publicUrl(token: string) {
@@ -82,10 +82,20 @@ export function PublicLinksPage() {
 
       {error && <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
 
-      {loading && <p className="text-sm" style={textLo}>Cargando enlaces...</p>}
+      {loading && <p className="text-sm" style={textLo}>Cargando enlaces…</p>}
+
+      {!loading && !raceId && (
+        <EmptyState message="Elegí una carrera en la barra superior para gestionar enlaces públicos." />
+      )}
 
       {!loading && raceId && tokens.length === 0 && (
-        <p className="text-sm" style={textLo}>No hay enlaces públicos generados para esta carrera.</p>
+        <EmptyState
+          message={
+            canCreate
+              ? 'Todavía no hay enlaces públicos para esta carrera. Generá uno para compartir resultados.'
+              : 'Todavía no hay enlaces públicos para esta carrera.'
+          }
+        />
       )}
 
       {tokens.length > 0 && (

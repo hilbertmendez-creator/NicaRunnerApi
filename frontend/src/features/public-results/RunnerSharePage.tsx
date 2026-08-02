@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { LoadingText, ErrorAlert } from '@nicarunner/ui'
 import { getPublicRunnerByShareKey } from '../../api/endpoints'
@@ -22,6 +22,13 @@ export function RunnerSharePage() {
   const [data, setData] = useState<PublicRunnerShareDto | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [reloadKey, setReloadKey] = useState(0)
+
+  const retry = useCallback(() => {
+    setError(null)
+    setData(null)
+    setReloadKey((k) => k + 1)
+  }, [])
 
   useEffect(() => {
     if (!shareKey) return
@@ -38,7 +45,7 @@ export function RunnerSharePage() {
     return () => {
       cancelled = true
     }
-  }, [shareKey])
+  }, [shareKey, reloadKey])
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-app)' }}>
@@ -61,8 +68,8 @@ export function RunnerSharePage() {
           </Link>
         )}
 
-        {loading && <LoadingText message="Cargando..." />}
-        {error && <ErrorAlert message={error} />}
+        {loading && <LoadingText message="Cargando ficha del corredor…" />}
+        {error && <ErrorAlert message={error} onRetry={retry} />}
         {data && <RunnerShareCard data={data} />}
       </main>
     </div>

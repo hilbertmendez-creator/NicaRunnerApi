@@ -5,7 +5,7 @@ const STYLES: Record<RaceStatus, CSSProperties> = {
   Planeada: {
     background: 'var(--badge-cl-bg)',
     color: 'var(--badge-cl-text)',
-    border: '1px solid var(--bd)',
+    border: '1px solid var(--badge-cl-bd)',
   },
   EnCurso: {
     background: 'var(--badge-ok-bg)',

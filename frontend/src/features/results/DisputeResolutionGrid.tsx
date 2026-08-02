@@ -124,28 +124,31 @@ export function DisputeResolutionGrid({
   }
 
   return (
-    <div className="flex flex-col gap-2 font-sans">
+    <div className="nr-dispute-grid flex flex-col gap-2 font-sans">
       <div
-        className="sticky top-0 z-10 flex h-11 items-center gap-3 px-3"
+        className="nr-dispute-toolbar sticky top-0 z-10 flex flex-wrap items-center gap-2 px-3 py-2"
         style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--bd)',
           borderRadius: 'var(--r-card)',
+          minHeight: 44,
         }}
       >
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por dorsal o nombre…"
-          className="nr-input h-7 w-56 px-2 text-sm"
+          aria-label="Buscar controversias"
+          className="nr-input nr-dispute-search h-7 min-w-0 flex-1 px-2 text-sm sm:w-56 sm:flex-none"
         />
-        <div className="flex gap-1">
+        <div className="nr-dispute-filters flex flex-wrap gap-1">
           {ESTADOS_FILTRO.map((opt) => (
             <button
               key={opt}
               type="button"
               onClick={() => setFiltro(opt)}
-              className="h-7 px-2.5 text-xs font-medium"
+              className="nr-dispute-chip h-7 px-2.5 text-xs font-medium"
+              aria-pressed={filtro === opt}
               style={
                 filtro === opt
                   ? {
@@ -202,7 +205,7 @@ export function DisputeResolutionGrid({
                   key={row.id}
                   className="row-hover"
                   style={{
-                    height: 42,
+                    minHeight: 42,
                     borderBottom: '1px solid var(--bd-inner)',
                     background: ROW_TINT[row.estado],
                   }}
@@ -265,12 +268,12 @@ export function DisputeResolutionGrid({
                   </td>
                   <td className="px-3">
                     {canMutate ? (
-                      <div className="flex gap-1.5">
+                      <div className="nr-dispute-actions flex flex-wrap gap-1.5 py-1">
                         <button
                           type="button"
                           disabled={rowBusy || row.estado === 'Oficial'}
                           onClick={() => openOficial(row)}
-                          className="h-6 px-2 text-xs font-medium disabled:opacity-50"
+                          className="nr-dispute-action h-6 px-2 text-xs font-medium disabled:opacity-50"
                           style={{
                             background: 'var(--ok-bg)',
                             border: '1px solid var(--ok-bd)',
@@ -278,13 +281,13 @@ export function DisputeResolutionGrid({
                             borderRadius: 'var(--r-btn)',
                           }}
                         >
-                          Oficial
+                          Marcar oficial
                         </button>
                         <button
                           type="button"
                           disabled={rowBusy || row.estado === 'Disputa'}
                           onClick={() => void markDisputa(row)}
-                          className="h-6 px-2 text-xs font-medium disabled:opacity-50"
+                          className="nr-dispute-action h-6 px-2 text-xs font-medium disabled:opacity-50"
                           style={{
                             background: 'var(--er-bg)',
                             border: '1px solid var(--er-bd)',
@@ -292,7 +295,7 @@ export function DisputeResolutionGrid({
                             borderRadius: 'var(--r-btn)',
                           }}
                         >
-                          Disputa
+                          Marcar disputa
                         </button>
                       </div>
                     ) : (
@@ -320,8 +323,8 @@ export function DisputeResolutionGrid({
             Confirmar tiempo oficial
           </h2>
           <p className="mb-3 text-sm" style={{ color: 'var(--tx-lo)' }}>
-            {oficialRow.corredorNombre} (dorsal {oficialRow.dorsal ?? '—'}). Elige la fuente y confirma;
-            no se aplica Oficial en silencio.
+            {oficialRow.corredorNombre} (dorsal {oficialRow.dorsal ?? '—'}). Elegí la fuente del tiempo;
+            el oficial no se aplica sin esta confirmación.
           </p>
           <fieldset className="mb-4 flex flex-col gap-2 border-0 p-0">
             <legend className="mb-1 text-xs font-medium" style={{ color: 'var(--tx-md)' }}>
@@ -333,7 +336,11 @@ export function DisputeResolutionGrid({
               </p>
             )}
             {availableSources(oficialRow).map((source) => (
-              <label key={source} className="flex items-center gap-2 text-sm" style={{ color: 'var(--tx-hi)' }}>
+              <label
+                key={source}
+                className="nr-dispute-source flex items-center gap-2 text-sm"
+                style={{ color: 'var(--tx-hi)', minHeight: 32 }}
+              >
                 <input
                   type="radio"
                   name="selectedSource"
@@ -358,10 +365,16 @@ export function DisputeResolutionGrid({
               disabled={!selectedSource || busyId === oficialRow.id}
               onClick={() => void confirmOficial()}
             >
-              {busyId === oficialRow.id ? 'Aplicando…' : 'Confirmar Oficial'}
+              {busyId === oficialRow.id ? 'Aplicando…' : 'Confirmar tiempo oficial'}
             </Button>
           </div>
         </Modal>
+      )}
+
+      {rows.length > 0 && visibleRows.length === 0 && (
+        <p className="py-6 text-center text-sm" style={{ color: 'var(--tx-lo)' }}>
+          Ninguna controversia coincide con la búsqueda o el filtro.
+        </p>
       )}
     </div>
   )

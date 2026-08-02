@@ -31,7 +31,7 @@ export function ControversiasPage() {
       .then(setRows)
       .catch(() => {
         setRows([])
-        setError('No se pudieron cargar las controversias.')
+        setError('No se pudieron cargar las controversias. Intentá de nuevo.')
       })
       .finally(() => setLoading(false))
   }
@@ -49,7 +49,7 @@ export function ControversiasPage() {
       setRows((prev) => prev.map((row) => (row.id === id ? updated : row)))
       window.dispatchEvent(new Event(CONTROVERSIAS_CHANGED_EVENT))
     } catch {
-      setError('No se pudo resolver la controversia. Revisa confirmación y fuente.')
+      setError('No se pudo resolver. Confirmá la fuente y volvé a intentar.')
     } finally {
       setBusyId(null)
     }
@@ -62,7 +62,7 @@ export function ControversiasPage() {
           Controversias
         </h1>
         <p className="mt-1 text-sm" style={textLo}>
-          Resolución de tiempos multi-fuente para la carrera activa.
+          Cuando chip, capturista o cámara no coinciden, resolvé el tiempo oficial de la carrera activa.
         </p>
       </div>
 
@@ -73,13 +73,13 @@ export function ControversiasPage() {
       )}
 
       {!raceId && !loading && (
-        <EmptyState message="Selecciona una carrera en la barra superior para ver controversias." />
+        <EmptyState message="Elegí una carrera en la barra superior para ver controversias." />
       )}
 
-      {loading && <LoadingText message="Cargando controversias..." />}
+      {loading && <LoadingText message="Cargando controversias…" />}
 
       {!loading && raceId && rows.length === 0 && (
-        <EmptyState message="No hay controversias abiertas para esta carrera. Usa los filtros cuando existan casos." />
+        <EmptyState message="No hay controversias abiertas para esta carrera." />
       )}
 
       {!loading && raceId && rows.length > 0 && (

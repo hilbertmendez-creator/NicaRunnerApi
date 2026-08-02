@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react'
+
 type MetricCardVariant = 'gray' | 'orange' | 'teal' | 'amber' | 'red'
 
 interface MetricCardProps {
@@ -8,12 +10,47 @@ interface MetricCardProps {
   className?: string
 }
 
-const VARIANT_CLASSES: Record<MetricCardVariant, { bg: string; label: string; value: string }> = {
-  gray: { bg: 'bg-white border border-zinc-200', label: 'text-zinc-500', value: 'text-zinc-900' },
-  orange: { bg: 'bg-orange-50 border border-orange-300', label: 'text-orange-800', value: 'text-orange-800' },
-  teal: { bg: 'bg-official-50 border border-official-200', label: 'text-official-700', value: 'text-official-600' },
-  amber: { bg: 'bg-dispute-50 border border-dispute-200', label: 'text-dispute-700', value: 'text-dispute-600' },
-  red: { bg: 'bg-critical-50 border border-critical-200', label: 'text-critical-700', value: 'text-critical-600' },
+const VARIANT_STYLES: Record<MetricCardVariant, { wrap: CSSProperties; label: CSSProperties; value: CSSProperties }> = {
+  gray: {
+    wrap: {
+      background: 'var(--bg-card, #fff)',
+      border: '1px solid var(--bd, #e4e4e7)',
+    },
+    label: { color: 'var(--text-lo, #71717a)' },
+    value: { color: 'var(--text-hi, #18181b)' },
+  },
+  orange: {
+    wrap: {
+      background: 'var(--wn-bg, #fffbeb)',
+      border: '1px solid var(--wn-bd, #fde68a)',
+    },
+    label: { color: 'var(--wn-tx, #92400e)' },
+    value: { color: 'var(--wn-tx, #92400e)' },
+  },
+  teal: {
+    wrap: {
+      background: 'var(--ok-bg, #f0fdf4)',
+      border: '1px solid var(--ok-bd, #bbf7d0)',
+    },
+    label: { color: 'var(--ok-tx, #15803d)' },
+    value: { color: 'var(--ok-tx, #15803d)' },
+  },
+  amber: {
+    wrap: {
+      background: 'var(--wn-bg, #fffbeb)',
+      border: '1px solid var(--wn-bd, #fde68a)',
+    },
+    label: { color: 'var(--wn-tx, #92400e)' },
+    value: { color: 'var(--wn-tx, #92400e)' },
+  },
+  red: {
+    wrap: {
+      background: 'var(--er-bg, #fef2f2)',
+      border: '1px solid var(--er-bd, #fecaca)',
+    },
+    label: { color: 'var(--er-tx, #b91c1c)' },
+    value: { color: 'var(--er-tx, #b91c1c)' },
+  },
 }
 
 const SIZE_CLASSES = {
@@ -22,13 +59,26 @@ const SIZE_CLASSES = {
 }
 
 export function MetricCard({ label, value, variant = 'gray', size = 'md', className = '' }: MetricCardProps) {
-  const styles = VARIANT_CLASSES[variant]
+  const styles = VARIANT_STYLES[variant]
   const sizeStyles = SIZE_CLASSES[size]
 
   return (
-    <div className={`${styles.bg} ${sizeStyles.p} ${className}`}>
-      <p className={`${styles.label} ${sizeStyles.label} mb-1 font-medium uppercase tracking-wide`}>{label}</p>
-      <p className={`${styles.value} ${sizeStyles.value} font-mono font-semibold tabular-nums`}>{value}</p>
+    <div
+      className={`${sizeStyles.p} ${className}`}
+      style={{
+        ...styles.wrap,
+        borderRadius: 'var(--radius-card, 7px)',
+      }}
+    >
+      <p
+        className={`${sizeStyles.label} mb-1 font-medium uppercase tracking-wide`}
+        style={styles.label}
+      >
+        {label}
+      </p>
+      <p className={`${sizeStyles.value} font-mono font-semibold tabular-nums`} style={styles.value}>
+        {value}
+      </p>
     </div>
   )
 }

@@ -30,6 +30,10 @@ body {
   font-family: var(--font-sans);
   background: var(--bg-app, #f3f4f6);
   color: var(--text-hi, #111827);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -39,6 +43,7 @@ body {
    ──────────────────────────────────────────────────────────── */
 
 /* ── Animaciones globales ── */
+/* Focal (Operate): pulso "En vivo" — carrera EnCurso. Continuidad: drawer. */
 @keyframes pulse-live {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.3; transform: scale(0.68); }
@@ -47,6 +52,10 @@ body {
 @keyframes prog-in {
   from { width: 0; }
   to   { width: var(--prog-width, 72%); }
+}
+
+@keyframes nr-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ── THEME: DARK ── */
@@ -61,10 +70,11 @@ body {
   --bd:       rgba(255,255,255,.07);
   --bd-inner: rgba(255,255,255,.04);
 
+  /* Text hierarchy: hi > md > lo; all ≥4.5:1 on --bg-app / --bg-card (WCAG AA) */
   --tx-hi:  #E2E8F0;
-  --tx-md:  #5B7A99;
-  --tx-lo:  #2D4460;
-  --tx-th:  #2D4460;
+  --tx-md:  #94A3B8;
+  --tx-lo:  #6B8499;
+  --tx-th:  #6B8499;
 
   --ac:     #3B82F6;
   --ac-bg:  rgba(59,130,246,.12);
@@ -85,6 +95,7 @@ body {
   --r-card:  7px;
   --r-btn:   6px;
   --r-badge: 20px;
+  --live-dot: #22C55E;
 
   /* backward compat — existing components keep working */
   --bg-sidebar: var(--bg-sb);
@@ -107,10 +118,19 @@ body {
   --badge-ok-bg:   var(--ok-bg);  --badge-ok-bd:   var(--ok-bd);  --badge-ok-text:  var(--ok-tx);
   --badge-pr-bg:   var(--wn-bg);  --badge-pr-bd:   var(--wn-bd);  --badge-pr-text:  var(--wn-tx);
   --badge-er-bg:   var(--er-bg);  --badge-er-bd:   var(--er-bd);  --badge-er-text:  var(--er-tx);
+  /* Planeada / planned — neutral chip (StatusBadge) */
+  --badge-cl-bg:   rgba(255,255,255,.04);
+  --badge-cl-bd:   var(--bd);
+  --badge-cl-text: var(--tx-md);
   --conflict-bd:   var(--er-bd);
   --conflict-text: var(--er-tx);
+  /* Night Console — always dark rail; do NOT alias to content --tx-* */
+  --sb-fg:        #E2E8F0;
+  --sb-muted:     #94A3B8; /* ≥4.5:1 on --bg-sb */
+  --sb-sep:       rgba(255,255,255,.10);
+  --sb-hover:     rgba(255,255,255,.07);
+  --sb-border:    rgba(255,255,255,.08);
   --sb-text:      var(--ac);
-  --sb-muted:     var(--tx-md);
   --sb-active-bg: var(--ac-bg);
   --sb-active-bd: var(--ac);
   --mono:         var(--ac);
@@ -128,10 +148,11 @@ body {
   --bd:       #E2E8F0;
   --bd-inner: #F1F5F9;
 
+  /* Text hierarchy: hi > md > lo; all ≥4.5:1 on --bg-app / --bg-card (WCAG AA) */
   --tx-hi:  #0F172A;
   --tx-md:  #475569;
-  --tx-lo:  #94A3B8;
-  --tx-th:  #94A3B8;
+  --tx-lo:  #5B6B7C;
+  --tx-th:  #5B6B7C;
 
   --ac:     #2563EB;
   --ac-bg:  #EFF6FF;
@@ -152,6 +173,7 @@ body {
   --r-card:  7px;
   --r-btn:   6px;
   --r-badge: 20px;
+  --live-dot: #22C55E;
 
   /* backward compat */
   --bg-sidebar: var(--bg-sb);
@@ -174,10 +196,19 @@ body {
   --badge-ok-bg:   var(--ok-bg);  --badge-ok-bd:   var(--ok-bd);  --badge-ok-text:  var(--ok-tx);
   --badge-pr-bg:   var(--wn-bg);  --badge-pr-bd:   var(--wn-bd);  --badge-pr-text:  var(--wn-tx);
   --badge-er-bg:   var(--er-bg);  --badge-er-bd:   var(--er-bd);  --badge-er-text:  var(--er-tx);
+  /* Planeada / planned — neutral chip (StatusBadge) */
+  --badge-cl-bg:   var(--bg-th);
+  --badge-cl-bd:   var(--bd);
+  --badge-cl-text: var(--tx-md);
   --conflict-bd:   var(--er-bd);
   --conflict-text: var(--er-tx);
+  /* Night Console — same on-console roles as dark (rail stays dark in light mode) */
+  --sb-fg:        #E2E8F0;
+  --sb-muted:     #94A3B8; /* ≥4.5:1 on --bg-sb (#1C2333) — never content --tx-md */
+  --sb-sep:       rgba(255,255,255,.10);
+  --sb-hover:     rgba(255,255,255,.07);
+  --sb-border:    rgba(255,255,255,.08);
   --sb-text:      var(--ac);
-  --sb-muted:     var(--tx-md);
   --sb-active-bg: var(--ac-bg);
   --sb-active-bd: var(--ac);
   --mono:         var(--ac);
@@ -193,6 +224,15 @@ body {
   background: var(--bg-hover);
 }
 
+.nr-account-logout:hover {
+  background: var(--er-bg) !important;
+}
+
+.nr-account-logout:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+}
+
 /* Input tematizado */
 .nr-input {
   background: var(--bg-input);
@@ -205,33 +245,156 @@ body {
   border-color: var(--accent);
 }
 
-/* Dot animado "En vivo" */
+/* Dot animado "En vivo" — señal de carrera activa (no decoración) */
 .dot-live {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #22C55E;
+  background: var(--live-dot, #22C55E);
   animation: pulse-live 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.nr-spinner {
+  animation: nr-spin 0.7s linear infinite;
 }
 
 /* ── AppLayout v2 ── */
 .sb-tooltip { opacity: 0; transition: opacity .12s; }
-button:hover > .sb-tooltip { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  button:hover > .sb-tooltip { opacity: 1; }
+}
+
+/* Touch / coarse pointer: chrome targets ≥44×44 (ThemeSwitcher bar) */
+@media (pointer: coarse) {
+  .nr-nav-btn {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .nr-icon-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .nr-theme-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    height: auto !important;
+  }
+  .nr-account-btn {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .nr-topbar {
+    min-height: 56px !important;
+    height: auto !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+  .nr-race-select {
+    min-height: 44px !important;
+  }
+  .nr-ui-btn-md {
+    min-height: 44px;
+    height: auto;
+  }
+  .nr-ui-btn-sm {
+    min-height: 40px;
+    height: auto;
+  }
+  .nr-ui-input {
+    min-height: 44px;
+    height: auto;
+    font-size: 16px; /* evita zoom forzado de iOS en focus */
+  }
+  .nr-password-toggle {
+    min-width: 44px;
+    padding-inline: 12px;
+  }
+
+  /* Controversias / dispute grid — race-day touch */
+  .nr-dispute-search {
+    min-height: 44px !important;
+    height: auto !important;
+    font-size: 16px !important;
+  }
+  .nr-dispute-chip {
+    min-height: 44px !important;
+    height: auto !important;
+    padding-inline: 12px !important;
+  }
+  .nr-dispute-action {
+    min-height: 44px !important;
+    height: auto !important;
+    padding-inline: 12px !important;
+  }
+  .nr-dispute-source {
+    min-height: 44px !important;
+  }
+}
 
 @media (max-width: 640px) {
   .mobile-menu-btn { display: flex !important; }
   .nr-sidebar {
     position: fixed !important;
     top: 0; left: 0; bottom: 0;
-    width: 200px !important;
+    width: min(240px, 86vw) !important;
     z-index: 40;
-    align-items: flex-start !important;
+    align-items: stretch !important;
     padding-left: 8px !important;
-    transition: transform .2s;
+    padding-right: 8px !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+    transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .nr-sidebar.closed { transform: translateX(-100%); }
   .nr-sidebar.open   { transform: translateX(0); }
+
+  /* Drawer: labels always visible (no hover dependency) */
+  .nr-sidebar .nr-nav-wrap {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  .nr-sidebar .nr-nav-btn {
+    width: 100% !important;
+    height: 44px !important;
+    justify-content: flex-start !important;
+    padding-inline: 12px !important;
+    gap: 10px;
+  }
+  .nr-sidebar .sb-tooltip {
+    position: static !important;
+    opacity: 1 !important;
+    transform: none !important;
+    background: transparent !important;
+    color: inherit !important;
+    padding: 0 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    pointer-events: none;
+  }
+  .nr-sidebar nav {
+    padding: 0 4px !important;
+    align-items: stretch !important;
+  }
+  .nr-main {
+    padding: 16px !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .nr-topbar {
+    padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+  }
+  .nr-dispute-toolbar {
+    gap: 8px;
+  }
+  .nr-dispute-search {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+  }
 }
+
 @media (min-width: 641px) {
   .nr-sidebar { transform: none !important; }
 }
@@ -251,5 +414,38 @@ a:focus:not(:focus-visible) {
 @media (max-width: 900px) {
   .nr-content-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/*
+  Reduced motion: keep state meaning, drop nonessential loops.
+  No global animation:0.01ms kill — that destroys useful feedback.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .dot-live {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .nr-spinner {
+    animation: none;
+  }
+
+  .nr-sidebar {
+    transition: none !important;
+  }
+
+  .sb-tooltip {
+    transition: none;
+  }
+
+  .pb-fill {
+    animation: none !important;
+    width: var(--prog-width, 72%) !important;
+  }
+
+  .nr-nav-btn {
+    transition: none !important;
   }
 }
