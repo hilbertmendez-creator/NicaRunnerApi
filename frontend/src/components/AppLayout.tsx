@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/auth-context'
 import { ThemeSwitcher } from './ThemeSwitcher'
+import { TopbarRaceSelect } from './TopbarRaceSelect'
+import { UserAccountMenu } from './UserAccountMenu'
 
 interface NavItem {
   path: string
@@ -59,17 +61,10 @@ const PAGE_TITLES: Record<string, string> = {
 }
 
 export function AppLayout() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-
-  const initials = (user?.nombre ?? '?')
-    .split(' ')
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
 
   const pageTitle = PAGE_TITLES[location.pathname] ?? 'NicaRunner'
 
@@ -81,7 +76,6 @@ export function AppLayout() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-app)' }}>
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
@@ -95,7 +89,6 @@ export function AppLayout() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`nr-sidebar ${sidebarOpen ? 'open' : 'closed'}`}
         style={{
@@ -111,7 +104,6 @@ export function AppLayout() {
           zIndex: 20,
         }}
       >
-        {/* Logo */}
         <div
           style={{
             width: 32,
@@ -139,7 +131,6 @@ export function AppLayout() {
           </svg>
         </div>
 
-        {/* Nav */}
         <nav
           aria-label="Navegación principal"
           style={{
@@ -170,8 +161,8 @@ export function AppLayout() {
               item.path === '/'
                 ? location.pathname === '/'
                 : item.label === 'Controversias'
-                ? false
-                : location.pathname.startsWith(item.path)
+                  ? false
+                  : location.pathname.startsWith(item.path)
 
             return (
               <div key={`${item.path}-${item.label}`} style={{ margin: '0 auto' }}>
@@ -230,7 +221,6 @@ export function AppLayout() {
                       }}
                     />
                   )}
-                  {/* Tooltip — inside button so button:hover > .sb-tooltip selector works */}
                   <span
                     className="sb-tooltip"
                     aria-hidden="true"
@@ -259,36 +249,10 @@ export function AppLayout() {
           })}
         </nav>
 
-        {/* Avatar */}
-        <button
-          type="button"
-          title={user?.nombre ?? 'Mi cuenta'}
-          aria-label="Cerrar sesión"
-          onClick={logout}
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 10,
-            fontWeight: 600,
-            color: 'rgba(255,255,255,.7)',
-            marginTop: 'auto',
-            cursor: 'pointer',
-            border: 'none',
-            fontFamily: 'Inter, system-ui',
-          }}
-        >
-          {initials}
-        </button>
+        <UserAccountMenu />
       </aside>
 
-      {/* Main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Topbar */}
         <header
           style={{
             height: 52,
@@ -301,7 +265,6 @@ export function AppLayout() {
             flexShrink: 0,
           }}
         >
-          {/* Mobile hamburger */}
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -329,35 +292,11 @@ export function AppLayout() {
             {pageTitle}
           </span>
 
-          {/* Race selector */}
-          <button
-            type="button"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              background: 'var(--bg-input)',
-              border: '1px solid var(--bd)',
-              borderRadius: 'var(--r-btn)',
-              padding: '4px 10px 4px 8px',
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--tx-hi)',
-              cursor: 'pointer',
-              fontFamily: 'Inter, system-ui',
-            }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', flexShrink: 0, display: 'inline-block' }} />
-            Maratón Managua 2025
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-              <path d="M2 3.5l3 3 3-3" />
-            </svg>
-          </button>
+          <TopbarRaceSelect />
 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ThemeSwitcher />
             <div style={{ height: 18, width: 1, background: 'var(--bd)', margin: '0 4px' }} />
-            {/* Notification bell */}
             <button
               type="button"
               aria-label="Notificaciones"
@@ -395,7 +334,6 @@ export function AppLayout() {
           </div>
         </header>
 
-        {/* Content */}
         <main style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
           <Outlet />
         </main>

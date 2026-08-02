@@ -3,14 +3,15 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { notifyAll } from '../../api/endpoints'
 import type { NotifyAllSummaryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
+import { useActiveRace } from '../../hooks/useActiveRace'
 import { Button } from '@nicarunner/ui'
 import { pageTitle, card, cardTitle, textLo, miniMetric } from '../../theme/styles'
 
 export function NotificationsPage() {
   const { user } = useAuth()
   const canNotify = user?.role === 'Administrador'
+  const { raceId } = useActiveRace()
 
-  const [raceId, setRaceId] = useState<number | null>(null)
   const [summary, setSummary] = useState<NotifyAllSummaryDto | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
@@ -34,7 +35,7 @@ export function NotificationsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={pageTitle}>Notificaciones</h1>
-        <RaceSelector value={raceId} onChange={setRaceId} />
+        <RaceSelector />
       </div>
 
       <section style={card}>

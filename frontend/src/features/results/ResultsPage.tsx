@@ -3,6 +3,7 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { getResults, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
+import { useActiveRace } from '../../hooks/useActiveRace'
 import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import { EditResultModal } from './EditResultModal'
@@ -11,8 +12,8 @@ import { AuditHistory } from './AuditHistory'
 export function ResultsPage() {
   const { user } = useAuth()
   const canEdit = user?.role === 'Administrador'
+  const { raceId } = useActiveRace()
 
-  const [raceId, setRaceId] = useState<number | null>(null)
   const [results, setResults] = useState<ResultDto[]>([])
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<ResultDto | null>(null)
@@ -92,7 +93,7 @@ export function ResultsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>Resultados</h1>
-        <RaceSelector value={raceId} onChange={setRaceId} />
+        <RaceSelector />
       </div>
 
       {loading && <LoadingText message="Cargando resultados..." />}

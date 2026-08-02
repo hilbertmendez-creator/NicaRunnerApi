@@ -3,6 +3,7 @@ import { RaceSelector } from '../../components/RaceSelector'
 import { createPublicToken, getPublicTokens } from '../../api/endpoints'
 import type { PublicTokenDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
+import { useActiveRace } from '../../hooks/useActiveRace'
 import { Button, Label, Input } from '@nicarunner/ui'
 import { pageTitle, card, textLo, tableWrap } from '../../theme/styles'
 
@@ -13,8 +14,8 @@ function publicUrl(token: string) {
 export function PublicLinksPage() {
   const { user } = useAuth()
   const canCreate = user?.role === 'Administrador'
+  const { raceId } = useActiveRace()
 
-  const [raceId, setRaceId] = useState<number | null>(null)
   const [tokens, setTokens] = useState<PublicTokenDto[]>([])
   const [loading, setLoading] = useState(false)
   const [diasExpiracion, setDiasExpiracion] = useState(30)
@@ -58,7 +59,7 @@ export function PublicLinksPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={pageTitle}>Enlaces públicos de resultados</h1>
-        <RaceSelector value={raceId} onChange={setRaceId} />
+        <RaceSelector />
       </div>
 
       {canCreate && (

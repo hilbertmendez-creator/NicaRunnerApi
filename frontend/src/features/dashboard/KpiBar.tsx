@@ -1,7 +1,10 @@
 interface KpiItem {
   label: string
   value: string
+  /** Color del valor principal (p. ej. warning en pendientes). */
+  valueColor?: string
   trend?: string
+  /** Color del subtítulo de tendencia; por defecto muted, nunca verde forzado. */
   trendColor?: string
 }
 
@@ -48,7 +51,7 @@ export function KpiBar({ items }: KpiBarProps) {
               style={{
                 fontSize: 15,
                 fontWeight: 700,
-                color: item.trendColor ?? 'var(--tx-hi)',
+                color: item.valueColor ?? 'var(--tx-hi)',
                 fontFeatureSettings: '"tnum"',
                 fontFamily: '"IBM Plex Mono", ui-monospace, monospace',
               }}
@@ -56,7 +59,9 @@ export function KpiBar({ items }: KpiBarProps) {
               {item.value}
             </span>
             {item.trend && (
-              <span style={{ fontSize: 10, color: 'var(--ok-tx)' }}>{item.trend}</span>
+              <span style={{ fontSize: 10, color: item.trendColor ?? 'var(--tx-lo)' }}>
+                {item.trend}
+              </span>
             )}
           </div>
         </div>

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
 import { StatusBadge } from '../../components/StatusBadge'
@@ -6,6 +5,7 @@ import { ConnectionStatusBadge, type ConnectionState } from '../../components/Co
 import { getDashboard, getStandings } from '../../api/endpoints'
 import { usePolling } from '../../hooks/usePolling'
 import { useRaceDashboardHub } from '../../hooks/useRaceDashboardHub'
+import { useActiveRace } from '../../hooks/useActiveRace'
 import { DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import { KpiBar } from './KpiBar'
 import type { Column } from '@nicarunner/ui'
@@ -67,7 +67,7 @@ function connectionState(loading: boolean, hasData: boolean, error: unknown): Co
 }
 
 export function DashboardPage() {
-  const [raceId, setRaceId] = useState<number | null>(null)
+  const { raceId } = useActiveRace()
 
   const dashboard = usePolling(
     () => (raceId ? getDashboard(raceId) : Promise.resolve(null)),
@@ -121,7 +121,7 @@ export function DashboardPage() {
             />
           )}
         </div>
-        <RaceSelector value={raceId} onChange={setRaceId} />
+        <RaceSelector />
       </div>
 
       {!raceId && <EmptyState message="Selecciona una carrera para ver su progreso." />}
@@ -136,8 +136,18 @@ export function DashboardPage() {
             items={[
               { label: 'Tiempo en curso', value: '—' },
               { label: 'Ritmo promedio', value: '—' },
-              { label: 'Chip llegadas', value: String(dashboard.data.totalConTiempo), trend: `▲ de ${dashboard.data.totalInscritos} inscritos` },
-              { label: 'Pendientes', value: String(dashboard.data.totalPendientes), trendColor: dashboard.data.totalPendientes > 0 ? 'var(--wn-tx)' : undefined },
+              {
+                label: 'Chip llegadas',
+                value: String(dashboard.data.totalConTiempo),
+                trend: `▲ de ${dashboard.data.totalInscritos} inscritos`,
+                trendColor:
+                  dashboard.data.totalConTiempo > 0 ? 'var(--ok-tx)' : 'var(--tx-lo)',
+              },
+              {
+                label: 'Pendientes',
+                value: String(dashboard.data.totalPendientes),
+                valueColor: dashboard.data.totalPendientes > 0 ? 'var(--wn-tx)' : undefined,
+              },
               { label: 'Cámara ok', value: '—' },
               { label: 'Último dorsal', value: '—' },
             ]}
