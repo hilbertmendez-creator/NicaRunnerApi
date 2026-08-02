@@ -16,6 +16,7 @@ import type {
   ImportRunnersResultDto,
   NotificationDto,
   NotifyAllSummaryDto,
+  OpenDisputeCountDto,
   PublicRaceResultsDto,
   PublicRunnerDetailDto,
   PublicRunnerShareDto,
@@ -24,9 +25,11 @@ import type {
   RaceDashboardDto,
   RaceDto,
   ResetPasswordRequest,
+  ResolveDisputeRequest,
   ResultAuditDto,
   ResultDto,
   RunnerDto,
+  TimingDisputeDto,
   UpdateCategoryRequest,
   UpdateRaceRequest,
   UpdateResultRequest,
@@ -66,6 +69,29 @@ export async function getStandings(raceId: number): Promise<CategoryStandingsDto
 
 export async function getResults(raceId: number): Promise<ResultDto[]> {
   const { data } = await apiClient.get<ResultDto[]>(`/races/${raceId}/results`)
+  return data
+}
+
+// Controversias race-scoped — list / open-count / PATCH resolve (Admin).
+export async function getControversias(raceId: number): Promise<TimingDisputeDto[]> {
+  const { data } = await apiClient.get<TimingDisputeDto[]>(`/races/${raceId}/controversias`)
+  return data
+}
+
+export async function getControversiasOpenCount(raceId: number): Promise<OpenDisputeCountDto> {
+  const { data } = await apiClient.get<OpenDisputeCountDto>(`/races/${raceId}/controversias/open-count`)
+  return data
+}
+
+export async function resolveControversia(
+  raceId: number,
+  disputeId: number,
+  request: ResolveDisputeRequest,
+): Promise<TimingDisputeDto> {
+  const { data } = await apiClient.patch<TimingDisputeDto>(
+    `/races/${raceId}/controversias/${disputeId}`,
+    request,
+  )
   return data
 }
 

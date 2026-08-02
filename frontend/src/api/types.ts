@@ -354,3 +354,35 @@ export interface PublicRunnerShareDto {
   posicionGeneral: number | null
   totalGeneral: number | null
 }
+
+// Controversias (TimingDispute) — JsonStringEnumConverter → PascalCase strings.
+export type DisputeEstado = 'Revision' | 'Disputa' | 'Oficial'
+export type TimingSource = 'Chip' | 'Checkpoint' | 'Camera'
+
+export interface TimingDisputeDto {
+  id: number
+  raceId: number
+  resultId: number | null
+  runnerId: number | null
+  dorsal: string | null
+  corredorNombre: string
+  chipSeconds: number | null
+  checkpointSeconds: number | null
+  cameraSeconds: number | null
+  estado: DisputeEstado
+  capturistaNombre: string | null
+  capturaNote: string | null
+  resolvedByUserId: number | null
+  resolvedAt: string | null
+  updatedAt: string
+}
+
+export interface ResolveDisputeRequest {
+  estado: DisputeEstado
+  selectedSource?: TimingSource | null
+  confirmApplyOfficial?: boolean
+}
+
+export interface OpenDisputeCountDto {
+  count: number
+}

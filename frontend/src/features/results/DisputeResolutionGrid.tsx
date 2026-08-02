@@ -1,64 +1,46 @@
 import { useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
+import { Button, Modal } from '@nicarunner/ui'
+import type { DisputeEstado, ResolveDisputeRequest, TimingDisputeDto, TimingSource } from '../../api/types'
 import { tableWrap } from '../../theme/styles'
 
-type EstadoTiempo = 'oficial' | 'revision' | 'disputa'
-type ManualSyncState = 'pending' | 'error'
-
-interface DisputeRow {
-  id: number
-  dorsal: number
-  corredor: string
-  chipRfid: number | null
-  puntoControl: number | null
-  camara: number | null
-  estado: EstadoTiempo
-  /** Punto de control ingresado manualmente y aún no confirmado por el servidor. Ausente = sincronizado. */
-  manualSync?: ManualSyncState
-  capturista?: string
-  capturaNote?: string
+const ESTADO_LABEL: Record<DisputeEstado, string> = {
+  Oficial: 'Oficial',
+  Revision: 'Revisión',
+  Disputa: 'Disputa',
 }
 
-const CONNECTION_CYCLE: ConnectionState[] = ['online', 'syncing', 'offline']
-
-const ESTADO_LABEL: Record<EstadoTiempo, string> = {
-  oficial: 'Oficial',
-  revision: 'Revisión',
-  disputa: 'Disputa',
-}
-
-const ESTADO_STYLE: Record<EstadoTiempo, CSSProperties> = {
-  oficial: {
+const ESTADO_STYLE: Record<DisputeEstado, CSSProperties> = {
+  Oficial: {
     background: 'var(--ok-bg)',
     color: 'var(--ok-tx)',
     border: '1px solid var(--ok-bd)',
   },
-  revision: {
+  Revision: {
     background: 'var(--wn-bg)',
     color: 'var(--wn-tx)',
     border: '1px solid var(--wn-bd)',
   },
-  disputa: {
+  Disputa: {
     background: 'var(--er-bg)',
     color: 'var(--er-tx)',
     border: '1px solid var(--er-bd)',
   },
 }
 
-const ROW_TINT: Record<EstadoTiempo, string> = {
-  oficial:  'var(--row-ok)',
-  revision: 'var(--row-wn)',
-  disputa:  'var(--row-er)',
+const ROW_TINT: Record<DisputeEstado, string> = {
+  Oficial: 'var(--row-ok)',
+  Revision: 'var(--row-wn)',
+  Disputa: 'var(--row-er)',
 }
 
-const MOCK_ROWS: DisputeRow[] = [
-  { id: 1, dorsal: 118, corredor: 'Ana Pérez',     chipRfid: 2531.4, puntoControl: 2531.9, camara: 2531.6, estado: 'oficial',  capturista: 'M. López' },
-  { id: 2, dorsal: 205, corredor: 'Luis Gómez',    chipRfid: 2559.1, puntoControl: 2565.8, camara: 2560.0, estado: 'revision', manualSync: 'pending', capturista: 'R. García', capturaNote: '2 capturas' },
-  { id: 3, dorsal: 342, corredor: 'Karla Solís',   chipRfid: 2601.0, puntoControl: 2601.2, camara: null,   estado: 'disputa',  capturista: 'M. López' },
-  { id: 4, dorsal: 87,  corredor: 'José Martínez', chipRfid: 2410.7, puntoControl: 2411.0, camara: 2410.9, estado: 'oficial',  capturista: 'R. García' },
-  { id: 5, dorsal: 156, corredor: 'María Reyes',   chipRfid: null,   puntoControl: 2622.3, camara: 2621.8, estado: 'disputa',  manualSync: 'error', capturista: 'M. López', capturaNote: 'sin chip' },
-]
+const SOURCE_LABEL: Record<TimingSource, string> = {
+  Chip: 'Chip RFID',
+  Checkpoint: 'Capturista (juez)',
+  Camera: 'Cámara',
+}
+
+const ESTADOS_FILTRO: ('todos' | DisputeEstado)[] = ['todos', 'Oficial', 'Revision', 'Disputa']
 
 function formatTiempo(seconds: number | null) {
   if (seconds === null) return '—'
@@ -72,30 +54,73 @@ function diferencia(chip: number | null, checkpoint: number | null) {
   return Math.abs(chip - checkpoint)
 }
 
-const ESTADOS_FILTRO: ('todos' | EstadoTiempo)[] = ['todos', 'oficial', 'revision', 'disputa']
+function availableSources(row: TimingDisputeDto): TimingSource[] {
+  const sources: TimingSource[] = []
+  if (row.chipSeconds != null) sources.push('Chip')
+  if (row.checkpointSeconds != null) sources.push('Checkpoint')
+  if (row.cameraSeconds != null) sources.push('Camera')
+  return sources
+}
 
-export function DisputeResolutionGrid() {
-  const [rows, setRows] = useState(MOCK_ROWS)
+function sourceSeconds(row: TimingDisputeDto, source: TimingSource): number | null {
+  if (source === 'Chip') return row.chipSeconds
+  if (source === 'Checkpoint') return row.checkpointSeconds
+  return row.cameraSeconds
+}
+
+export interface DisputeResolutionGridProps {
+  rows: TimingDisputeDto[]
+  canMutate: boolean
+  busyId?: number | null
+  onResolve: (id: number, request: ResolveDisputeRequest) => Promise<void>
+}
+
+export function DisputeResolutionGrid({
+  rows,
+  canMutate,
+  busyId = null,
+  onResolve,
+}: DisputeResolutionGridProps) {
   const [search, setSearch] = useState('')
-  const [filtro, setFiltro] = useState<'todos' | EstadoTiempo>('todos')
-  const [connection, setConnection] = useState<ConnectionState>('online')
-
-  function cycleConnection() {
-    setConnection((prev) => CONNECTION_CYCLE[(CONNECTION_CYCLE.indexOf(prev) + 1) % CONNECTION_CYCLE.length])
-  }
+  const [filtro, setFiltro] = useState<'todos' | DisputeEstado>('todos')
+  const [oficialRow, setOficialRow] = useState<TimingDisputeDto | null>(null)
+  const [selectedSource, setSelectedSource] = useState<TimingSource | null>(null)
 
   const visibleRows = useMemo(() => {
     const term = search.trim().toLowerCase()
     return rows.filter((row) => {
+      const dorsal = row.dorsal ?? ''
       const matchesSearch =
-        term === '' || String(row.dorsal).includes(term) || row.corredor.toLowerCase().includes(term)
+        term === '' ||
+        dorsal.toLowerCase().includes(term) ||
+        row.corredorNombre.toLowerCase().includes(term)
       const matchesFiltro = filtro === 'todos' || row.estado === filtro
       return matchesSearch && matchesFiltro
     })
   }, [rows, search, filtro])
 
-  function setEstado(id: number, estado: EstadoTiempo) {
-    setRows((prev) => prev.map((row) => (row.id === id ? { ...row, estado } : row)))
+  function openOficial(row: TimingDisputeDto) {
+    const sources = availableSources(row)
+    setOficialRow(row)
+    setSelectedSource(sources[0] ?? null)
+  }
+
+  async function confirmOficial() {
+    if (!oficialRow || !selectedSource) return
+    await onResolve(oficialRow.id, {
+      estado: 'Oficial',
+      selectedSource,
+      confirmApplyOfficial: true,
+    })
+    setOficialRow(null)
+    setSelectedSource(null)
+  }
+
+  async function markDisputa(row: TimingDisputeDto) {
+    if (!confirm(`¿Marcar controversia de ${row.corredorNombre} (dorsal ${row.dorsal ?? '—'}) como Disputa?`)) {
+      return
+    }
+    await onResolve(row.id, { estado: 'Disputa' })
   }
 
   return (
@@ -144,8 +169,6 @@ export function DisputeResolutionGrid() {
         <span className="ml-auto text-xs" style={{ color: 'var(--tx-lo)' }}>
           {visibleRows.length} resultados
         </span>
-        <span className="h-4 w-px" style={{ background: 'var(--bd)' }} />
-        <ConnectionStatusBadge state={connection} onClick={cycleConnection} />
       </div>
 
       <div style={{ ...tableWrap }}>
@@ -171,8 +194,9 @@ export function DisputeResolutionGrid() {
           </thead>
           <tbody>
             {visibleRows.map((row) => {
-              const diff = diferencia(row.chipRfid, row.puntoControl)
+              const diff = diferencia(row.chipSeconds, row.checkpointSeconds)
               const isCritical = diff !== null && diff > 3
+              const rowBusy = busyId === row.id
               return (
                 <tr
                   key={row.id}
@@ -183,9 +207,15 @@ export function DisputeResolutionGrid() {
                     background: ROW_TINT[row.estado],
                   }}
                 >
-                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-hi)' }}>{row.dorsal}</td>
-                  <td className="px-3" style={{ color: 'var(--tx-hi)' }}>{row.corredor}</td>
-                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-md)' }}>{formatTiempo(row.chipRfid)}</td>
+                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-hi)' }}>
+                    {row.dorsal ?? '—'}
+                  </td>
+                  <td className="px-3" style={{ color: 'var(--tx-hi)' }}>
+                    {row.corredorNombre}
+                  </td>
+                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-md)' }}>
+                    {formatTiempo(row.chipSeconds)}
+                  </td>
                   <td className="px-3" style={{ verticalAlign: 'middle' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <span
@@ -194,43 +224,28 @@ export function DisputeResolutionGrid() {
                           fontSize: 12,
                           fontWeight: 600,
                           color: 'var(--tx-hi)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
                         }}
                       >
-                        {row.manualSync && (
-                          <span
-                            title={row.manualSync === 'pending' ? 'Pendiente de sincronizar' : 'Error de sincronización'}
-                            className={row.manualSync === 'pending' ? 'motion-safe:animate-pulse' : ''}
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              flexShrink: 0,
-                              display: 'inline-block',
-                              background: row.manualSync === 'pending' ? 'var(--ac)' : 'var(--er-bd)',
-                            }}
-                          />
-                        )}
-                        {formatTiempo(row.puntoControl)}
+                        {formatTiempo(row.checkpointSeconds)}
                       </span>
                       <span style={{ fontSize: 10.5, color: 'var(--tx-lo)' }}>
-                        {row.capturista ?? '—'}
-                        {(row.capturaNote ?? (row.manualSync === 'pending' ? 'sincronizando…' : row.manualSync === 'error' ? 'error sync' : undefined)) && (
+                        {row.capturistaNombre ?? '—'}
+                        {row.capturaNote && (
                           <span
                             style={{
                               marginLeft: 4,
-                              color: row.estado === 'disputa' ? 'var(--er-tx)' : 'var(--wn-tx)',
+                              color: row.estado === 'Disputa' ? 'var(--er-tx)' : 'var(--wn-tx)',
                             }}
                           >
-                            · {row.capturaNote ?? (row.manualSync === 'pending' ? 'sincronizando…' : 'error sync')}
+                            · {row.capturaNote}
                           </span>
                         )}
                       </span>
                     </div>
                   </td>
-                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-md)' }}>{formatTiempo(row.camara)}</td>
+                  <td className="px-3 font-mono tabular-nums" style={{ color: 'var(--tx-md)' }}>
+                    {formatTiempo(row.cameraSeconds)}
+                  </td>
                   <td
                     className="px-3 font-mono tabular-nums"
                     style={{
@@ -249,34 +264,42 @@ export function DisputeResolutionGrid() {
                     </span>
                   </td>
                   <td className="px-3">
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setEstado(row.id, 'oficial')}
-                        className="h-6 px-2 text-xs font-medium"
-                        style={{
-                          background: 'var(--ok-bg)',
-                          border: '1px solid var(--ok-bd)',
-                          color: 'var(--ok-tx)',
-                          borderRadius: 'var(--r-btn)',
-                        }}
-                      >
-                        Oficial
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEstado(row.id, 'disputa')}
-                        className="h-6 px-2 text-xs font-medium"
-                        style={{
-                          background: 'var(--er-bg)',
-                          border: '1px solid var(--er-bd)',
-                          color: 'var(--er-tx)',
-                          borderRadius: 'var(--r-btn)',
-                        }}
-                      >
-                        Disputa
-                      </button>
-                    </div>
+                    {canMutate ? (
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          disabled={rowBusy || row.estado === 'Oficial'}
+                          onClick={() => openOficial(row)}
+                          className="h-6 px-2 text-xs font-medium disabled:opacity-50"
+                          style={{
+                            background: 'var(--ok-bg)',
+                            border: '1px solid var(--ok-bd)',
+                            color: 'var(--ok-tx)',
+                            borderRadius: 'var(--r-btn)',
+                          }}
+                        >
+                          Oficial
+                        </button>
+                        <button
+                          type="button"
+                          disabled={rowBusy || row.estado === 'Disputa'}
+                          onClick={() => void markDisputa(row)}
+                          className="h-6 px-2 text-xs font-medium disabled:opacity-50"
+                          style={{
+                            background: 'var(--er-bg)',
+                            border: '1px solid var(--er-bd)',
+                            color: 'var(--er-tx)',
+                            borderRadius: 'var(--r-btn)',
+                          }}
+                        >
+                          Disputa
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs" style={{ color: 'var(--tx-lo)' }}>
+                        Solo lectura
+                      </span>
+                    )}
                   </td>
                 </tr>
               )
@@ -284,6 +307,62 @@ export function DisputeResolutionGrid() {
           </tbody>
         </table>
       </div>
+
+      {oficialRow && (
+        <Modal
+          onClose={() => {
+            setOficialRow(null)
+            setSelectedSource(null)
+          }}
+          labelledBy="oficial-confirm-title"
+        >
+          <h2 id="oficial-confirm-title" className="mb-2 text-base font-semibold" style={{ color: 'var(--tx-hi)' }}>
+            Confirmar tiempo oficial
+          </h2>
+          <p className="mb-3 text-sm" style={{ color: 'var(--tx-lo)' }}>
+            {oficialRow.corredorNombre} (dorsal {oficialRow.dorsal ?? '—'}). Elige la fuente y confirma;
+            no se aplica Oficial en silencio.
+          </p>
+          <fieldset className="mb-4 flex flex-col gap-2 border-0 p-0">
+            <legend className="mb-1 text-xs font-medium" style={{ color: 'var(--tx-md)' }}>
+              Fuente
+            </legend>
+            {availableSources(oficialRow).length === 0 && (
+              <p className="text-sm" style={{ color: 'var(--er-tx)' }}>
+                Ninguna fuente tiene tiempo disponible.
+              </p>
+            )}
+            {availableSources(oficialRow).map((source) => (
+              <label key={source} className="flex items-center gap-2 text-sm" style={{ color: 'var(--tx-hi)' }}>
+                <input
+                  type="radio"
+                  name="selectedSource"
+                  checked={selectedSource === source}
+                  onChange={() => setSelectedSource(source)}
+                />
+                {SOURCE_LABEL[source]} — {formatTiempo(sourceSeconds(oficialRow, source))}
+              </label>
+            ))}
+          </fieldset>
+          <div className="flex justify-end gap-2">
+            <Button
+              onClick={() => {
+                setOficialRow(null)
+                setSelectedSource(null)
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!selectedSource || busyId === oficialRow.id}
+              onClick={() => void confirmOficial()}
+            >
+              {busyId === oficialRow.id ? 'Aplicando…' : 'Confirmar Oficial'}
+            </Button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
