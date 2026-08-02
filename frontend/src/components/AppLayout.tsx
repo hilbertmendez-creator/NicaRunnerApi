@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { getControversiasOpenCount } from '../api/endpoints'
 import { useAuth } from '../auth/auth-context'
+import { CONTROVERSIAS_CHANGED_EVENT } from '../features/controversias/ControversiasPage'
+import { useActiveRace } from '../hooks/useActiveRace'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { TopbarRaceSelect } from './TopbarRaceSelect'
 import { UserAccountMenu } from './UserAccountMenu'
@@ -72,11 +75,30 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function AppLayout() {
   const { user } = useAuth()
+  const { raceId } = useActiveRace()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [openDisputeCount, setOpenDisputeCount] = useState(0)
   const location = useLocation()
   const navigate = useNavigate()
 
   const pageTitle = PAGE_TITLES[location.pathname] ?? 'NicaRunner'
+
+  // Badge honesto: solo si open-count > 0 para la carrera activa.
+  const refreshOpenCount = useCallback(() => {
+    if (!raceId) {
+      setOpenDisputeCount(0)
+      return
+    }
+    getControversiasOpenCount(raceId)
+      .then((dto) => setOpenDisputeCount(dto.count))
+      .catch(() => setOpenDisputeCount(0))
+  }, [raceId])
+
+  useEffect(() => {
+    refreshOpenCount()
+    window.addEventListener(CONTROVERSIAS_CHANGED_EVENT, refreshOpenCount)
+    return () => window.removeEventListener(CONTROVERSIAS_CHANGED_EVENT, refreshOpenCount)
+  }, [refreshOpenCount])
 
   const visibleNav = NAV.filter((item) => {
     if (item === 'sep') return true
@@ -172,13 +194,19 @@ export function AppLayout() {
               item.path === '/'
                 ? location.pathname === '/'
                 : location.pathname.startsWith(item.path)
+            const showBadge =
+              item.path === '/controversias' ? openDisputeCount > 0 : Boolean(item.badge)
 
             return (
               <div key={`${item.path}-${item.label}`} style={{ margin: '0 auto' }}>
                 <button
                   type="button"
                   aria-current={isActive ? 'page' : undefined}
-                  aria-label={item.label}
+                  aria-label={
+                    item.path === '/controversias' && openDisputeCount > 0
+                      ? `${item.label} (${openDisputeCount} abiertas)`
+                      : item.label
+                  }
                   onClick={() => {
                     navigate(item.path)
                     setSidebarOpen(false)
@@ -215,7 +243,7 @@ export function AppLayout() {
                     strokeLinejoin="round"
                     dangerouslySetInnerHTML={{ __html: item.icon }}
                   />
-                  {item.badge && (
+                  {showBadge && (
                     <span
                       aria-hidden="true"
                       style={{

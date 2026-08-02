@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react'
-import { RaceSelector } from '../../components/RaceSelector'
 import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
 import { getDashboard, getStandings } from '../../api/endpoints'
@@ -109,19 +108,17 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>
-            {dashboard.data?.raceName ?? 'Dashboard en vivo'}
-          </h1>
-          {dashboard.data && <StatusBadge status={dashboard.data.estado} />}
-          {raceId && (
-            <ConnectionStatusBadge
-              state={connectionState(dashboard.loading, dashboard.data !== null, dashboard.error)}
-            />
-          )}
-        </div>
-        <RaceSelector />
+      {/* Race chrome vive solo en TopbarRaceSelect (ActiveRaceProvider). */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>
+          {dashboard.data?.raceName ?? 'Dashboard en vivo'}
+        </h1>
+        {dashboard.data && <StatusBadge status={dashboard.data.estado} />}
+        {raceId && (
+          <ConnectionStatusBadge
+            state={connectionState(dashboard.loading, dashboard.data !== null, dashboard.error)}
+          />
+        )}
       </div>
 
       {!raceId && <EmptyState message="Selecciona una carrera para ver su progreso." />}
@@ -134,22 +131,44 @@ export function DashboardPage() {
         <>
           <KpiBar
             items={[
-              { label: 'Tiempo en curso', value: '—' },
-              { label: 'Ritmo promedio', value: '—' },
+              {
+                label: 'Tiempo en curso',
+                value: '—',
+                trend: 'Próximamente',
+                kind: 'aspirational',
+              },
+              {
+                label: 'Ritmo promedio',
+                value: '—',
+                trend: 'Próximamente',
+                kind: 'aspirational',
+              },
               {
                 label: 'Chip llegadas',
                 value: String(dashboard.data.totalConTiempo),
                 trend: `▲ de ${dashboard.data.totalInscritos} inscritos`,
                 trendColor:
                   dashboard.data.totalConTiempo > 0 ? 'var(--ok-tx)' : 'var(--tx-lo)',
+                kind: 'live',
               },
               {
                 label: 'Pendientes',
                 value: String(dashboard.data.totalPendientes),
                 valueColor: dashboard.data.totalPendientes > 0 ? 'var(--wn-tx)' : undefined,
+                kind: 'live',
               },
-              { label: 'Cámara ok', value: '—' },
-              { label: 'Último dorsal', value: '—' },
+              {
+                label: 'Cámara ok',
+                value: '—',
+                trend: 'Próximamente',
+                kind: 'aspirational',
+              },
+              {
+                label: 'Último dorsal',
+                value: '—',
+                trend: 'Próximamente',
+                kind: 'aspirational',
+              },
             ]}
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

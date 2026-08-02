@@ -22,6 +22,7 @@ public class NicaRunnerDbContext : DbContext
     public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
     public DbSet<RaceJudge> RaceJudges => Set<RaceJudge>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<TimingDispute> TimingDisputes => Set<TimingDispute>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -243,6 +244,38 @@ public class NicaRunnerDbContext : DbContext
         modelBuilder.Entity<Result>()
             .HasIndex(r => new { r.RaceId, r.CategoryId, r.TiempoLlegada })
             .HasDatabaseName("IX_Results_RaceId_CategoryId_TiempoLlegada");
+
+        // Controversias (backoffice-redesign-audit D1): listado por carrera + filtro estado.
+        modelBuilder.Entity<TimingDispute>(e =>
+        {
+            e.Property(d => d.CorredorNombre).HasMaxLength(200).IsRequired();
+            e.Property(d => d.Dorsal).HasMaxLength(32);
+            e.Property(d => d.CapturistaNombre).HasMaxLength(120);
+            e.Property(d => d.CapturaNote).HasMaxLength(500);
+
+            e.HasIndex(d => new { d.RaceId, d.Estado })
+                .HasDatabaseName("IX_TimingDisputes_RaceId_Estado");
+
+            e.HasOne(d => d.Race)
+                .WithMany()
+                .HasForeignKey(d => d.RaceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(d => d.Result)
+                .WithMany()
+                .HasForeignKey(d => d.ResultId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(d => d.Runner)
+                .WithMany()
+                .HasForeignKey(d => d.RunnerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(d => d.ResolvedBy)
+                .WithMany()
+                .HasForeignKey(d => d.ResolvedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
 
         base.OnModelCreating(modelBuilder);
     }

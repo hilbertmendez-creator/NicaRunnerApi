@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { RaceSelector } from '../../components/RaceSelector'
 import { notifyAll } from '../../api/endpoints'
 import type { NotifyAllSummaryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
@@ -35,7 +34,6 @@ export function NotificationsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={pageTitle}>Notificaciones</h1>
-        <RaceSelector />
       </div>
 
       <section style={card}>
