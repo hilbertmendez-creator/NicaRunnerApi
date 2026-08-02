@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { RaceSelector } from '../../components/RaceSelector'
 import { getResults, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
@@ -93,7 +92,6 @@ export function ResultsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>Resultados</h1>
-        <RaceSelector />
       </div>
 
       {loading && <LoadingText message="Cargando resultados..." />}
