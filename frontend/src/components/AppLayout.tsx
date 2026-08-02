@@ -98,7 +98,6 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={`nr-sidebar ${sidebarOpen ? 'open' : 'closed'}`}
-        aria-label="Navegación principal"
         style={{
           width: 52,
           flexShrink: 0,
@@ -170,10 +169,12 @@ export function AppLayout() {
             const isActive =
               item.path === '/'
                 ? location.pathname === '/'
+                : item.label === 'Controversias'
+                ? false
                 : location.pathname.startsWith(item.path)
 
             return (
-              <div key={`${item.path}-${item.label}`} style={{ position: 'relative', margin: '0 auto' }}>
+              <div key={`${item.path}-${item.label}`} style={{ margin: '0 auto' }}>
                 <button
                   type="button"
                   aria-current={isActive ? 'page' : undefined}
@@ -229,30 +230,30 @@ export function AppLayout() {
                       }}
                     />
                   )}
+                  {/* Tooltip — inside button so button:hover > .sb-tooltip selector works */}
+                  <span
+                    className="sb-tooltip"
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      left: 'calc(100% + 8px)',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: '#1E293B',
+                      color: '#E2E8F0',
+                      fontSize: 11,
+                      fontWeight: 500,
+                      padding: '4px 8px',
+                      borderRadius: 5,
+                      whiteSpace: 'nowrap',
+                      pointerEvents: 'none',
+                      zIndex: 100,
+                      fontFamily: 'Inter, system-ui',
+                    }}
+                  >
+                    {item.label}
+                  </span>
                 </button>
-                {/* Tooltip */}
-                <span
-                  className="sb-tooltip"
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    left: 'calc(100% + 8px)',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: '#1E293B',
-                    color: '#E2E8F0',
-                    fontSize: 11,
-                    fontWeight: 500,
-                    padding: '4px 8px',
-                    borderRadius: 5,
-                    whiteSpace: 'nowrap',
-                    pointerEvents: 'none',
-                    zIndex: 100,
-                    fontFamily: 'Inter, system-ui',
-                  }}
-                >
-                  {item.label}
-                </span>
               </div>
             )
           })}
@@ -262,6 +263,7 @@ export function AppLayout() {
         <button
           type="button"
           title={user?.nombre ?? 'Mi cuenta'}
+          aria-label="Cerrar sesión"
           onClick={logout}
           style={{
             width: 28,
