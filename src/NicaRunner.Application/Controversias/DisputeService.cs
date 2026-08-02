@@ -22,6 +22,13 @@ public class DisputeService(
         return rows.Select(ToDto).ToList();
     }
 
+    public async Task<int> CountOpenAsync(int raceId, CancellationToken ct = default)
+    {
+        await GetRaceOrThrowAsync(raceId, ct);
+        var rows = await disputeRepository.GetByRaceAsync(raceId, estado: null, search: null, ct);
+        return rows.Count(d => d.Estado is DisputeEstado.Revision or DisputeEstado.Disputa);
+    }
+
     public async Task<TimingDisputeDto> ResolveAsync(
         int raceId,
         int disputeId,

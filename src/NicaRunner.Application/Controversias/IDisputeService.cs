@@ -11,6 +11,9 @@ public interface IDisputeService
         string? search = null,
         CancellationToken ct = default);
 
+    // Badge D3: Disputa + Revisión (excluye Oficial).
+    Task<int> CountOpenAsync(int raceId, CancellationToken ct = default);
+
     Task<TimingDisputeDto> ResolveAsync(
         int raceId,
         int disputeId,
