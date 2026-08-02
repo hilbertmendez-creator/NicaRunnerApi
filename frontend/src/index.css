@@ -235,3 +235,21 @@ button:hover > .sb-tooltip { opacity: 1; }
 @media (min-width: 641px) {
   .nr-sidebar { transform: none !important; }
 }
+
+/* ── Focus rings (WCAG AA) ── */
+:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Responsive grid breakpoints ── */
+@media (max-width: 900px) {
+  .nr-content-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
