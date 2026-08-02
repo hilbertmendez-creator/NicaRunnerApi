@@ -16,6 +16,7 @@ using NicaRunner.Api.Auth;
 using NicaRunner.Api.Dev;
 using NicaRunner.Api.Hubs;
 using NicaRunner.Api.Middleware;
+using NicaRunner.Api.Startup;
 using NicaRunner.Application.Admin;
 using NicaRunner.Application.Auth;
 using NicaRunner.Application.Auditing;
@@ -141,7 +142,7 @@ builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
     {
         var pgConn = builder.Configuration.GetConnectionString("PostgresConnection")
             ?? throw new InvalidOperationException("Falta PostgresConnection en producción");
-        options.UseNpgsql(NormalizePostgresConnectionString(pgConn));
+        options.UseNpgsql(PostgresConnectionStringNormalizer.Normalize(pgConn));
     }
 });
 
@@ -191,6 +192,8 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IRaceDashboardNotifier, RaceDashboardNotifier>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtSigningKey = jwtSection["Key"]
+    ?? throw new InvalidOperationException("Falta Jwt:Key en la configuración");
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -203,7 +206,7 @@ builder.Services
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSection["Issuer"],
             ValidAudience = jwtSection["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey))
         };
 
         // El cliente web (browser) no manda el header Authorization: el JWT
@@ -330,7 +333,7 @@ if (!app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
-    await MigrateWithAdvisoryLockAsync(db);
+    await DatabaseMigrator.MigrateWithAdvisoryLockAsync(db);
 }
 
 // Seed idempotente de administradores de backoffice — corre en ambos entornos:
@@ -352,6 +355,13 @@ using (var seedScope = app.Services.CreateScope())
         // M2 (design.md §3.2): backfill de alias para filas creadas antes de esta PR.
         // Mismo scope/repositorio que el seed de arriba — idempotente, seguro en cada deploy.
         await UsernameBackfillService.BackfillAsync(seedUserRepository, seedAliasAssigner);
+
+        // enlaces-publicos-resultados design.md Decisión 2: backfill de PublicShareKey
+        // para corredores creados antes de esta migración (o insertados por una
+        // instancia vieja durante la ventana de deploy). Mismo scope/patrón que el
+        // backfill de arriba — idempotente, seguro en cada boot.
+        var seedRunnerRepository = seedScope.ServiceProvider.GetRequiredService<IRunnerRepository>();
+        await RunnerShareKeyBackfillService.BackfillAsync(seedRunnerRepository);
 
         // M3 (design.md §3.2): audita colisiones de email que solo difieren en
         // mayúsculas/minúsculas antes de habilitar cualquier normalización futura a
@@ -486,104 +496,3 @@ app.MapHub<RaceDashboardHub>("/hubs/race-dashboard");
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
-
-/// <summary>
-/// Render expone la connection string de su Postgres administrado en formato
-/// URI (postgres://usuario:password@host:puerto/db), pero Npgsql solo
-/// entiende el formato keyword=value (Host=...;Username=...;...). Sin esto,
-/// NpgsqlConnectionStringBuilder lanza ArgumentException apenas arranca el
-/// contenedor ("Format of the initialization string does not conform to
-/// specification starting at index 0") — verificado en el primer deploy real
-/// a Render. Si la cadena ya viene en formato keyword=value (como en dev
-/// contra un Postgres local), se devuelve sin tocar.
-/// </summary>
-static string NormalizePostgresConnectionString(string connectionString)
-{
-    if (!connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
-        !connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
-    {
-        return connectionString;
-    }
-
-    var uri = new Uri(connectionString);
-    var userInfo = uri.UserInfo.Split(':', 2);
-    var username = Uri.UnescapeDataString(userInfo[0]);
-    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
-    var database = uri.AbsolutePath.TrimStart('/');
-    var port = uri.Port == -1 ? 5432 : uri.Port;
-
-    // Require (no Prefer): esta rama solo la ejercita la URI de Neon en
-    // producción (dev/test usan Sqlite), y Neon siempre soporta TLS con
-    // certificado válido — Prefer permitía degradar silenciosamente a texto
-    // plano si el handshake TLS fallaba. Sin Trust Server Certificate: Neon
-    // usa un certificado firmado por una CA pública, así que la validación
-    // default de Npgsql contra el store del sistema alcanza; confiar en
-    // cualquier certificado exponía a un MITM.
-    return $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require";
-}
-
-/// <summary>
-/// Serializa la aplicación de migraciones entre instancias concurrentes
-/// (rolling deploy) con un advisory lock de Postgres. La instancia que no
-/// consigue el lock espera; cuando lo obtiene, su propio MigrateAsync() ya no
-/// tiene nada pendiente y es un no-op.
-/// </summary>
-static async Task MigrateWithAdvisoryLockAsync(NicaRunnerDbContext db)
-{
-    const long migrationLockId = 72710051; // arbitrario, estable, exclusivo de este propósito
-
-    var connection = db.Database.GetDbConnection();
-    var openedHere = connection.State != System.Data.ConnectionState.Open;
-    if (openedHere)
-    {
-        await connection.OpenAsync();
-    }
-
-    try
-    {
-        await using (var lockCmd = connection.CreateCommand())
-        {
-            lockCmd.CommandText = $"SELECT pg_advisory_lock({migrationLockId})";
-            await lockCmd.ExecuteNonQueryAsync();
-        }
-
-        await db.Database.MigrateAsync();
-    }
-    finally
-    {
-        await using (var unlockCmd = connection.CreateCommand())
-        {
-            unlockCmd.CommandText = $"SELECT pg_advisory_unlock({migrationLockId})";
-            await unlockCmd.ExecuteNonQueryAsync();
-        }
-
-        if (openedHere)
-        {
-            await connection.CloseAsync();
-        }
-    }
-}
-
-/// <summary>
-/// Sqlite y Npgsql devuelven DateTime con Kind=Unspecified (no preservan el
-/// Kind al leer), y System.Text.Json serializa eso sin sufijo "Z" — el
-/// navegador interpreta la hora como LOCAL en vez de UTC, causando un desfase
-/// de 6h en Nicaragua. Todas las columnas DateTime de la app almacenan
-/// instantes UTC, así que Unspecified se re-etiqueta como Utc sin conversión;
-/// Local (poco común) sí se convierte. Se aplica también a DateTime? porque
-/// System.Text.Json envuelve automáticamente los converters de tipos de valor
-/// para su forma Nullable<T>.
-/// </summary>
-sealed class UtcDateTimeConverter : JsonConverter<DateTime>
-{
-    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => reader.GetDateTime();
-
-    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
-    {
-        var utc = value.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
-            : value.ToUniversalTime();
-        writer.WriteStringValue(utc);
-    }
-}

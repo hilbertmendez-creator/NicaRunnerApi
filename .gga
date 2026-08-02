@@ -37,7 +37,7 @@ FILE_PATTERNS="*.cs,*.csproj"
 # Examples:
 #   EXCLUDE_PATTERNS="*.test.ts,*.spec.ts"
 #   EXCLUDE_PATTERNS="*_test.go,*.mock.ts"
-EXCLUDE_PATTERNS="*.Tests.cs,*Tests/*"
+EXCLUDE_PATTERNS="*.Tests.cs,*Tests/*,*.Designer.cs,*ModelSnapshot.cs"
 
 # File containing code review rules
 # Default: AGENTS.md

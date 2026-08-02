@@ -12,6 +12,14 @@ public class Race
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string? Descripcion { get; set; }
+
+    /// <summary>
+    /// Frase corta opcional para el enlace público de detalle del corredor. Cascada de
+    /// resolución en RaceSloganSelector: Slogan -> Descripcion -> frase determinista por
+    /// hash. Nullable — la mayoría de carreras no la configuran.
+    /// </summary>
+    public string? Slogan { get; set; }
+
     public DateTime FechaCarrera { get; set; }
     public RaceStatus Estado { get; set; } = RaceStatus.Planeada;
     public string JoinCode { get; set; } = string.Empty;

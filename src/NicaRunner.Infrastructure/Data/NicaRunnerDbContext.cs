@@ -219,6 +219,31 @@ public class NicaRunnerDbContext : DbContext
         modelBuilder.Entity<NotificationLog>()
             .HasIndex(n => n.Status);
 
+        // Enlace público de corredor (design.md Decisión 1-2): clave opaca de 22
+        // caracteres Base64Url, única, nullable mientras dura la ventana de backfill.
+        // Índice único filtrado — mismo patrón que IX_Users_Username — para no chocar
+        // contra filas creadas por una instancia vieja durante un deploy en curso.
+        modelBuilder.Entity<Runner>()
+            .Property(r => r.PublicShareKey)
+            .HasMaxLength(32);
+
+        modelBuilder.Entity<Runner>()
+            .HasIndex(r => r.PublicShareKey)
+            .IsUnique()
+            .HasFilter("\"PublicShareKey\" IS NOT NULL")
+            .HasDatabaseName("IX_Runners_PublicShareKey");
+
+        modelBuilder.Entity<Race>()
+            .Property(r => r.Slogan)
+            .HasMaxLength(160);
+
+        // Soporta GetPlacingCountsAsync (design.md Decisión 3): las cuatro cuentas de
+        // posicionamiento del enlace público resuelven en un solo GroupBy sobre este
+        // índice, sin materializar los resultados de la carrera completa.
+        modelBuilder.Entity<Result>()
+            .HasIndex(r => new { r.RaceId, r.CategoryId, r.TiempoLlegada })
+            .HasDatabaseName("IX_Results_RaceId_CategoryId_TiempoLlegada");
+
         base.OnModelCreating(modelBuilder);
     }
 }

@@ -18,6 +18,7 @@ import type {
   NotifyAllSummaryDto,
   PublicRaceResultsDto,
   PublicRunnerDetailDto,
+  PublicRunnerShareDto,
   PublicTokenDto,
   RaceCategoryDto,
   RaceDashboardDto,
@@ -224,6 +225,12 @@ export async function getPublicRunnerResult(
   runnerId: number,
 ): Promise<PublicRunnerDetailDto> {
   const { data } = await apiClient.get<PublicRunnerDetailDto>(`/public/runner/${token}/${runnerId}`)
+  return data
+}
+
+// Enlace público permanente por shareKey — sin token de carrera en la URL.
+export async function getPublicRunnerByShareKey(shareKey: string): Promise<PublicRunnerShareDto> {
+  const { data } = await apiClient.get<PublicRunnerShareDto>(`/public/corredor/${encodeURIComponent(shareKey)}`)
   return data
 }
 

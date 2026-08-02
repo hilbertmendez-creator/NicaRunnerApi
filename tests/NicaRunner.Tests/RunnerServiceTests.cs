@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Moq;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
@@ -97,6 +98,28 @@ public class RunnerServiceTests
         var request = RequestWithBirthdate(new DateTime(1990, 1, 1));
 
         await Assert.ThrowsAsync<ValidationException>(() => BuildService().CreateAsync(1, request));
+    }
+
+    [Fact]
+    public async Task CreateAsync_AsignaPublicShareKeyNoNuloYBienFormado()
+    {
+        var race = RaceOn(new DateTime(2026, 6, 1));
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(race);
+        _raceCategories.Setup(c => c.GetByIdAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync(JuvenilCategory());
+        _runners.Setup(r => r.DorsalExistsAsync(1, "101", null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        Runner? created = null;
+        _runners.Setup(r => r.AddAsync(It.IsAny<Runner>(), It.IsAny<CancellationToken>()))
+            .Callback<Runner, CancellationToken>((r, _) => created = r)
+            .Returns(Task.CompletedTask);
+        _runners.Setup(r => r.GetByIdAsync(1, It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync((Runner?)null);
+
+        var request = RequestWithBirthdate(new DateTime(2011, 5, 15));
+
+        await BuildService().CreateAsync(1, request);
+
+        Assert.NotNull(created!.PublicShareKey);
+        Assert.Matches(new Regex("^[A-Za-z0-9_-]{22}$"), created.PublicShareKey);
     }
 
     [Fact]
@@ -225,6 +248,36 @@ public class RunnerServiceTests
         Assert.Equal(0, result.Importados);
         Assert.Single(result.Errores);
         _runners.Verify(r => r.AddRangeAsync(It.IsAny<IEnumerable<Runner>>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ImportFromExcelAsync_AsignaPublicShareKeyUnicoATodosLosImportados()
+    {
+        var race = RaceOn(new DateTime(2026, 6, 1));
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(race);
+
+        var category = JuvenilCategory();
+        _raceCategories.Setup(c => c.GetAllByRaceAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync([category]);
+        _runners.Setup(r => r.GetAllByRaceAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        _excelParser.Setup(p => p.Parse(It.IsAny<Stream>())).Returns(
+        [
+            new ParsedRunnerRow(2, "Ana", "Pérez", "101", null, null, "F", null, new DateTime(2011, 5, 15), "Juvenil"),
+            new ParsedRunnerRow(3, "Beto", "López", "102", null, null, "M", null, new DateTime(2011, 5, 15), "Juvenil"),
+        ]);
+
+        List<Runner>? added = null;
+        _runners.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<Runner>>(), It.IsAny<CancellationToken>()))
+            .Callback<IEnumerable<Runner>, CancellationToken>((rs, _) => added = rs.ToList())
+            .Returns(Task.CompletedTask);
+
+        await BuildService().ImportFromExcelAsync(1, Stream.Null);
+
+        Assert.NotNull(added);
+        Assert.Equal(2, added!.Count);
+        Assert.All(added, r => Assert.NotNull(r.PublicShareKey));
+        Assert.All(added, r => Assert.Matches(new Regex("^[A-Za-z0-9_-]{22}$"), r.PublicShareKey));
+        Assert.Equal(added.Count, added.Select(r => r.PublicShareKey).Distinct().Count());
     }
 
     // Archivo con extensión .xlsx pero contenido corrupto/no-Excel: ClosedXML

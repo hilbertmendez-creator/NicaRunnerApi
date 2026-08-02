@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Runners.Dtos;
@@ -35,7 +36,8 @@ public class RunnerService(
             Club = request.Club,
             FechaNacimiento = request.FechaNacimiento,
             Edad = edad,
-            CategoryId = request.CategoryId
+            CategoryId = request.CategoryId,
+            PublicShareKey = ShareKeyGenerator.Generate()
         };
 
         await runnerRepository.AddAsync(runner, ct);
@@ -196,7 +198,8 @@ public class RunnerService(
                 Club = row.Club,
                 FechaNacimiento = row.FechaNacimiento,
                 Edad = edad,
-                CategoryId = category!.Id
+                CategoryId = category!.Id,
+                PublicShareKey = ShareKeyGenerator.Generate()
             });
         }
 

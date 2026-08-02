@@ -5,4 +5,5 @@ public record PublicRunnerResultDto(
     string Nombre,
     string Dorsal,
     int Posicion,
-    DateTime TiempoLlegada);
+    DateTime TiempoLlegada,
+    string? ShareKey);
