@@ -131,22 +131,44 @@ export function DashboardPage() {
         <>
           <KpiBar
             items={[
-              { label: 'Tiempo en curso', value: '—' },
-              { label: 'Ritmo promedio', value: '—' },
+              {
+                label: 'Tiempo en curso',
+                value: '—',
+                trend: 'Próximamente',
+                kind: 'aspirational',
+              },
+              {
+                label: 'Ritmo promedio',
+                value: '—',
+                trend: 'Próximamente',
+                kind: 'aspirational',
+              },
               {
                 label: 'Chip llegadas',
                 value: String(dashboard.data.totalConTiempo),
                 trend: `▲ de ${dashboard.data.totalInscritos} inscritos`,
                 trendColor:
                   dashboard.data.totalConTiempo > 0 ? 'var(--ok-tx)' : 'var(--tx-lo)',
+                kind: 'live',
               },
               {
                 label: 'Pendientes',
                 value: String(dashboard.data.totalPendientes),
                 valueColor: dashboard.data.totalPendientes > 0 ? 'var(--wn-tx)' : undefined,
+                kind: 'live',
               },
-              { label: 'Cámara ok', value: '—' },
-              { label: 'Último dorsal', value: '—' },
+              {
+                label: 'Cámara ok',
+                value: '—',
+                trend: 'Próximamente',
+                kind: 'aspirational',
+              },
+              {
+                label: 'Último dorsal',
+                value: '—',
+                trend: 'Próximamente',
+                kind: 'aspirational',
+              },
             ]}
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
