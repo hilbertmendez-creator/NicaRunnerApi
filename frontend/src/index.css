@@ -213,3 +213,25 @@ body {
   background: #22C55E;
   animation: pulse-live 1.4s ease-in-out infinite;
 }
+
+/* ── AppLayout v2 ── */
+.sb-tooltip { opacity: 0; transition: opacity .12s; }
+button:hover > .sb-tooltip { opacity: 1; }
+
+@media (max-width: 640px) {
+  .mobile-menu-btn { display: flex !important; }
+  .nr-sidebar {
+    position: fixed !important;
+    top: 0; left: 0; bottom: 0;
+    width: 200px !important;
+    z-index: 40;
+    align-items: flex-start !important;
+    padding-left: 8px !important;
+    transition: transform .2s;
+  }
+  .nr-sidebar.closed { transform: translateX(-100%); }
+  .nr-sidebar.open   { transform: translateX(0); }
+}
+@media (min-width: 641px) {
+  .nr-sidebar { transform: none !important; }
+}
