@@ -63,6 +63,23 @@ public class DisputeServiceTests
     }
 
     [Fact]
+    public async Task CountOpenAsync_CuentaRevisionYDisputa()
+    {
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(RaceWithStart());
+        var open = SampleDispute();
+        open.Estado = DisputeEstado.Revision;
+        var closed = SampleDispute();
+        closed.Id = 8;
+        closed.Estado = DisputeEstado.Oficial;
+        _disputes.Setup(d => d.GetByRaceAsync(1, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([open, closed, SampleDispute()]);
+
+        var count = await BuildService().CountOpenAsync(1);
+
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
     public async Task ResolveAsync_Lector_LanzaForbidden()
     {
         await Assert.ThrowsAsync<ForbiddenException>(() =>

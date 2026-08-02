@@ -25,3 +25,5 @@ public record ResolveDisputeRequest(
     DisputeEstado Estado,
     TimingSource? SelectedSource = null,
     bool ConfirmApplyOfficial = false);
+
+public record OpenDisputeCountDto(int Count);
