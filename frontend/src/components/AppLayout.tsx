@@ -30,10 +30,19 @@ const NAV: Array<NavItem | 'sep'> = [
     icon: '<path d="M2 4h12M2 8h8M2 12h10"/>',
   },
   {
-    path: '/resultados',
+    path: '/controversias',
     label: 'Controversias',
-    badge: true,
     icon: '<path d="M8 2L9.5 6h4.5l-3.6 2.6 1.4 4.4L8 10.4 4.2 13 5.6 8.6 2 6h4.5z"/>',
+  },
+  {
+    path: '/notificaciones',
+    label: 'Notificaciones',
+    icon: '<path d="M8 1.5a1 1 0 00-1 1V3A4 4 0 004 6.5c0 2 0 3-1 4h10c-1-1-1-2-1-4A4 4 0 009 3V2.5a1 1 0 00-1-1zM6.5 11.5a1.5 1.5 0 003 0"/>',
+  },
+  {
+    path: '/enlaces',
+    label: 'Enlaces',
+    icon: '<path d="M6.5 9.5a3 3 0 010-4.2l1.4-1.4a3 3 0 014.2 4.2l-.7.7"/><path d="M9.5 6.5a3 3 0 010 4.2l-1.4 1.4a3 3 0 01-4.2-4.2l.7-.7"/>',
   },
   'sep',
   {
@@ -54,6 +63,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
   '/carreras': 'Carreras',
   '/resultados': 'Resultados',
+  '/controversias': 'Controversias',
   '/notificaciones': 'Notificaciones',
   '/usuarios': 'Usuarios',
   '/categorias': 'Categorías',
@@ -157,12 +167,11 @@ export function AppLayout() {
               )
             }
 
+            // Controversias usa ruta propia; isActive estándar (sin forzar false).
             const isActive =
               item.path === '/'
                 ? location.pathname === '/'
-                : item.label === 'Controversias'
-                  ? false
-                  : location.pathname.startsWith(item.path)
+                : location.pathname.startsWith(item.path)
 
             return (
               <div key={`${item.path}-${item.label}`} style={{ margin: '0 auto' }}>
@@ -300,6 +309,7 @@ export function AppLayout() {
             <button
               type="button"
               aria-label="Notificaciones"
+              onClick={() => navigate('/notificaciones')}
               style={{
                 width: 30,
                 height: 30,
@@ -317,19 +327,6 @@ export function AppLayout() {
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
                 <path d="M7.5 2a1 1 0 00-1 1V3.5A4 4 0 004.5 7c0 2 0 3-1 4h8c-1-1-1-2-1-4a4 4 0 00-2-3.5V3a1 1 0 00-1-1zM6 11a1.5 1.5 0 003 0" />
               </svg>
-              <span
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  top: 5,
-                  right: 5,
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: '#EF4444',
-                  border: '1.5px solid var(--bg-tb)',
-                }}
-              />
             </button>
           </div>
         </header>

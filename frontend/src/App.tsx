@@ -15,6 +15,7 @@ import { ResultsPage } from './features/results/ResultsPage'
 import { RacesPage } from './features/races/RacesPage'
 import { RaceDetailPage } from './features/races/RaceDetailPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
+import { ControversiasPage } from './features/controversias/ControversiasPage'
 import { PublicLinksPage } from './features/public-links/PublicLinksPage'
 import { PublicResultsPage } from './features/public-results/PublicResultsPage'
 import { RunnerSharePage } from './features/public-results/RunnerSharePage'
@@ -49,6 +50,7 @@ function App() {
                 <Route path="/carreras" element={<RacesPage />} />
                 <Route path="/carreras/:raceId" element={<RaceDetailPage />} />
                 <Route path="/resultados" element={<ResultsPage />} />
+                <Route path="/controversias" element={<ControversiasPage />} />
                 <Route path="/notificaciones" element={<NotificationsPage />} />
                 <Route path="/enlaces" element={<PublicLinksPage />} />
 
