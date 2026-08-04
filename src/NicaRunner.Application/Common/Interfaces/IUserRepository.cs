@@ -1,3 +1,4 @@
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Common.Interfaces;
@@ -16,6 +17,7 @@ public interface IUserRepository
     Task<User?> GetByResetTokenAsync(string token, CancellationToken ct = default);
     Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default);
     Task<List<User>> GetAllAsync(CancellationToken ct = default);
+    Task<PaginatedList<User>> GetPaginatedAsync(int limit = 50, int offset = 0, CancellationToken ct = default);
     Task<bool> EmailExistsAsync(string email, CancellationToken ct = default);
     Task<bool> UsernameExistsAsync(string username, CancellationToken ct = default);
     Task AddAsync(User user, CancellationToken ct = default);

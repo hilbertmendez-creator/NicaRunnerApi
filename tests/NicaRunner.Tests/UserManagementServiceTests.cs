@@ -4,6 +4,7 @@ using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Notifications.EmailTemplates;
 using NicaRunner.Application.Users;
 using NicaRunner.Application.Users.Dtos;
@@ -31,17 +32,19 @@ public class UserManagementServiceTests
     [Fact]
     public async Task GetAllAsync_DevuelveTodosMapeadosADto()
     {
-        _users.Setup(u => u.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(
-        [
+        var items = new List<User>
+        {
             new User { Id = 1, Email = "a@b.com", Nombre = "A", Role = UserRole.Administrador, IsActive = true },
             new User { Id = 2, Email = "c@d.com", Nombre = "C", Role = UserRole.Lector, IsActive = false },
-        ]);
+        };
+        _users.Setup(u => u.GetPaginatedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+              .ReturnsAsync(new PaginatedList<User>(items, 2));
 
         var result = await BuildService().GetAllAsync();
 
-        Assert.Equal(2, result.Count);
-        Assert.Equal("a@b.com", result[0].Email);
-        Assert.False(result[1].IsActive);
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal("a@b.com", result.Items[0].Email);
+        Assert.False(result.Items[1].IsActive);
     }
 
     [Fact]

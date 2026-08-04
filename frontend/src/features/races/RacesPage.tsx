@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { deleteRace, getRaceAudit, getRaces } from '../../api/endpoints'
 import type { RaceDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
@@ -21,25 +22,35 @@ export function RacesPage() {
   const [auditingRace, setAuditingRace] = useState<RaceDto | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const [pageIndex, setPageIndex] = useState(1) // 1-based; DataTable contract
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 50
+
   function reload() {
     setLoading(true)
-    getRaces()
-      .then(setRaces)
+    getRaces(pageSize, (pageIndex - 1) * pageSize)
+      .then((res) => {
+        setRaces(res.items)
+        setTotalCount(res.totalCount)
+      })
       .finally(() => setLoading(false))
   }
 
   // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(reload, [])
+  useEffect(reload, [pageIndex])
 
   async function handleDelete(race: RaceDto) {
     if (!confirm(`¿Eliminar la carrera "${race.nombre}"? Esta acción no se puede deshacer.`)) return
     setError(null)
     try {
       await deleteRace(race.id)
+      toast.success('Carrera eliminada correctamente')
       reload()
     } catch (err: any) {
-      setError(err.response?.data?.detail ?? 'No se pudo eliminar la carrera.')
+      const msg = err.response?.data?.detail ?? 'No se pudo eliminar la carrera.'
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -110,6 +121,9 @@ export function RacesPage() {
           data={races}
           rowKey={(race) => race.id}
           emptyState={<EmptyState message="No hay carreras creadas todavía." />}
+          pageIndex={pageIndex}
+          pageCount={Math.ceil(totalCount / pageSize)}
+          onPageChange={setPageIndex}
         />
       )}
 

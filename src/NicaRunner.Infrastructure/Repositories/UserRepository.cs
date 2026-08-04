@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Data;
@@ -53,6 +54,18 @@ public class UserRepository(NicaRunnerDbContext context) : IUserRepository
     // enviar un valor mixto antes de que UserManagementService lo normalice.
     public Task<User?> GetByUsernameAsync(string username, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.Username == username.ToLowerInvariant(), ct);
+
+    public async Task<PaginatedList<User>> GetPaginatedAsync(int limit = 50, int offset = 0, CancellationToken ct = default)
+    {
+        var total = await context.Users.CountAsync(ct);
+        var items = await context.Users
+            .OrderBy(u => u.Email)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(ct);
+            
+        return new PaginatedList<User>(items, total);
+    }
 
     public Task<List<User>> GetAllAsync(CancellationToken ct = default) =>
         context.Users.OrderBy(u => u.Email).ToListAsync(ct);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import { getControversiasOpenCount } from '../api/endpoints'
 import { useAuth } from '../auth/auth-context'
 import { CONTROVERSIAS_CHANGED_EVENT } from '../features/controversias/ControversiasPage'
@@ -383,6 +384,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <Toaster position="top-right" />
     </div>
   )
 }

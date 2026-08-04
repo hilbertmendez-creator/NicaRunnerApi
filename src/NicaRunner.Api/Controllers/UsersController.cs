@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Auditing.Dtos;
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Users;
 using NicaRunner.Application.Users.Dtos;
 using NicaRunner.Domain.Constants;
@@ -21,8 +22,8 @@ public class UsersController(
     IAuditService auditService) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<UserDto>>> GetAll(CancellationToken ct) =>
-        Ok(await userManagementService.GetAllAsync(ct));
+    public async Task<ActionResult<PaginatedList<UserDto>>> GetAll([FromQuery] int limit = 50, [FromQuery] int offset = 0, CancellationToken ct = default) =>
+        Ok(await userManagementService.GetAllAsync(limit, offset, ct));
 
     [HttpPost]
     public async Task<ActionResult<UserDto>> Create(CreateUserRequest request, CancellationToken ct)

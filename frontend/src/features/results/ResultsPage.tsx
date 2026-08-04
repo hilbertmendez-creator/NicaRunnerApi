@@ -19,6 +19,10 @@ export function ResultsPage() {
   const [auditingId, setAuditingId] = useState<number | null>(null)
   const [notifyingId, setNotifyingId] = useState<number | null>(null)
 
+  const [pageIndex, setPageIndex] = useState(1) // 1-based; DataTable contract
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 50
+
   async function handleNotify(resultId: number) {
     setNotifyingId(resultId)
     try {
@@ -31,14 +35,17 @@ export function ResultsPage() {
   function reload() {
     if (!raceId) return
     setLoading(true)
-    getResults(raceId)
-      .then(setResults)
+    getResults(raceId, pageSize, (pageIndex - 1) * pageSize)
+      .then((res) => {
+        setResults(res.items)
+        setTotalCount(res.totalCount)
+      })
       .finally(() => setLoading(false))
   }
 
   // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(reload, [raceId])
+  useEffect(reload, [raceId, pageIndex])
 
   const columns: Column<ResultDto>[] = [
     {
@@ -102,6 +109,9 @@ export function ResultsPage() {
           data={results}
           rowKey={(result) => result.id}
           emptyState={<EmptyState message="Esta carrera no tiene resultados capturados todavía." />}
+          pageIndex={pageIndex}
+          pageCount={Math.ceil(totalCount / pageSize)}
+          onPageChange={setPageIndex}
         />
       )}
 
