@@ -9,7 +9,7 @@ const getOpenCount = vi.fn()
 
 vi.mock('../api/endpoints', () => ({
   getControversiasOpenCount: (...args: unknown[]) => getOpenCount(...args),
-  getRaces: vi.fn().mockResolvedValue([]),
+  getRaces: vi.fn().mockResolvedValue({ items: [], totalCount: 0 }),
 }))
 
 vi.mock('../hooks/useActiveRace', () => ({
