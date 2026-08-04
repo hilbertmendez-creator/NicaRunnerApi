@@ -499,3 +499,9 @@ app.MapHub<RaceDashboardHub>("/hubs/race-dashboard");
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
+
+/// <summary>
+/// Public entry-point type for HostFactoryResolver / integration tooling.
+/// Top-level statements synthesize an internal Program; this partial makes it public.
+/// </summary>
+public partial class Program { }

@@ -49,8 +49,9 @@ export function ActiveRaceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
     getRaces()
-      .then((data) => {
+      .then((page) => {
         if (cancelled) return
+        const data = page.items
         setRaces(data)
         const next = pickDefaultRace(data, readStoredId())
         setRaceIdState(next)
