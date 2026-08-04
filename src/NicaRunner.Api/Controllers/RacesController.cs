@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Auditing.Dtos;
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Races;
 using NicaRunner.Application.Races.Dtos;
 using NicaRunner.Domain.Constants;
@@ -27,8 +28,8 @@ public class RacesController(IRaceService raceService, IAuditService auditServic
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<RaceDto>>> GetAll(CancellationToken ct) =>
-        Ok(await raceService.GetAllAsync(ct));
+    public async Task<ActionResult<PaginatedList<RaceDto>>> GetAll([FromQuery] int limit = 50, [FromQuery] int offset = 0, CancellationToken ct = default) =>
+        Ok(await raceService.GetAllAsync(limit, offset, ct));
 
     [HttpGet("{raceId:int}")]
     public async Task<ActionResult<RaceDto>> GetById(int raceId, CancellationToken ct) =>

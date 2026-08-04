@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import axios from 'axios'
+import toast from 'react-hot-toast'
 import { createUser, updateUser } from '../../api/endpoints'
 import type { UserDto, UserRole } from '../../api/types'
 import { Modal, Button, Label, Input, Select } from '@nicarunner/ui'
@@ -34,9 +35,11 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
     try {
       if (user) {
         await updateUser(user.id, { nombre, username: username.trim().toLowerCase() })
+        toast.success('Usuario actualizado correctamente')
         onSaved()
       } else {
         const created = await createUser({ email, nombre, role })
+        toast.success('Usuario creado correctamente')
         setCreatedUser(created)
       }
     } catch (err) {
@@ -44,13 +47,15 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
       // se distingue del resto de errores para no confundir al admin con el
       // mensaje genérico de nombre/email.
       if (user && axios.isAxiosError(err) && err.response?.status === 409) {
-        setError(`El alias "${username.trim().toLowerCase()}" ya está en uso por otro usuario.`)
+        const msg = `El alias "${username.trim().toLowerCase()}" ya está en uso por otro usuario.`
+        setError(msg)
+        toast.error(msg)
       } else {
-        setError(
-          user
-            ? 'No se pudo actualizar el usuario. Verificá el nombre y el formato del alias.'
-            : 'No se pudo crear el usuario. Verificá que el email no esté ya registrado.',
-        )
+        const msg = user
+          ? 'No se pudo actualizar el usuario. Verificá el nombre y el formato del alias.'
+          : 'No se pudo crear el usuario. Verificá que el email no esté ya registrado.'
+        setError(msg)
+        toast.error(msg)
       }
     } finally {
       setSubmitting(false)

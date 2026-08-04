@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Results;
 using NicaRunner.Application.Results.Dtos;
 using NicaRunner.Domain.Entities;
@@ -39,8 +40,8 @@ public class ResultsController(IResultService resultService) : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ResultDto>>> GetAll(int raceId, CancellationToken ct) =>
-        Ok(await resultService.GetAllByRaceAsync(raceId, ct));
+    public async Task<ActionResult<PaginatedList<ResultDto>>> GetAll(int raceId, [FromQuery] int limit = 50, [FromQuery] int offset = 0, CancellationToken ct = default) =>
+        Ok(await resultService.GetAllByRaceAsync(raceId, limit, offset, ct));
 
     [HttpGet("{resultId:int}")]
     public async Task<ActionResult<ResultDto>> GetById(int raceId, int resultId, CancellationToken ct) =>

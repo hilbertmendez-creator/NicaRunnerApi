@@ -38,6 +38,11 @@ import type {
   UserDto,
 } from './types'
 
+export interface PaginatedList<T> {
+  items: T[]
+  totalCount: number
+}
+
 // user-auth: "Unified Identifier Login" / "Backward-Compatible Login Payload" —
 // el backend acepta `identifier` (email o alias); `email` legado se mantiene
 // server-side para clientes ya publicados, pero el backoffice ya envía
@@ -52,8 +57,8 @@ export async function getCurrentUser(): Promise<CurrentUserDto> {
   return data
 }
 
-export async function getRaces(): Promise<RaceDto[]> {
-  const { data } = await apiClient.get<RaceDto[]>('/races')
+export async function getRaces(limit = 50, offset = 0): Promise<PaginatedList<RaceDto>> {
+  const { data } = await apiClient.get<PaginatedList<RaceDto>>(`/races?limit=${limit}&offset=${offset}`)
   return data
 }
 
@@ -67,8 +72,8 @@ export async function getStandings(raceId: number): Promise<CategoryStandingsDto
   return data
 }
 
-export async function getResults(raceId: number): Promise<ResultDto[]> {
-  const { data } = await apiClient.get<ResultDto[]>(`/races/${raceId}/results`)
+export async function getResults(raceId: number, limit = 50, offset = 0): Promise<PaginatedList<ResultDto>> {
+  const { data } = await apiClient.get<PaginatedList<ResultDto>>(`/races/${raceId}/results?limit=${limit}&offset=${offset}`)
   return data
 }
 
@@ -272,8 +277,8 @@ export async function resetPassword(request: ResetPasswordRequest): Promise<void
   await apiClient.post('/auth/reset-password', request)
 }
 
-export async function getUsers(): Promise<UserDto[]> {
-  const { data } = await apiClient.get<UserDto[]>('/users')
+export async function getUsers(limit = 50, offset = 0): Promise<PaginatedList<UserDto>> {
+  const { data } = await apiClient.get<PaginatedList<UserDto>>(`/users?limit=${limit}&offset=${offset}`)
   return data
 }
 

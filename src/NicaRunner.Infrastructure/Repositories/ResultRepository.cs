@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Domain.Entities;
@@ -21,6 +22,23 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
             .Include(r => r.Category)
             .Include(r => r.Capturista)
             .FirstOrDefaultAsync(r => r.Id == resultId, ct);
+
+    public async Task<PaginatedList<Result>> GetPaginatedByRaceAsync(int raceId, int limit = 50, int offset = 0, CancellationToken ct = default)
+    {
+        var query = context.Results.Where(r => r.RaceId == raceId);
+        var total = await query.CountAsync(ct);
+        var items = await query
+            .Include(r => r.Runner)
+            .Include(r => r.Category)
+            .Include(r => r.Capturista)
+            .OrderBy(r => r.CategoryId)
+            .ThenBy(r => r.Posicion)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(ct);
+            
+        return new PaginatedList<Result>(items, total);
+    }
 
     public Task<List<Result>> GetAllByRaceAsync(int raceId, CancellationToken ct = default) =>
         context.Results

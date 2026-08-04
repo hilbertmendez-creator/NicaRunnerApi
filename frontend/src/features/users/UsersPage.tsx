@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import { getUserAudit, getUsers, unlockUser, updateUser } from '../../api/endpoints'
 import type { UserDto, UserRole } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
@@ -18,20 +19,32 @@ export function UsersPage() {
   const [auditingUser, setAuditingUser] = useState<UserDto | null>(null)
   const [unlockingId, setUnlockingId] = useState<number | null>(null)
 
+  const [pageIndex, setPageIndex] = useState(1) // 1-based; DataTable contract
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 50
+
   function reload() {
     setLoading(true)
-    getUsers()
-      .then(setUsers)
+    getUsers(pageSize, (pageIndex - 1) * pageSize)
+      .then((res) => {
+        setUsers(res.items)
+        setTotalCount(res.totalCount)
+      })
       .finally(() => setLoading(false))
   }
 
   // Effect-driven fetch with a loading flag: react.dev/learn/synchronizing-with-effects#fetching-data
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(reload, [])
+  useEffect(reload, [pageIndex])
 
   async function handleRoleChange(target: UserDto, role: UserRole) {
-    await updateUser(target.id, { role })
-    reload()
+    try {
+      await updateUser(target.id, { role })
+      toast.success(`Rol actualizado a ${role}`)
+      reload()
+    } catch {
+      toast.error('No se pudo actualizar el rol')
+    }
   }
 
   async function handleToggleActive(target: UserDto) {
@@ -47,7 +60,10 @@ export function UsersPage() {
     setUnlockingId(target.id)
     try {
       await unlockUser(target.id)
+      toast.success('Usuario desbloqueado')
       reload()
+    } catch {
+      toast.error('No se pudo desbloquear el usuario')
     } finally {
       setUnlockingId(null)
     }
@@ -135,6 +151,9 @@ export function UsersPage() {
           data={users}
           rowKey={(u) => u.id}
           emptyState={<EmptyState message="Todavía no hay usuarios de backoffice." />}
+          pageIndex={pageIndex}
+          pageCount={Math.ceil(totalCount / pageSize)}
+          onPageChange={setPageIndex}
         />
       )}
 

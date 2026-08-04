@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Common;
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Notifications.EmailTemplates;
@@ -20,10 +21,10 @@ public class UserManagementService(
 {
     private const string TempPasswordAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
-    public async Task<List<UserDto>> GetAllAsync(CancellationToken ct = default)
+    public async Task<PaginatedList<UserDto>> GetAllAsync(int limit = 50, int offset = 0, CancellationToken ct = default)
     {
-        var users = await userRepository.GetAllAsync(ct);
-        return users.Select(ToDto).ToList();
+        var paginated = await userRepository.GetPaginatedAsync(limit, offset, ct);
+        return new PaginatedList<UserDto>(paginated.Items.Select(ToDto).ToList(), paginated.TotalCount);
     }
 
     public async Task<UserDto> CreateAsync(CreateUserRequest request, CancellationToken ct = default)

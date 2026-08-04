@@ -1,3 +1,4 @@
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Common.Interfaces;
@@ -6,6 +7,7 @@ public interface IResultRepository
 {
     Task<Result?> GetByIdAsync(int raceId, int resultId, CancellationToken ct = default);
     Task<Result?> GetByIdAsync(int resultId, CancellationToken ct = default);
+    Task<PaginatedList<Result>> GetPaginatedByRaceAsync(int raceId, int limit = 50, int offset = 0, CancellationToken ct = default);
     Task<List<Result>> GetAllByRaceAsync(int raceId, CancellationToken ct = default);
     Task<List<Result>> GetAllByCategoryAsync(int raceId, int categoryId, CancellationToken ct = default);
     Task<bool> ExistsByRunnerAsync(int raceId, int runnerId, int? excludeResultId = null, CancellationToken ct = default);

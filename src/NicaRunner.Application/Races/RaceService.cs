@@ -1,4 +1,5 @@
 using NicaRunner.Application.Auditing;
+using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Races.Dtos;
@@ -53,10 +54,10 @@ public class RaceService(
         }
     }
 
-    public async Task<List<RaceDto>> GetAllAsync(CancellationToken ct = default)
+    public async Task<PaginatedList<RaceDto>> GetAllAsync(int limit = 50, int offset = 0, CancellationToken ct = default)
     {
-        var races = await raceRepository.GetAllAsync(ct);
-        return races.Select(ToDto).ToList();
+        var paginated = await raceRepository.GetPaginatedAsync(limit, offset, ct);
+        return new PaginatedList<RaceDto>(paginated.Items.Select(ToDto).ToList(), paginated.TotalCount);
     }
 
     public async Task<RaceDto> GetByIdAsync(int raceId, CancellationToken ct = default)
