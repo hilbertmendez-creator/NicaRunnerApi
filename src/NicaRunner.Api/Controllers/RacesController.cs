@@ -56,7 +56,7 @@ public class RacesController(IRaceService raceService, IAuditService auditServic
     }
 
     [HttpPost("{raceId:int}/start")]
-    [Authorize(Roles = nameof(UserRole.Administrador))]
+    [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
     public async Task<ActionResult<RaceDto>> Start(int raceId, CancellationToken ct) =>
         Ok(await raceService.StartAsync(raceId, ct));
 

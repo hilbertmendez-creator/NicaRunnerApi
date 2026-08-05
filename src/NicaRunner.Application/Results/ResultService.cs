@@ -27,10 +27,14 @@ public class ResultService(
                 return ToDto(existing);
         }
 
-        // El chequeo de "el tiempo no puede ser anterior al inicio" se volvió innecesario: el
-        // servidor ya no acepta un tiempo del cliente, así que no hay nada que pueda estar
-        // desfasado hacia atrás. Pero sigue faltando esto: sin RaceStartUtc, no hay contra qué
-        // medir la llegada en absoluto.
+        // Captures only when EnCurso (domain rule). RaceStartUtc alone is not enough:
+        // a Terminada race may still have RaceStartUtc from when it was running.
+        if (race.Estado != RaceStatus.EnCurso)
+            throw new ValidationException(
+                race.Estado == RaceStatus.Planeada
+                    ? "La carrera todavía no arrancó."
+                    : $"Solo se pueden capturar llegadas mientras la carrera está EnCurso (estado actual: {race.Estado}).");
+
         if (race.RaceStartUtc is null)
             throw new ValidationException("La carrera todavía no arrancó.");
 

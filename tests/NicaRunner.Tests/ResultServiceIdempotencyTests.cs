@@ -18,7 +18,7 @@ public class ResultServiceIdempotencyTests
     private ResultService BuildService() =>
         new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object);
 
-    private void RaceExists(int raceId = 1)
+    private void RaceExists(int raceId = 1, RaceStatus estado = RaceStatus.EnCurso)
     {
         _races.Setup(r => r.GetByIdAsync(raceId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Race
@@ -26,6 +26,7 @@ public class ResultServiceIdempotencyTests
                 Id = raceId,
                 Nombre = "Test",
                 AdminId = 1,
+                Estado = estado,
                 RaceStartUtc = new DateTime(2026, 6, 29, 9, 0, 0, DateTimeKind.Utc)
             });
     }
@@ -237,6 +238,19 @@ public class ResultServiceIdempotencyTests
         await Assert.ThrowsAsync<ValidationException>(
             () => BuildService().CreateAsync(1, MakeRequest(), capturistaId: 5));
 
+        _results.Verify(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // Terminada may still have RaceStartUtc; capture must refuse when Estado != EnCurso.
+    [Fact]
+    public async Task Create_CarreraTerminada_LanzaValidationException()
+    {
+        RaceExists(estado: RaceStatus.Terminada);
+
+        var ex = await Assert.ThrowsAsync<ValidationException>(
+            () => BuildService().CreateAsync(1, MakeRequest(), capturistaId: 5));
+
+        Assert.Contains("EnCurso", ex.Message);
         _results.Verify(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
