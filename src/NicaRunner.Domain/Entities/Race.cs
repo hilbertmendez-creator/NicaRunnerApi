@@ -24,6 +24,11 @@ public class Race
     public RaceStatus Estado { get; set; } = RaceStatus.Planeada;
     public string JoinCode { get; set; } = string.Empty;
     public DateTime? RaceStartUtc { get; set; }
+
+    // public-runner-registration-manual-payment: flag explícito de apertura admin —
+    // deploy con InscripcionesAbiertas = false por defecto, cada carrera se abre individualmente.
+    public bool InscripcionesAbiertas { get; set; }
+    public DateTime? FechaLimiteInscripcion { get; set; }
     public int AdminId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

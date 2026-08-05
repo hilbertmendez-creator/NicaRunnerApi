@@ -13,6 +13,15 @@ public class Runner
     public string Nombre { get; set; } = string.Empty;
     public string? Apellidos { get; set; }
     public string Dorsal { get; set; } = string.Empty; // único por carrera
+
+    /// <summary>
+    /// design.md D11: forma normalizada de <see cref="Dorsal"/> (DorsalNormalizer.Normalize),
+    /// calculada en cada escritura. La unicidad numérica real ("21K7" == "21K007") corre
+    /// sobre esta columna vía el índice único IX_Runners_RaceId_DorsalNormalizado, aditivo
+    /// al índice textual existente — un chequeo solo-en-servicio dejaría una ventana TOCTOU.
+    /// </summary>
+    public string DorsalNormalizado { get; set; } = string.Empty;
+
     public string? Telefono { get; set; }
     public string? Email { get; set; }
     public Sexo? Sexo { get; set; }

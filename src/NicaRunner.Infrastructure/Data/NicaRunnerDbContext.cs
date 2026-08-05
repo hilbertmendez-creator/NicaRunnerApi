@@ -23,6 +23,9 @@ public class NicaRunnerDbContext : DbContext
     public DbSet<RaceJudge> RaceJudges => Set<RaceJudge>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<TimingDispute> TimingDisputes => Set<TimingDispute>();
+    public DbSet<Registration> Registrations => Set<Registration>();
+    public DbSet<RegistrationLink> RegistrationLinks => Set<RegistrationLink>();
+    public DbSet<ReservedDorsal> ReservedDorsals => Set<ReservedDorsal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -276,6 +279,90 @@ public class NicaRunnerDbContext : DbContext
                 .HasForeignKey(d => d.ResolvedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
+
+        // public-runner-registration-manual-payment (D11): índice adicional, aditivo —
+        // el textual IX Runners RaceId+Dorsal de arriba se queda igual, la unicidad
+        // normalizada es estrictamente más fuerte y nunca dispara sola. Es lo que
+        // realmente cierra la ventana TOCTOU que un chequeo solo-en-servicio dejaría.
+        modelBuilder.Entity<Runner>()
+            .HasIndex(r => new { r.RaceId, r.DorsalNormalizado })
+            .IsUnique()
+            .HasDatabaseName("IX_Runners_RaceId_DorsalNormalizado");
+
+        // RegistrationLink: mismo patrón que PublicResultToken (D4).
+        modelBuilder.Entity<RegistrationLink>()
+            .HasIndex(l => l.Token)
+            .IsUnique();
+
+        modelBuilder.Entity<RegistrationLink>()
+            .HasOne(l => l.Race)
+            .WithMany()
+            .HasForeignKey(l => l.RaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RegistrationLink>()
+            .HasOne(l => l.Creator)
+            .WithMany()
+            .HasForeignKey(l => l.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Registration: el listado de revisión filtra constantemente por (RaceId, Estado).
+        modelBuilder.Entity<Registration>()
+            .HasIndex(r => new { r.RaceId, r.Estado })
+            .HasDatabaseName("IX_Registrations_RaceId_Estado");
+
+        modelBuilder.Entity<Registration>()
+            .Property(r => r.MotivoRechazo)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<Registration>()
+            .HasOne(r => r.Race)
+            .WithMany()
+            .HasForeignKey(r => r.RaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Registration>()
+            .HasOne(r => r.RaceCategory)
+            .WithMany()
+            .HasForeignKey(r => r.RaceCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Restrict: sin endpoint de borrado de Runner hoy, pero explícito para no
+        // depender del comportamiento por defecto de EF (mismo criterio que NotificationLog).
+        modelBuilder.Entity<Registration>()
+            .HasOne(r => r.Runner)
+            .WithMany()
+            .HasForeignKey(r => r.RunnerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Registration>()
+            .HasOne(r => r.RevisadoPor)
+            .WithMany()
+            .HasForeignKey(r => r.RevisadoPorUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ReservedDorsal (D8/D11): unicidad sobre el valor normalizado, no el crudo —
+        // comparte el mismo grano (RaceId) que la unicidad de Runner.Dorsal.
+        modelBuilder.Entity<ReservedDorsal>()
+            .Property(d => d.Motivo)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<ReservedDorsal>()
+            .HasIndex(d => new { d.RaceId, d.DorsalNormalizado })
+            .IsUnique()
+            .HasDatabaseName("IX_ReservedDorsals_RaceId_DorsalNormalizado");
+
+        modelBuilder.Entity<ReservedDorsal>()
+            .HasOne(d => d.Race)
+            .WithMany()
+            .HasForeignKey(d => d.RaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ReservedDorsal>()
+            .HasOne(d => d.Creator)
+            .WithMany()
+            .HasForeignKey(d => d.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
 
         base.OnModelCreating(modelBuilder);
     }

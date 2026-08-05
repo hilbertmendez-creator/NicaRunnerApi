@@ -1,0 +1,35 @@
+schema: spec-driven
+
+context: |
+  Tech stack: .NET 8 (C#), EF Core, Sqlite (dev/test) + PostgreSQL (prod); separate React/TypeScript frontend (not in this solution).
+  Architecture: Clean/Hexagonal — NicaRunner.Domain -> NicaRunner.Application -> NicaRunner.Infrastructure / NicaRunner.Api.
+  Testing: xUnit test projects under tests/, run via `dotnet test`.
+  Style: Spanish domain vocabulary in entity/property names, English for structural code and artifacts. EF migrations named `yyyyMMddHHmmss_DescriptiveName` with paired `.Designer.cs`.
+  Notable gaps: no transaction/unit-of-work/RowVersion abstraction anywhere; one scoped DbContext per request with plain SaveChangesAsync.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Flag any decision that is a product/business call, not a pure implementation detail
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Document architecture decisions with rationale and rejected alternatives
+    - State the concurrency strategy explicitly for any capacity/uniqueness invariant
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Pair every EF migration task with its `.Designer.cs`
+  apply:
+    guidelines:
+      - Follow existing code patterns
+      - Never break existing public service signatures; add overloads instead
+    tdd: false
+    test_command: "dotnet test"
+  verify:
+    test_command: "dotnet test"
+    build_command: "dotnet build NicaRunner.sln"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
