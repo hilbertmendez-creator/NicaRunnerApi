@@ -33,4 +33,16 @@ public class RaceCategoryRepository(NicaRunnerDbContext context) : IRaceCategory
 
     public Task SaveChangesAsync(CancellationToken ct = default) =>
         context.SaveChangesAsync(ct);
+
+    public Task<RaceCategory?> GetRaceCategoryByIdAsync(int raceId, int raceCategoryId, CancellationToken ct = default) =>
+        context.RaceCategories
+            .Include(rc => rc.Category)
+            .FirstOrDefaultAsync(rc => rc.RaceId == raceId && rc.Id == raceCategoryId, ct);
+
+    public Task<List<RaceCategory>> GetAllRaceCategoriesByRaceAsync(int raceId, CancellationToken ct = default) =>
+        context.RaceCategories
+            .Include(rc => rc.Category)
+            .Where(rc => rc.RaceId == raceId)
+            .OrderBy(rc => rc.Category.Orden)
+            .ToListAsync(ct);
 }

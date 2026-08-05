@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Data;
@@ -42,10 +43,18 @@ public class RunnerRepository(NicaRunnerDbContext context) : IRunnerRepository
             .OrderBy(r => r.Id)
             .ToListAsync(ct);
 
-    public Task<bool> DorsalExistsAsync(int raceId, string dorsal, int? excludeRunnerId = null, CancellationToken ct = default) =>
-        context.Runners.AnyAsync(
-            r => r.RaceId == raceId && r.Dorsal == dorsal && r.Id != excludeRunnerId,
+    // design.md D11: compara sobre DorsalNormalizado, no el string crudo — "21K7" y
+    // "21K007" deben chocar igual. El índice único IX_Runners_RaceId_DorsalNormalizado
+    // es el detector definitivo (cierra la ventana TOCTOU), pero este chequeo a nivel de
+    // servicio es lo que produce un ConflictException legible en vez de un
+    // DbUpdateException crudo al llegar a SaveChangesAsync.
+    public Task<bool> DorsalExistsAsync(int raceId, string dorsal, int? excludeRunnerId = null, CancellationToken ct = default)
+    {
+        var normalized = DorsalNormalizer.Normalize(dorsal);
+        return context.Runners.AnyAsync(
+            r => r.RaceId == raceId && r.DorsalNormalizado == normalized && r.Id != excludeRunnerId,
             ct);
+    }
 
     public Task<bool> ExistsByCategoryAsync(int categoryId, CancellationToken ct = default) =>
         context.Runners.AnyAsync(r => r.CategoryId == categoryId, ct);

@@ -14,9 +14,13 @@ public class RunnerServiceTests
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
     private readonly Mock<IExcelRunnerParser> _excelParser = new();
+    private readonly Mock<IReservedDorsalRepository> _reservedDorsals = new();
 
+    // public-runner-registration-manual-payment (D8): sin setup explícito, Moq resuelve
+    // IsReservedAsync a Task.FromResult(false) — "no reservado" es el default correcto
+    // para todos los tests preexistentes que no ejercitan la guarda de ReservedDorsal.
     private RunnerService BuildService() =>
-        new(_runners.Object, _races.Object, _raceCategories.Object, _excelParser.Object);
+        new(_runners.Object, _races.Object, _raceCategories.Object, _excelParser.Object, _reservedDorsals.Object);
 
     private static Race RaceOn(DateTime fechaCarrera, int id = 1) =>
         new() { Id = id, Nombre = "Carrera", JoinCode = "ABC123", FechaCarrera = fechaCarrera };
@@ -132,6 +136,66 @@ public class RunnerServiceTests
         var request = RequestWithBirthdate(new DateTime(2011, 5, 15));
 
         await Assert.ThrowsAsync<ConflictException>(() => BuildService().CreateAsync(1, request));
+    }
+
+    // public-runner-registration-manual-payment (D8): CreateAsync siempre consulta
+    // ReservedDorsal, sin excepción de "es la primera vez" — no hay excludeRunnerId
+    // posible en una creación.
+    [Fact]
+    public async Task CreateAsync_DorsalReservado_LanzaConflictSinConsultarDorsalExistente()
+    {
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(RaceOn(new DateTime(2026, 6, 1)));
+        _raceCategories.Setup(c => c.GetByIdAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync(JuvenilCategory());
+        _reservedDorsals.Setup(d => d.IsReservedAsync(1, "101", It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var request = RequestWithBirthdate(new DateTime(2011, 5, 15));
+
+        await Assert.ThrowsAsync<ConflictException>(() => BuildService().CreateAsync(1, request));
+
+        _runners.Verify(r => r.AddAsync(It.IsAny<Runner>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // D10: UpdateAsync solo consulta ReservedDorsal cuando el dorsal normalizado
+    // realmente cambia — un corredor que YA tiene ese dorsal reservado no debe fallar
+    // por una edición de un campo no relacionado.
+    [Fact]
+    public async Task UpdateAsync_DorsalSinCambiar_NoConsultaReservedDorsalNiFalla()
+    {
+        var runner = new Runner
+        {
+            Id = 7, RaceId = 1, Nombre = "Carlos", Dorsal = "101", DorsalNormalizado = "101",
+            CategoryId = 5, FechaNacimiento = new DateTime(2011, 5, 15), Edad = 15
+        };
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(RaceOn(new DateTime(2026, 6, 1)));
+        _runners.Setup(r => r.GetByIdAsync(1, 7, It.IsAny<CancellationToken>())).ReturnsAsync(runner);
+        _raceCategories.Setup(c => c.GetByIdAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync(JuvenilCategory());
+        _runners.Setup(r => r.DorsalExistsAsync(1, "101", 7, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var request = new UpdateRunnerRequest("Carlos Editado", null, "101", null, null, null, null, new DateTime(2011, 5, 15), null, 5);
+
+        var dto = await BuildService().UpdateAsync(1, 7, request);
+
+        Assert.Equal("Carlos Editado", dto.Nombre);
+        _reservedDorsals.Verify(d => d.IsReservedAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CambiaADorsalReservado_LanzaConflict()
+    {
+        var runner = new Runner
+        {
+            Id = 7, RaceId = 1, Nombre = "Carlos", Dorsal = "101", DorsalNormalizado = "101",
+            CategoryId = 5, FechaNacimiento = new DateTime(2011, 5, 15), Edad = 15
+        };
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(RaceOn(new DateTime(2026, 6, 1)));
+        _runners.Setup(r => r.GetByIdAsync(1, 7, It.IsAny<CancellationToken>())).ReturnsAsync(runner);
+        _raceCategories.Setup(c => c.GetByIdAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync(JuvenilCategory());
+        _runners.Setup(r => r.DorsalExistsAsync(1, "102", 7, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _reservedDorsals.Setup(d => d.IsReservedAsync(1, "102", It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var request = new UpdateRunnerRequest("Carlos", null, "102", null, null, null, null, new DateTime(2011, 5, 15), null, 5);
+
+        await Assert.ThrowsAsync<ConflictException>(() => BuildService().UpdateAsync(1, 7, request));
     }
 
     [Fact]

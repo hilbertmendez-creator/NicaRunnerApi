@@ -45,16 +45,21 @@ Session review budget is 800 lines (overrides the skill's default 400); the esti
 - [x] 1.13 Tests: `DorsalNormalizer` equivalence cases, `EdadCalculator.AtRaceDate`; integration: migrated `0101` next to existing `101` rejected by index (D11).
 
 ## Phase 2: Core Registration & Review Flow (PR 2)
-- [ ] 2.1 Create `RegistrationRepository.cs` + `RegistrationLinkRepository.cs`: `TryClaimAsync`, `TryReserveSlotAsync`, `ReleaseSlotAsync` via `ExecuteUpdateAsync`.
-- [ ] 2.2 Create `ReservedDorsalRepository.cs` implementing `IReservedDorsalRepository`.
-- [ ] 2.3 Create `RegistrationService.cs`: submit, receipt upload, list, confirm (claim→reserve→promote→notify), reject.
-- [ ] 2.4 Modify `RunnerService.cs`: add `CreateFromRegistrationAsync(dorsal)` overload; `CreateAsync`/`UpdateAsync` reject a reserved dorsal (checked only when it changes, mirrors `excludeRunnerId`); set `DorsalNormalizado` on writes.
-- [ ] 2.5 Create `PublicRegistrationController.cs`: `[AllowAnonymous]` + rate limit, link/submit/receipt routes under `api/public`.
-- [ ] 2.6 Create `RegistrationsController.cs`: admin list/confirm/reject.
-- [ ] 2.7 Create `ReservedDorsalsController.cs`: admin `GET`/`POST`/`DELETE` under `api/races/{raceId}/reserved-dorsals`.
-- [ ] 2.8 Wire `AuditLog` writes on confirm/reject.
-- [ ] 2.9 Unit tests: state machine, closed/past-deadline rejection, confirm-without-dorsal, reject-no-runner.
-- [ ] 2.10 Integration + E2E tests: parallel confirms at capacity boundary, double-confirm idempotency, manual create/update reserved-dorsal guard + D10 unrelated-edit exemption, reservation delete-then-reuse, full anonymous submit→confirm flow, unauthenticated admin-route rejection.
+- [x] 2.1 Create `RegistrationRepository.cs` + `RegistrationLinkRepository.cs`: `TryClaimAsync`, `TryReserveSlotAsync`, `ReleaseSlotAsync` via `ExecuteUpdateAsync`.
+- [x] 2.2 Create `ReservedDorsalRepository.cs` implementing `IReservedDorsalRepository`.
+- [x] 2.3 Create `RegistrationService.cs`: submit, receipt upload, list, confirm (claim→reserve→promote→notify), reject.
+- [x] 2.4 Modify `RunnerService.cs`: add `CreateFromRegistrationAsync(dorsal)` overload; `CreateAsync`/`UpdateAsync` reject a reserved dorsal (checked only when it changes, mirrors `excludeRunnerId`); set `DorsalNormalizado` on writes.
+- [x] 2.5 Create `PublicRegistrationController.cs`: `[AllowAnonymous]` + rate limit, link/submit/receipt routes under `api/public`.
+- [x] 2.6 Create `RegistrationsController.cs`: admin list/confirm/reject.
+- [x] 2.7 Create `ReservedDorsalsController.cs`: admin `GET`/`POST`/`DELETE` under `api/races/{raceId}/reserved-dorsals`.
+- [x] 2.8 Wire `AuditLog` writes on confirm/reject.
+- [x] 2.9 Unit tests: state machine, closed/past-deadline rejection, confirm-without-dorsal, reject-no-runner.
+- [x] 2.10 Integration + E2E tests: parallel confirms at capacity boundary, double-confirm idempotency, manual create/update reserved-dorsal guard + D10 unrelated-edit exemption, reservation delete-then-reuse, full anonymous submit→confirm flow, unauthenticated admin-route rejection.
+
+### Phase 2 gap found during apply — required for end-to-end usability, not in any original phase
+- [x] 2.11 Add admin endpoint(s) to configure `RaceCategory.Capacidad`/`Precio` for a race (spec requirement "RaceCategory Capacity/Price Configuration" had no assigned task).
+- [x] 2.12 Add admin endpoint(s) to create/revoke a `RegistrationLink` for a race (spec requirement "Registration Link Administration" had no assigned task) — without this there is no way to generate the public link at all.
+- [x] 2.13 Tests for 2.11/2.12: reject opening registration without capacity/price configured on at least one category; revoke immediately invalidates the public link.
 
 ## Phase 3: Bulk-Excel Confirm (PR 3)
 - [ ] 3.1 Create `IExcelRegistrationParser.cs`: `ParsedConfirmRow`, `Parse`, `GenerateTemplate`.

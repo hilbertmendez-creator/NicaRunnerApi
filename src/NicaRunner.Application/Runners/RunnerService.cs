@@ -11,15 +11,17 @@ public class RunnerService(
     IRunnerRepository runnerRepository,
     IRaceRepository raceRepository,
     IRaceCategoryRepository categoryRepository,
-    IExcelRunnerParser excelRunnerParser) : IRunnerService
+    IExcelRunnerParser excelRunnerParser,
+    IReservedDorsalRepository reservedDorsalRepository) : IRunnerService
 {
     public async Task<RunnerDto> CreateAsync(int raceId, CreateRunnerRequest request, CancellationToken ct = default)
     {
         var race = await GetRaceOrThrowAsync(raceId, ct);
         var category = await EnsureCategoryBelongsToRaceAsync(raceId, request.CategoryId, ct);
 
-        if (await runnerRepository.DorsalExistsAsync(raceId, request.Dorsal, ct: ct))
-            throw new ConflictException($"Ya existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
+        // design.md D9: el Dorsal manual sigue sin regla de formato — solo unicidad
+        // (normalizada, D11) y no-reservado (D8) se validan acá.
+        await EnsureDorsalAvailableOrThrowAsync(raceId, request.Dorsal, excludeRunnerId: null, ct);
 
         var edad = ResolveEdad(request.FechaNacimiento, request.Edad, race.FechaCarrera);
         EnsureAgeMatchesCategoryOrThrow(edad, category);
@@ -30,6 +32,7 @@ public class RunnerService(
             Nombre = request.Nombre,
             Apellidos = request.Apellidos,
             Dorsal = request.Dorsal,
+            DorsalNormalizado = DorsalNormalizer.Normalize(request.Dorsal),
             Telefono = request.Telefono,
             Email = request.Email,
             Sexo = request.Sexo,
@@ -70,12 +73,24 @@ public class RunnerService(
         if (await runnerRepository.DorsalExistsAsync(raceId, request.Dorsal, runnerId, ct))
             throw new ConflictException($"Ya existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
 
+        // design.md D10: el chequeo de ReservedDorsal solo corre cuando el dorsal
+        // realmente cambia (numéricamente, ignorando ceros a la izquierda) — mismo grano
+        // que el excludeRunnerId de arriba. Editar un campo no relacionado en un corredor
+        // que YA tenía ese dorsal (aunque después se haya reservado) nunca debe fallar.
+        var normalizedNew = DorsalNormalizer.Normalize(request.Dorsal);
+        if (normalizedNew != runner.DorsalNormalizado &&
+            await reservedDorsalRepository.IsReservedAsync(raceId, request.Dorsal, ct))
+        {
+            throw new ConflictException($"El dorsal '{request.Dorsal}' está reservado y no puede asignarse.");
+        }
+
         var edad = ResolveEdad(request.FechaNacimiento, request.Edad, race.FechaCarrera);
         EnsureAgeMatchesCategoryOrThrow(edad, category);
 
         runner.Nombre = request.Nombre;
         runner.Apellidos = request.Apellidos;
         runner.Dorsal = request.Dorsal;
+        runner.DorsalNormalizado = normalizedNew;
         runner.Telefono = request.Telefono;
         runner.Email = request.Email;
         runner.Sexo = request.Sexo;
@@ -88,6 +103,52 @@ public class RunnerService(
 
         var saved = await runnerRepository.GetByIdAsync(raceId, runnerId, ct);
         return ToDto(saved ?? runner);
+    }
+
+    public async Task<Runner> CreateFromRegistrationAsync(Registration registration, string dorsal, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(dorsal))
+            throw new Common.Exceptions.ValidationException("Debe indicar un dorsal para confirmar la inscripción.");
+
+        var race = await GetRaceOrThrowAsync(registration.RaceId, ct);
+
+        await EnsureDorsalAvailableOrThrowAsync(registration.RaceId, dorsal, excludeRunnerId: null, ct);
+
+        var edad = EdadCalculator.AtRaceDate(registration.FechaNacimiento, race.FechaCarrera);
+
+        var runner = new Runner
+        {
+            RaceId = registration.RaceId,
+            Nombre = registration.Nombre,
+            Apellidos = registration.Apellidos,
+            Dorsal = dorsal.Trim(),
+            DorsalNormalizado = DorsalNormalizer.Normalize(dorsal),
+            Telefono = registration.Telefono,
+            Email = registration.Email,
+            Sexo = registration.Sexo,
+            Club = registration.Club,
+            FechaNacimiento = registration.FechaNacimiento,
+            Edad = edad,
+            CategoryId = registration.RaceCategory.CategoryId,
+            PublicShareKey = ShareKeyGenerator.Generate()
+        };
+
+        // Deliberadamente sin SaveChangesAsync acá — ver el comentario en
+        // IRunnerService.CreateFromRegistrationAsync.
+        await runnerRepository.AddAsync(runner, ct);
+        return runner;
+    }
+
+    // design.md D8/D9: chequeo compartido entre CreateAsync y CreateFromRegistrationAsync
+    // (confirm individual/bulk) — reservado primero, duplicado (normalizado) después.
+    // UpdateAsync no lo usa tal cual porque su chequeo de reservado es condicional (D10).
+    private async Task EnsureDorsalAvailableOrThrowAsync(int raceId, string dorsal, int? excludeRunnerId, CancellationToken ct)
+    {
+        if (await reservedDorsalRepository.IsReservedAsync(raceId, dorsal, ct))
+            throw new ConflictException($"El dorsal '{dorsal}' está reservado y no puede asignarse.");
+
+        if (await runnerRepository.DorsalExistsAsync(raceId, dorsal, excludeRunnerId, ct))
+            throw new ConflictException($"Ya existe un corredor con el dorsal '{dorsal}' en esta carrera.");
     }
 
     public async Task DeleteAsync(int raceId, int runnerId, CancellationToken ct = default)
@@ -174,7 +235,7 @@ public class RunnerService(
             int edad = 0;
             if (reasons.Count == 0 && category is not null)
             {
-                edad = CalculateEdad(row.FechaNacimiento!.Value, race.FechaCarrera);
+                edad = EdadCalculator.AtRaceDate(row.FechaNacimiento!.Value, race.FechaCarrera);
                 if (!IsAgeValidForCategory(edad, category))
                     reasons.Add($"La edad ({edad}) no corresponde al rango de la categoría '{category.NombreCategoria}' ({category.EdadMinima}-{category.EdadMaxima})");
             }
@@ -192,6 +253,13 @@ public class RunnerService(
                 Nombre = row.Nombre.Trim(),
                 Apellidos = row.Apellidos?.Trim(),
                 Dorsal = row.Dorsal.Trim(),
+                // public-runner-registration-manual-payment (D11): sin esto, dos o más
+                // filas importadas en el mismo lote comparten DorsalNormalizado="" (el
+                // default de la entidad) y el índice único aditivo IX_Runners_RaceId_
+                // DorsalNormalizado rechazaría el SaveChangesAsync entero, no solo la fila
+                // conflictiva — no está en tasks.md 2.x explícitamente, pero "sets
+                // DorsalNormalizado on every write" (design.md, File Changes) es general.
+                DorsalNormalizado = DorsalNormalizer.Normalize(row.Dorsal.Trim()),
                 Telefono = row.Telefono,
                 Email = row.Email,
                 Sexo = sexo,
@@ -235,20 +303,12 @@ public class RunnerService(
     private static int ResolveEdad(DateTime? fechaNacimiento, int? edad, DateTime fechaCarrera)
     {
         if (fechaNacimiento is not null)
-            return CalculateEdad(fechaNacimiento.Value, fechaCarrera);
+            return EdadCalculator.AtRaceDate(fechaNacimiento.Value, fechaCarrera);
 
         if (edad is not null)
             return edad.Value;
 
         throw new Common.Exceptions.ValidationException("Debe indicar la fecha de nacimiento o, en su defecto, la edad del corredor.");
-    }
-
-    private static int CalculateEdad(DateTime fechaNacimiento, DateTime asOf)
-    {
-        var edad = asOf.Year - fechaNacimiento.Year;
-        if (fechaNacimiento.Date > asOf.Date.AddYears(-edad))
-            edad--;
-        return Math.Max(edad, 0);
     }
 
     private static bool IsAgeValidForCategory(int edad, Category category) =>

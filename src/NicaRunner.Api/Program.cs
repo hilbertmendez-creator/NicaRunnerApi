@@ -28,6 +28,8 @@ using NicaRunner.Application.Dashboard;
 using NicaRunner.Application.Notifications;
 using NicaRunner.Application.PublicResults;
 using NicaRunner.Application.Races;
+using NicaRunner.Application.Registrations;
+using NicaRunner.Application.ReservedDorsals;
 using NicaRunner.Application.Results;
 using NicaRunner.Application.Runners;
 using NicaRunner.Application.Users;
@@ -152,6 +154,11 @@ builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Rese
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
 builder.Services.Configure<LockoutOptions>(builder.Configuration.GetSection("Lockout"));
+// public-runner-registration-manual-payment: el binding completo de appsettings*.json
+// llega en Phase 4 (tasks.md 4.2); se registra ya acá (con el default de la clase,
+// EdadMayoriaEdad=18) para que RegistrationService pueda resolver IOptions<RegistrationOptions>
+// desde Phase 2 sin fallar en tiempo de DI.
+builder.Services.Configure<RegistrationOptions>(builder.Configuration.GetSection("RegistrationOptions"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<AliasAssigner>();
@@ -167,6 +174,9 @@ builder.Services.AddScoped<IExcelRunnerParser, ExcelRunnerParser>();
 builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenRepository>();
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IReservedDorsalRepository, ReservedDorsalRepository>();
+builder.Services.AddScoped<IRegistrationRepository, RegistrationRepository>();
+builder.Services.AddScoped<IRegistrationLinkRepository, RegistrationLinkRepository>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
 builder.Services.AddHttpClient<ResendEmailSender>(client =>
 {
@@ -193,6 +203,8 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IDisputeService, DisputeService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IRaceDashboardNotifier, RaceDashboardNotifier>();
+builder.Services.AddScoped<IRegistrationService, RegistrationService>();
+builder.Services.AddScoped<IReservedDorsalService, ReservedDorsalService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtSigningKey = jwtSection["Key"]
@@ -273,51 +285,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
-// Rate limiting para los endpoints sin autenticación más expuestos a abuso:
-// login/forgot-password (fuerza bruta, agotar cuota de envío de email) y
-// resultados públicos (fuerza bruta del token). Particionado por IP del
-// cliente, fixed window, sin cola — de nada sirve encolar un login.
-builder.Services.AddRateLimiter(options =>
-{
-    options.OnRejected = async (context, ct) =>
-    {
-        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-        context.HttpContext.Response.ContentType = "application/problem+json";
-        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-            context.HttpContext.Response.Headers["Retry-After"] = ((int)retryAfter.TotalSeconds).ToString();
-
-        var problem = new
-        {
-            status = StatusCodes.Status429TooManyRequests,
-            title = HttpStatusCode.TooManyRequests.ToString(),
-            detail = "Demasiadas solicitudes. Intenta de nuevo en unos momentos.",
-        };
-        await context.HttpContext.Response.WriteAsync(JsonSerializer.Serialize(problem), ct);
-    };
-
-    string PartitionByIp(HttpContext httpContext) =>
-        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-    var authSection = builder.Configuration.GetSection("RateLimiting:Auth");
-    options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
-        PartitionByIp(httpContext),
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = authSection.GetValue("PermitLimit", 8),
-            Window = TimeSpan.FromSeconds(authSection.GetValue("WindowSeconds", 60)),
-            QueueLimit = 0,
-        }));
-
-    var publicResultsSection = builder.Configuration.GetSection("RateLimiting:PublicResults");
-    options.AddPolicy("public-results", httpContext => RateLimitPartition.GetFixedWindowLimiter(
-        PartitionByIp(httpContext),
-        _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = publicResultsSection.GetValue("PermitLimit", 30),
-            Window = TimeSpan.FromSeconds(publicResultsSection.GetValue("WindowSeconds", 60)),
-            QueueLimit = 0,
-        }));
-});
+builder.Services.AddNicaRunnerRateLimiting(builder.Configuration);
 
 var app = builder.Build();
 
@@ -438,56 +406,7 @@ app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 
-// CSRF (double-submit cookie) para tráfico autenticado por cookie: si el
-// browser manda la cookie nr_at o nr_rt en un request mutante SIN header
-// Authorization, exige que el header X-CSRF-Token coincida con la cookie
-// nr_csrf (legible por JS a propósito). Clientes que sí mandan Authorization
-// (Android, scripts, admin) no dependen de cookies ambient y quedan afuera de
-// este chequeo — CSRF ataca cookies que el browser adjunta solo.
-var mutatingMethods = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "POST", "PUT", "PATCH", "DELETE" };
-
-// Endpoints anónimos que se autentican con credenciales explícitas del body
-// (password, google id token, link de reseteo) y no con la cookie ambient:
-// no dependen de nr_at/nr_rt para autorizar nada, así que no deben exigir
-// CSRF. Sin esto, un usuario con cookies viejas/expiradas de una sesión
-// anterior (y el csrfToken en memoria del cliente perdido por haber recargado
-// la página) queda bloqueado con 403 al intentar loguearse o pedir un reset
-// de contraseña — el propio login/forgot-password es lo que debería dejarlo
-// arrancar de cero.
-var csrfExemptPaths = new[] { "/auth/login", "/auth/google-login", "/auth/forgot-password", "/auth/reset-password" };
-app.Use(async (context, next) =>
-{
-    var request = context.Request;
-
-    // Eco de la cookie CSRF como header en toda respuesta donde viaje: el
-    // frontend (dominio distinto al de esta API) no puede leerla vía
-    // document.cookie, así que se la devolvemos acá para que la guarde en
-    // memoria y la reenvíe como X-CSRF-Token en el próximo request mutante.
-    if (request.Cookies.TryGetValue(AuthCookieNames.Csrf, out var csrfCookieValue) && !string.IsNullOrEmpty(csrfCookieValue))
-        context.Response.Headers[AuthCookieNames.CsrfHeader] = csrfCookieValue;
-
-    var usaCookieAuth = !request.Headers.ContainsKey("Authorization") &&
-        (request.Cookies.ContainsKey(AuthCookieNames.AccessToken) || request.Cookies.ContainsKey(AuthCookieNames.RefreshToken));
-
-    var isCsrfExempt = csrfExemptPaths.Any(path =>
-        request.Path.Value?.EndsWith(path, StringComparison.OrdinalIgnoreCase) == true);
-
-    if (mutatingMethods.Contains(request.Method) && usaCookieAuth && !isCsrfExempt)
-    {
-        var csrfCookie = request.Cookies[AuthCookieNames.Csrf];
-        var csrfHeader = request.Headers[AuthCookieNames.CsrfHeader].ToString();
-        if (string.IsNullOrEmpty(csrfCookie) || !string.Equals(csrfCookie, csrfHeader, StringComparison.Ordinal))
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            context.Response.ContentType = "application/problem+json";
-            await context.Response.WriteAsync(
-                """{"status":403,"title":"Forbidden","detail":"CSRF token invalido o ausente."}""");
-            return;
-        }
-    }
-
-    await next();
-});
+app.UseMiddleware<CsrfMiddleware>();
 
 app.UseRateLimiter();
 

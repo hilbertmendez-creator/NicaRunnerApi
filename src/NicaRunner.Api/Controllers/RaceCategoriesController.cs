@@ -33,4 +33,11 @@ public class RaceCategoriesController(IRaceCategoryService categoryService) : Co
         await categoryService.UnassignAsync(raceId, categoryId, ct);
         return NoContent();
     }
+
+    // registration-review spec.md "RaceCategory Capacity and Price Configuration"
+    // (tasks.md 2.11).
+    [HttpPut("{categoryId:int}/configuration")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<ActionResult<RaceCategoryDto>> Configure(int raceId, int categoryId, ConfigureRaceCategoryRequest request, CancellationToken ct) =>
+        Ok(await categoryService.ConfigureAsync(raceId, categoryId, request, ct));
 }

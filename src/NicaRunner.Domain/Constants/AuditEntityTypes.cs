@@ -9,4 +9,7 @@ public static class AuditEntityTypes
     public const string User = "User";
     public const string Race = "Race";
     public const string Category = "Category";
+
+    // public-runner-registration-manual-payment: confirm/reject actions on Registration.
+    public const string Registration = "Registration";
 }

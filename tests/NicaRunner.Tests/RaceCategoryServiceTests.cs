@@ -94,4 +94,49 @@ public class RaceCategoryServiceTests
 
         await Assert.ThrowsAsync<NotFoundException>(() => BuildService().UnassignAsync(1, 5));
     }
+
+    // ---------- ConfigureAsync (tasks.md 2.11 / 2.13) ----------
+
+    [Fact]
+    public async Task ConfigureAsync_AsociacionExistente_ActualizaCapacidadYPrecio()
+    {
+        var association = new RaceCategory { RaceId = 1, CategoryId = 5 };
+        _raceCategories.Setup(rc => rc.GetAssociationAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync(association);
+        _categories.Setup(c => c.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Category { Id = 5, Codigo = "JUV", NombreCategoria = "Juvenil" });
+
+        var dto = await BuildService().ConfigureAsync(1, 5, new ConfigureRaceCategoryRequest(50, 250m));
+
+        Assert.Equal(50, association.Capacidad);
+        Assert.Equal(250m, association.Precio);
+        Assert.Equal(50, dto.Capacidad);
+        Assert.Equal(250m, dto.Precio);
+        _raceCategories.Verify(rc => rc.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ConfigureAsync_CapacidadNula_SePersisteComoSinLimite()
+    {
+        var association = new RaceCategory { RaceId = 1, CategoryId = 5, Capacidad = 20 };
+        _raceCategories.Setup(rc => rc.GetAssociationAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync(association);
+        _categories.Setup(c => c.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Category { Id = 5, Codigo = "JUV", NombreCategoria = "Juvenil" });
+
+        var dto = await BuildService().ConfigureAsync(1, 5, new ConfigureRaceCategoryRequest(null, 100m));
+
+        Assert.Null(association.Capacidad);
+        Assert.Null(dto.Capacidad);
+        Assert.Equal(100m, dto.Precio);
+    }
+
+    [Fact]
+    public async Task ConfigureAsync_NoAsignada_LanzaNotFound()
+    {
+        _raceCategories.Setup(rc => rc.GetAssociationAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync((RaceCategory?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            BuildService().ConfigureAsync(1, 5, new ConfigureRaceCategoryRequest(50, 250m)));
+
+        _raceCategories.Verify(rc => rc.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
 }
