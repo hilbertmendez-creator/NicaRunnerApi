@@ -22,11 +22,13 @@ public class RegistrationServiceTests
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
     private readonly Mock<IRunnerService> _runnerService = new();
+    private readonly Mock<IExcelRegistrationParser> _excelParser = new();
     private readonly FakeAuditLogRepository _auditRepo = new();
 
     private RegistrationService BuildService(RegistrationOptions? options = null) =>
         new(_registrations.Object, _links.Object, _races.Object, _raceCategories.Object,
-            _runnerService.Object, new AuditService(_auditRepo), Options.Create(options ?? new RegistrationOptions()));
+            _runnerService.Object, new AuditService(_auditRepo), Options.Create(options ?? new RegistrationOptions()),
+            _excelParser.Object);
 
     private static Race OpenRace(int id = 1, DateTime? deadline = null) => new()
     {
@@ -279,8 +281,12 @@ public class RegistrationServiceTests
         _registrations.Setup(r => r.GetByIdAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync(registration);
         _registrations.Setup(r => r.TryReserveSlotAsync(raceCategory.Id, It.IsAny<CancellationToken>())).ReturnsAsync(0);
 
-        await Assert.ThrowsAsync<ConflictException>(() =>
+        // design.md D13: CapacityExhaustedException (a ConflictException subtype, still an
+        // ordinary 409 for this single-confirm caller) lets ConfirmBulkAsync distinguish
+        // "cupo lleno" from other conflicts to mark the RaceCategory exhausted in-memory.
+        var ex = await Assert.ThrowsAsync<CapacityExhaustedException>(() =>
             BuildService().ConfirmAsync(1, 5, new ConfirmRegistrationRequest("101"), adminId: 9, CancellationToken.None));
+        Assert.Equal(raceCategory.Id, ex.RaceCategoryId);
 
         _registrations.Verify(r => r.ReleaseClaimAsync(5, It.IsAny<CancellationToken>()), Times.Once);
         _runnerService.Verify(s => s.CreateFromRegistrationAsync(It.IsAny<Registration>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);

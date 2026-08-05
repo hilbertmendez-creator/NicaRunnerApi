@@ -87,14 +87,16 @@ public class RegistrationServiceIntegrationTests
         new Mock<IExcelRunnerParser>().Object,
         new ReservedDorsalRepository(db));
 
-    private static RegistrationService BuildRegistrationService(NicaRunnerDbContext db, RunnerService runnerService) => new(
+    private static RegistrationService BuildRegistrationService(
+        NicaRunnerDbContext db, RunnerService runnerService, IExcelRegistrationParser? excelParser = null) => new(
         new RegistrationRepository(db),
         new RegistrationLinkRepository(db),
         new RaceRepository(db),
         new RaceCategoryRepository(db),
         runnerService,
         new AuditService(new AuditLogRepository(db)),
-        Options.Create(new RegistrationOptions()));
+        Options.Create(new RegistrationOptions()),
+        excelParser ?? new Mock<IExcelRegistrationParser>().Object);
 
     private static Registration ComprobanteSubidoRegistration(int raceId, int raceCategoryId, string nombre) => new()
     {
@@ -155,7 +157,8 @@ public class RegistrationServiceIntegrationTests
 
         db.ChangeTracker.Clear();
 
-        await Assert.ThrowsAsync<ConflictException>(() =>
+        // design.md D13: CapacityExhaustedException (ConflictException subtype).
+        await Assert.ThrowsAsync<CapacityExhaustedException>(() =>
             registrationService.ConfirmAsync(race.Id, reg2Id, new ConfirmRegistrationRequest("102"), admin.Id, CancellationToken.None));
 
         // reg2 nunca quedó "atascada" en Confirmada sin Runner — el compensating release

@@ -17,7 +17,8 @@ public class RegistrationService(
     IRaceCategoryRepository raceCategoryRepository,
     IRunnerService runnerService,
     IAuditService auditService,
-    IOptions<RegistrationOptions> registrationOptions) : IRegistrationService
+    IOptions<RegistrationOptions> registrationOptions,
+    IExcelRegistrationParser excelRegistrationParser) : IRegistrationService
 {
     // Cota generosa para "fecha de nacimiento implausible" (spec.md "Future or
     // implausible date of birth") — más ancha que cualquier corredor real, a propósito.
@@ -138,7 +139,11 @@ public class RegistrationService(
         if (reservedRows == 0)
         {
             await registrationRepository.ReleaseClaimAsync(registrationId, ct);
-            throw new ConflictException("La categoría de esta inscripción ya alcanzó su cupo máximo.");
+            // CapacityExhaustedException (design.md D13): ConfirmBulkAsync catches this
+            // specific type to mark the RaceCategory exhausted in-memory; it still
+            // derives from ConflictException so this single-confirm caller keeps getting
+            // an ordinary 409.
+            throw new CapacityExhaustedException(registration.RaceCategoryId, "La categoría de esta inscripción ya alcanzó su cupo máximo.");
         }
 
         try
@@ -252,6 +257,105 @@ public class RegistrationService(
         link.IsExpired = true;
 
         await linkRepository.SaveChangesAsync(ct);
+    }
+
+    // registration-review spec.md "Bulk Confirm via Excel Template" (tasks.md 3.4/3.5,
+    // design.md D12): export-then-fill. Scoped to this race's ComprobanteSubido
+    // registrations only — an admin who downloads after some rows already got confirmed
+    // individually simply sees a smaller sheet next time.
+    public async Task<byte[]> GenerateBulkConfirmTemplateAsync(int raceId, CancellationToken ct = default)
+    {
+        await EnsureRaceExistsAsync(raceId, ct);
+
+        var pendientes = await registrationRepository.GetAllByRaceAsync(raceId, RegistrationStatus.ComprobanteSubido, ct);
+        var referencia = await raceCategoryRepository.GetAllByRaceAsync(raceId, ct);
+
+        return excelRegistrationParser.GenerateTemplate(pendientes, referencia);
+    }
+
+    // registration-review spec.md "Bulk Confirm via Excel Template" (tasks.md 3.5,
+    // design.md D13/Data Flow "admin POST .../confirm-bulk"): per-row loop reusing
+    // ConfirmAsync's own claim -> reserve -> promote pipeline (never reimplemented here),
+    // one row at a time — deliberately NOT batched into a single SaveChangesAsync like
+    // RunnerService.ImportFromExcelAsync, because capacity is a per-row atomic conditional
+    // UPDATE (D2) and batching would dissolve exactly the guarantee it exists to provide.
+    // Capacity exhaustion is tracked per RaceCategoryId in-memory (D13) so the batch's
+    // remaining rows targeting an already-exhausted category fail fast without re-hitting
+    // the DB, while rows for other categories keep going. Rows already confirmed before
+    // the exhaustion point are never rolled back — same partial-success contract
+    // ImportFromExcelAsync already has for the runner import.
+    public async Task<BulkConfirmResultDto> ConfirmBulkAsync(int raceId, Stream excelStream, int adminId, CancellationToken ct = default)
+    {
+        await EnsureRaceExistsAsync(raceId, ct);
+
+        List<ParsedConfirmRow> rows;
+        try
+        {
+            rows = excelRegistrationParser.Parse(excelStream);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Mismo boundary genérico que RunnerService.ImportFromExcelAsync cruza contra
+            // ClosedXML — no documenta un tipo de excepción propio para "no es OOXML válido".
+            throw new ValidationException("El archivo no es un Excel válido (.xlsx) o está dañado.");
+        }
+
+        var pendientes = await registrationRepository.GetAllByRaceAsync(raceId, RegistrationStatus.ComprobanteSubido, ct);
+        var pendientesById = pendientes.ToDictionary(r => r.Id);
+
+        var seenDorsals = new HashSet<string>();
+        var exhaustedCategories = new HashSet<int>();
+        var errors = new List<ConfirmRowError>();
+        var confirmadas = 0;
+
+        foreach (var row in rows)
+        {
+            var reasons = new List<string>();
+
+            Registration? registration = null;
+            if (row.RegistrationId is null)
+                reasons.Add("RegistrationId vacío o inválido");
+            else if (!pendientesById.TryGetValue(row.RegistrationId.Value, out registration))
+                reasons.Add($"La inscripción {row.RegistrationId} no existe o no está en estado ComprobanteSubido en esta carrera");
+
+            if (string.IsNullOrWhiteSpace(row.Dorsal))
+                reasons.Add("Dorsal vacío");
+
+            var normalizedDorsal = string.IsNullOrWhiteSpace(row.Dorsal) ? null : DorsalNormalizer.Normalize(row.Dorsal);
+            if (reasons.Count == 0 && normalizedDorsal is not null && seenDorsals.Contains(normalizedDorsal))
+                reasons.Add($"El dorsal '{row.Dorsal}' está duplicado en el archivo");
+
+            if (reasons.Count > 0)
+            {
+                errors.Add(new ConfirmRowError(row.Fila, string.Join("; ", reasons)));
+                continue;
+            }
+
+            seenDorsals.Add(normalizedDorsal!);
+
+            if (exhaustedCategories.Contains(registration!.RaceCategoryId))
+            {
+                errors.Add(new ConfirmRowError(row.Fila, "La categoría de esta inscripción ya alcanzó su cupo máximo."));
+                continue;
+            }
+
+            try
+            {
+                await ConfirmAsync(raceId, registration.Id, new ConfirmRegistrationRequest(row.Dorsal), adminId, ct);
+                confirmadas++;
+            }
+            catch (CapacityExhaustedException ex)
+            {
+                exhaustedCategories.Add(ex.RaceCategoryId);
+                errors.Add(new ConfirmRowError(row.Fila, ex.Message));
+            }
+            catch (Exception ex) when (ex is ConflictException or ValidationException or NotFoundException)
+            {
+                errors.Add(new ConfirmRowError(row.Fila, ex.Message));
+            }
+        }
+
+        return new BulkConfirmResultDto(rows.Count, confirmadas, errors);
     }
 
     private static string GenerateToken() =>

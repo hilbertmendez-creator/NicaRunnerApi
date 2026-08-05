@@ -16,4 +16,8 @@ public interface IRegistrationService
     Task<RegistrationLinkDto> CreateLinkAsync(int raceId, CreateRegistrationLinkRequest request, int creatorId, CancellationToken ct = default);
     Task<List<RegistrationLinkDto>> GetAllLinksAsync(int raceId, CancellationToken ct = default);
     Task RevokeLinkAsync(int raceId, int linkId, CancellationToken ct = default);
+
+    // registration-review spec.md "Bulk Confirm via Excel Template" (tasks.md 3.4/3.5).
+    Task<byte[]> GenerateBulkConfirmTemplateAsync(int raceId, CancellationToken ct = default);
+    Task<BulkConfirmResultDto> ConfirmBulkAsync(int raceId, Stream excelStream, int adminId, CancellationToken ct = default);
 }

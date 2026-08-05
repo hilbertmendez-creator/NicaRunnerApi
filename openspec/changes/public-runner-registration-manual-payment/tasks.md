@@ -62,12 +62,17 @@ Session review budget is 800 lines (overrides the skill's default 400); the esti
 - [x] 2.13 Tests for 2.11/2.12: reject opening registration without capacity/price configured on at least one category; revoke immediately invalidates the public link.
 
 ## Phase 3: Bulk-Excel Confirm (PR 3)
-- [ ] 3.1 Create `IExcelRegistrationParser.cs`: `ParsedConfirmRow`, `Parse`, `GenerateTemplate`.
-- [ ] 3.2 Create `ExcelRegistrationParser.cs` (ClosedXML, reuse `ParseFecha`/`NullIfEmpty`); visible reference sheet, reads only id+dorsal columns.
-- [ ] 3.3 Create `BulkConfirmResultDto.cs` + `ConfirmRowError.cs` mirroring `ImportRunnersResultDto`/`ImportRunnerError`.
-- [ ] 3.4 Add `GET confirm-template` + `POST confirm-bulk` to `RegistrationsController` (`.xlsx`, 5MB guard, per-row errors).
-- [ ] 3.5 Implement per-row validation + PR2 confirm pipeline call in `RegistrationService`, no batched save (D2/D13).
-- [ ] 3.6 Tests: row validation, in-file dedup, capacity-exhausted-mid-batch (D13); integration: template round-trip, one bad row doesn't abort batch, mid-batch exhaustion keeps earlier successes.
+- [x] 3.1 Create `IExcelRegistrationParser.cs`: `ParsedConfirmRow`, `Parse`, `GenerateTemplate`.
+- [x] 3.2 Create `ExcelRegistrationParser.cs` (ClosedXML, reuse `ParseFecha`/`NullIfEmpty`); visible reference sheet, reads only id+dorsal columns.
+- [x] 3.3 Create `BulkConfirmResultDto.cs` + `ConfirmRowError.cs` mirroring `ImportRunnersResultDto`/`ImportRunnerError`.
+- [x] 3.4 Add `GET confirm-template` + `POST confirm-bulk` to `RegistrationsController` (`.xlsx`, 5MB guard, per-row errors).
+- [x] 3.5 Implement per-row validation + PR2 confirm pipeline call in `RegistrationService`, no batched save (D2/D13).
+- [x] 3.6 Tests: row validation, in-file dedup, capacity-exhausted-mid-batch (D13); integration: template round-trip, one bad row doesn't abort batch, mid-batch exhaustion keeps earlier successes.
+
+### Phase 3 apply notes
+- `RegistrationRepository.GetAllByRaceAsync` gained `.Include(r => r.RaceCategory).ThenInclude(rc => rc.Category)` — required so `GenerateBulkConfirmTemplateAsync`'s "Categoría" column isn't always blank; doesn't affect `GetAllForReviewAsync` (its `ToDto` never reads `RaceCategory`).
+- `ConfirmAsync`'s capacity-exhausted branch now throws the new `CapacityExhaustedException` (a `ConflictException` subtype carrying `RaceCategoryId`) instead of a plain `ConflictException`, so `ConfirmBulkAsync` can mark that RaceCategory exhausted in-memory without string-matching the message. Single-confirm callers still see an ordinary 409 (base-type catch in `ExceptionHandlingMiddleware` and `is ConflictException` pattern matches are polymorphic). Two existing xUnit assertions that relied on the exact `ConflictException` type for this specific scenario were updated to `CapacityExhaustedException` (xUnit's `Assert.ThrowsAsync<T>` requires an exact type match, not "is-a") — `RegistrationServiceTests.ConfirmAsync_CupoLleno_RevierteClaimYLanzaConflict` and `RegistrationServiceIntegrationTests.ConfirmAsync_DosInscripcionesConUnSoloCupo_SoloUnaSeConfirma`; behavior is unchanged, only the asserted type.
+- `RegistrationService`'s primary constructor gained a trailing `IExcelRegistrationParser` parameter; updated both existing direct-construction call sites (`RegistrationServiceTests.BuildService`, `RegistrationServiceIntegrationTests.BuildRegistrationService`) and DI registration in `Program.cs`.
 
 ## Phase 4: Notifications, Rate Limiting & Rollout (PR 4)
 - [ ] 4.1 Create `RegistrationNotifier.cs` over `IEnumerable<INotificationSender>`, best-effort.

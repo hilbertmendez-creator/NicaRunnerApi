@@ -20,7 +20,14 @@ public class RegistrationRepository(NicaRunnerDbContext context) : IRegistration
 
     public Task<List<Registration>> GetAllByRaceAsync(int raceId, RegistrationStatus? estado, CancellationToken ct = default)
     {
-        var query = context.Registrations.Where(r => r.RaceId == raceId);
+        // public-runner-registration-manual-payment (design.md D12): RaceCategory.Category
+        // se incluye acá porque RegistrationService.GenerateBulkConfirmTemplateAsync arma
+        // la columna "Categoría" del template de confirm-bulk directamente desde las
+        // Registration devueltas por este método — sin el Include, esa columna quedaría
+        // siempre en blanco. No afecta a GetAllForReviewAsync (su ToDto no toca RaceCategory).
+        var query = context.Registrations
+            .Include(r => r.RaceCategory).ThenInclude(rc => rc.Category)
+            .Where(r => r.RaceId == raceId);
         if (estado is not null)
             query = query.Where(r => r.Estado == estado);
 

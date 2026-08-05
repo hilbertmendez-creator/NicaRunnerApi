@@ -171,6 +171,7 @@ builder.Services.AddScoped<IResultAuditRepository, ResultAuditRepository>();
 builder.Services.AddScoped<ITimingDisputeRepository, TimingDisputeRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IExcelRunnerParser, ExcelRunnerParser>();
+builder.Services.AddScoped<IExcelRegistrationParser, ExcelRegistrationParser>();
 builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenRepository>();
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
