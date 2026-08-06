@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 
-export type Theme = 'dark' | 'light' | 'brand'
+export type Theme = 'control' | 'light' | 'brand'
 
 interface ThemeCtx {
   theme: Theme
@@ -10,11 +10,11 @@ interface ThemeCtx {
 
 const STORAGE_KEY = 'nr_theme'
 
-const ThemeContext = createContext<ThemeCtx>({ theme: 'dark', setTheme: () => {} })
+const ThemeContext = createContext<ThemeCtx>({ theme: 'control', setTheme: () => {} })
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem(STORAGE_KEY) as Theme) ?? 'dark'
+    return (localStorage.getItem(STORAGE_KEY) as Theme) ?? 'control'
   })
 
   // Aplica el tema al <html> para que los tokens [data-theme] apliquen

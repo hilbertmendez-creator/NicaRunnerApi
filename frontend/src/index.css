@@ -11,15 +11,42 @@
 
   --color-official-50: #ecfdf5;
   --color-official-200: #a7f3d0;
-  --color-official-600: #059669;
+  --color-official-600: #15803d;
 
   --color-dispute-50: #fffbeb;
   --color-dispute-200: #fde68a;
-  --color-dispute-600: #d97706;
+  --color-dispute-600: #92400e;
 
   --color-critical-50: #fef2f2;
   --color-critical-200: #fecaca;
   --color-critical-600: #dc2626;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Tokens compartidos (referencia Race-Day Control Room, design D1).
+   Se aplican SIEMPRE, en todos los modos de tema. Los bloques
+   [data-theme] solo sobreescriben superficies/texto/hover, no estos.
+   ──────────────────────────────────────────────────────────── */
+:root {
+  /* Primario */
+  --accent: #2563EB;
+  --accent-hover: #1E40AF;
+
+  /* Superficies (default: control room claro) */
+  --bg-app: #F4F6FA;
+  --bg-sidebar: #1C2333;
+  --bg-sb: #1C2333;
+
+  /* Radios */
+  --radius-btn: 6px;
+  --radius-card: 7px;
+  --radius-badge: 20px;
+
+  /* Controles */
+  --ctrl-h: 32px;
+
+  /* Misc */
+  --live-dot: #22C55E;
 }
 
 body {
@@ -46,46 +73,48 @@ body {
   to   { width: var(--prog-width, 72%); }
 }
 
-/* ── TEMA: CONTROL (oscuro) ── */
-[data-theme="dark"] {
+/* ── TEMA: CONTROL (Race-Day Control Room, default) ──
+   Superficies/texto/hover solo. Los tokens compartidos (accent,
+   radii, ctrl-h, sidebar navy) viven hoisted en `:root` y se aplican
+   SIEMPRE para que las derivaciones brand/light sean idénticas (DS-1). */
+[data-theme="control"] {
   --bg-app:        #0A1322;
-  --bg-sidebar:    #0F1D32;
+  --bg-sidebar:    #1C2333;
   --bg-topbar:     #0D1928;
   --bg-card:       #0D1928;
   --bg-hover:      rgba(255,255,255,.018);
   --bg-input:      rgba(255,255,255,.04);
   --bg-th:         #0A1826;
-  --bd:            rgba(66,165,245,.10);
-  --bd-card:       rgba(66,165,245,.13);
-  --bd-row:        rgba(66,165,245,.07);
+  --bd:            rgba(37,99,235,.10);
+  --bd-card:       rgba(37,99,235,.13);
+  --bd-row:        rgba(37,99,235,.07);
   --bd-conflict:   rgba(217,58,58,.22);
   --text-hi:       #E8F4FF;
   --text-lo:       #6A8DAB;
   --text-xs:       #3D5A73;
   --text-th:       #2E4A66;
-  --accent:        #42A5F5;
-  --accent-bg:     rgba(66,165,245,.12);
-  --accent-dim:    rgba(66,165,245,.20);
-  --sb-text:       #42A5F5;
+  --accent-bg:     rgba(37,99,235,.12);
+  --accent-dim:    rgba(37,99,235,.20);
+  --sb-text:       #2563EB;
   --sb-muted:      #5B7A9A;
-  --sb-active-bg:  rgba(66,165,245,.13);
-  --sb-active-bd:  #42A5F5;
-  --tab-active:    #42A5F5;
-  --mono:          #42A5F5;
-  --pr-bg:         rgba(66,165,245,.13);
-  --pr-bd:         rgba(66,165,245,.22);
-  --pr-text:       #42A5F5;
-  --gh-bd:         rgba(66,165,245,.18);
+  --sb-active-bg:  rgba(37,99,235,.15);
+  --sb-active-bd:  #2563EB;
+  --tab-active:    #2563EB;
+  --mono:          #2563EB;
+  --pr-bg:         rgba(37,99,235,.13);
+  --pr-bd:         rgba(37,99,235,.22);
+  --pr-text:       #2563EB;
+  --gh-bd:         rgba(37,99,235,.18);
   --gh-text:       #6A8DAB;
   --badge-ok-bg:   rgba(46,158,91,.16);
   --badge-ok-bd:   rgba(46,158,91,.3);
-  --badge-ok-text: #3DBE6E;
+  --badge-ok-text: #15803D;
   --badge-er-bg:   rgba(217,58,58,.2);
   --badge-er-bd:   rgba(217,58,58,.32);
   --badge-er-text: #D93A3A;
-  --badge-pr-bg:   rgba(66,165,245,.12);
-  --badge-pr-bd:   rgba(66,165,245,.2);
-  --badge-pr-text: #42A5F5;
+  --badge-pr-bg:   rgba(37,99,235,.12);
+  --badge-pr-bd:   rgba(37,99,235,.2);
+  --badge-pr-text: #2563EB;
   --badge-cl-bg:   rgba(91,122,154,.12);
   --badge-cl-text: #5B7A9A;
   --gold:          #D4AF37;
@@ -94,21 +123,18 @@ body {
   --conflict-bg:   rgba(217,58,58,.07);
   --conflict-bd:   #D93A3A;
   --conflict-text: #D93A3A;
-  --chip-a-bg:     rgba(66,165,245,.18);
-  --chip-a-bd:     #42A5F5;
-  --chip-a-text:   #42A5F5;
+  --chip-a-bg:     rgba(37,99,235,.18);
+  --chip-a-bd:     #2563EB;
+  --chip-a-text:   #2563EB;
   --pb-track:      #0A1826;
-  --pb-fill-from:  #1565FF;
-  --pb-fill-to:    #42A5F5;
-  --radius-card:   8px;
-  --radius-btn:    5px;
-  --radius-badge:  3px;
+  --pb-fill-from:  #1E40AF;
+  --pb-fill-to:    #2563EB;
 }
 
 /* ── TEMA: LIMPIO (claro) ── */
 [data-theme="light"] {
   --bg-app:        #F7F9FC;
-  --bg-sidebar:    #FFFFFF;
+  --bg-sidebar:    #1C2333;
   --bg-topbar:     #FFFFFF;
   --bg-card:       #FFFFFF;
   --bg-hover:      #FAFBFC;
@@ -122,17 +148,16 @@ body {
   --text-lo:       #5B6B82;
   --text-xs:       #9AA5B1;
   --text-th:       #9AA5B1;
-  --accent:        #0D47A1;
   --accent-bg:     #EEF3FF;
   --accent-dim:    #BFDBFE;
-  --sb-text:       #0D47A1;
-  --sb-muted:      #5B6B82;
-  --sb-active-bg:  #EEF3FF;
-  --sb-active-bd:  #0D47A1;
-  --tab-active:    #0D47A1;
-  --mono:          #0D47A1;
-  --pr-bg:         #0D47A1;
-  --pr-bd:         #0D47A1;
+  --sb-text:       #2563EB;
+  --sb-muted:      #5B7A9A;
+  --sb-active-bg:  rgba(37,99,235,.15);
+  --sb-active-bd:  #2563EB;
+  --tab-active:    #2563EB;
+  --mono:          #2563EB;
+  --pr-bg:         #2563EB;
+  --pr-bd:         #2563EB;
   --pr-text:       #FFFFFF;
   --gh-bd:         #E8ECEF;
   --gh-text:       #5B6B82;
@@ -142,9 +167,9 @@ body {
   --badge-er-bg:   #FEF2F2;
   --badge-er-bd:   #FECACA;
   --badge-er-text: #DC2626;
-  --badge-pr-bg:   #FFF7ED;
-  --badge-pr-bd:   #FED7AA;
-  --badge-pr-text: #D97706;
+  --badge-pr-bg:   #EEF3FF;
+  --badge-pr-bd:   #BFDBFE;
+  --badge-pr-text: #2563EB;
   --badge-cl-bg:   #F7F9FC;
   --badge-cl-text: #9AA5B1;
   --gold:          #D97706;
@@ -155,19 +180,16 @@ body {
   --conflict-text: #DC2626;
   --chip-a-bg:     #EEF3FF;
   --chip-a-bd:     #93C5FD;
-  --chip-a-text:   #1D4ED8;
+  --chip-a-text:   #2563EB;
   --pb-track:      #EEF3FF;
-  --pb-fill-from:  #42A5F5;
-  --pb-fill-to:    #0D47A1;
-  --radius-card:   8px;
-  --radius-btn:    6px;
-  --radius-badge:  20px;
+  --pb-fill-from:  #1E40AF;
+  --pb-fill-to:    #2563EB;
 }
 
 /* ── TEMA: MARCA NicaRunner ── */
 [data-theme="brand"] {
   --bg-app:        #F5F9FF;
-  --bg-sidebar:    #0D47A1;
+  --bg-sidebar:    #1C2333;
   --bg-topbar:     #FFFFFF;
   --bg-card:       #FFFFFF;
   --bg-hover:      #FAFCFF;
@@ -181,20 +203,19 @@ body {
   --text-lo:       #5B6B82;
   --text-xs:       #9AA5B1;
   --text-th:       #5B6B82;
-  --accent:        #1565FF;
   --accent-bg:     #EEF3FF;
   --accent-dim:    #D6EAFF;
   --sb-text:       #FFFFFF;
   --sb-muted:      rgba(255,255,255,.60);
-  --sb-active-bg:  rgba(255,255,255,.15);
+  --sb-active-bg:  rgba(37,99,235,.45);
   --sb-active-bd:  rgba(255,255,255,.5);
-  --tab-active:    #1565FF;
-  --mono:          #0D47A1;
-  --pr-bg:         #1565FF;
+  --tab-active:    #2563EB;
+  --mono:          #2563EB;
+  --pr-bg:         #2563EB;
   --pr-bd:         transparent;
   --pr-text:       #FFFFFF;
   --gh-bd:         #D6EAFF;
-  --gh-text:       #0D47A1;
+  --gh-text:       #2563EB;
   --badge-ok-bg:   #ECFDF5;
   --badge-ok-bd:   #6EE7B7;
   --badge-ok-text: #059669;
@@ -203,7 +224,7 @@ body {
   --badge-er-text: #DC2626;
   --badge-pr-bg:   #EEF3FF;
   --badge-pr-bd:   #BFDBFE;
-  --badge-pr-text: #1D4ED8;
+  --badge-pr-text: #2563EB;
   --badge-cl-bg:   #F5F9FF;
   --badge-cl-text: #5B6B82;
   --gold:          #D97706;
@@ -212,25 +233,22 @@ body {
   --conflict-bg:   #FFF5F5;
   --conflict-bd:   #DC2626;
   --conflict-text: #DC2626;
-  --chip-a-bg:     #1565FF;
+  --chip-a-bg:     #2563EB;
   --chip-a-bd:     transparent;
   --chip-a-text:   #FFFFFF;
   --pb-track:      #DBEAFE;
-  --pb-fill-from:  #42A5F5;
-  --pb-fill-to:    #1565FF;
-  --radius-card:   14px;
-  --radius-btn:    10px;
-  --radius-badge:  20px;
+  --pb-fill-from:  #1E40AF;
+  --pb-fill-to:    #2563EB;
 }
 
-/* Sidebar gradiente solo en tema brand */
+/* Sidebar navy fijo en tema brand (gradiente sutil sobre #1C2333) */
 [data-theme="brand"] .sidebar-inner {
-  background: linear-gradient(160deg, #0D47A1 0%, #08306B 100%) !important;
+  background: linear-gradient(160deg, #1C2333 0%, #0F1D32 100%) !important;
 }
 
-/* Botón primario con gradiente en tema brand */
+/* Botón primario con gradiente en tema brand (familia accent #2563EB) */
 [data-theme="brand"] .btn-primary {
-  background: linear-gradient(90deg, #42A5F5, #1565FF) !important;
+  background: linear-gradient(90deg, #2563EB, #1E40AF) !important;
 }
 
 /* Progress bar usando custom properties */
@@ -260,6 +278,6 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #22C55E;
+  background: var(--live-dot, #22C55E);
   animation: pulse-live 1.4s ease-in-out infinite;
 }

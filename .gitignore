@@ -40,3 +40,6 @@ publish/
 
 ## graphify knowledge graph (regenerated via git hook / /graphify --update)
 graphify-out/
+
+## CodeGraph index (per-project, local; nunca commitear)
+.codegraph/
