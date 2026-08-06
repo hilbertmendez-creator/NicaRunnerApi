@@ -45,3 +45,6 @@ publish/
 
 ## graphify knowledge graph (regenerated via git hook / /graphify --update)
 graphify-out/
+
+# Volumen del Postgres de desarrollo (docker-compose.yml)
+.postgres-data/
