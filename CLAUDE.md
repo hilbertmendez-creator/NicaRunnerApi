@@ -1,5 +1,8 @@
 # NicaRunner-API — Claude Code Configuration
 
+Local development runs against Postgres 16 via `docker compose up -d`. See
+[docs/development-database.md](docs/development-database.md).
+
 ## Rules
 
 - Do what has been asked; nothing more, nothing less
