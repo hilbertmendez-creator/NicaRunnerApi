@@ -104,6 +104,21 @@ public class RaceCategoryTransitionTests
         _raceCategories.Verify(rc => rc.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // El chequeo de conflicto es `Estado != Planeada`, no `Estado == EnCurso`: una
+    // categoría ya Terminada tampoco puede "arrancar" de nuevo por esta vía (para eso
+    // está Reopen). Sin este test, angostar el chequeo a solo EnCurso pasaría inadvertido.
+    [Fact]
+    public async Task StartAsync_UnaYaTerminada_LanzaConflict()
+    {
+        var a = Assoc(3, RaceCategoryStatus.Terminada);
+        Setup(a);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            BuildService().StartAsync(1, new CategoryTransitionRequest([3]), JudgeId));
+
+        _raceCategories.Verify(rc => rc.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact]
     public async Task StartAsync_CategoriaNoAsignadaALaCarrera_LanzaNotFound()
     {
