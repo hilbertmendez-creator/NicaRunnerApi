@@ -62,4 +62,21 @@ public class RaceCategoryService(
         category.EdadMinima,
         category.EdadMaxima,
         category.Orden);
+
+    private static RaceCategoryDto ToDto(RaceCategory rc) => new(
+        rc.Category.Id,
+        rc.Category.Codigo,
+        rc.Category.NombreCategoria,
+        rc.Category.Descripcion,
+        rc.Category.Distancia,
+        rc.Category.EdadMinima,
+        rc.Category.EdadMaxima,
+        rc.Category.Orden,
+        rc.Estado,
+        rc.StartUtc,
+        rc.StartedByUserId,
+        rc.StartedBy?.Nombre,
+        rc.ClosedUtc,
+        rc.ClosedByUserId,
+        rc.ClosedBy?.Nombre);
 }
