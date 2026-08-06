@@ -1,0 +1,21 @@
+# Postgres de desarrollo. Misma familia de versión que Render (16) a propósito:
+# el punto entero de este archivo es que lo que falla en producción falle acá primero.
+services:
+  postgres:
+    image: postgres:16
+    container_name: nicarunner-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nicarunner
+      POSTGRES_PASSWORD: devpass
+      POSTGRES_DB: nicarunner
+    ports:
+      # 55432 y no 5432: no pelea con un Postgres ya instalado en la máquina.
+      - "55432:5432"
+    volumes:
+      - ./.postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nicarunner -d nicarunner"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

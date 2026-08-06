@@ -129,21 +129,33 @@ builder.Services.AddApiVersioning(options =>
     options.SubstituteApiVersionInUrl = true;
 });
 
-var useSqlite = builder.Environment.IsDevelopment();
+// El motor de base de datos se elige por CONFIGURACIÓN, no por nombre de entorno.
+// Antes era `builder.Environment.IsDevelopment()`, y eso hacía imposible correr
+// Postgres localmente sin mentirle al framework: `dotnet ef migrations add` en una
+// máquina de desarrollo generaba DDL de Sqlite que Npgsql después ignoraba en
+// silencio. De ahí salieron las cuatro migraciones FixPostgres*.
+var provider = builder.Configuration["Database:Provider"]
+    ?? (builder.Environment.IsDevelopment() ? "Sqlite" : "Postgres");
 
 builder.Services.AddDbContext<NicaRunnerDbContext>(options =>
 {
-    if (useSqlite)
+    if (string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase))
     {
         var sqliteConn = builder.Configuration.GetConnectionString("SqliteConnection")
             ?? "Data Source=nicarunner.dev.db";
         options.UseSqlite(sqliteConn);
     }
-    else
+    else if (string.Equals(provider, "Postgres", StringComparison.OrdinalIgnoreCase))
     {
         var pgConn = builder.Configuration.GetConnectionString("PostgresConnection")
-            ?? throw new InvalidOperationException("Falta PostgresConnection en producción");
+            ?? throw new InvalidOperationException(
+                "Database:Provider=Postgres pero falta ConnectionStrings:PostgresConnection.");
         options.UseNpgsql(PostgresConnectionStringNormalizer.Normalize(pgConn));
+    }
+    else
+    {
+        throw new InvalidOperationException(
+            $"Database:Provider desconocido: '{provider}'. Valores válidos: Sqlite, Postgres.");
     }
 });
 
