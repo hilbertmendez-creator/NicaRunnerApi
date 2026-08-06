@@ -53,7 +53,7 @@ namespace NicaRunner.Infrastructure.Migrations
                 type: "character varying(16)",
                 maxLength: 16,
                 nullable: false,
-                defaultValue: "");
+                defaultValue: "Planeada");
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "StartUtc",
