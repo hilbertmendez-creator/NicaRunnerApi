@@ -316,3 +316,27 @@ export interface PublicRunnerDetailDto {
   posicion: number
   tiempoLlegada: string
 }
+
+export type ControversyEstado = 'Abierta' | 'Resuelta'
+
+export interface ControversyDto {
+  id: number
+  raceId: number
+  dorsal: string
+  nombre: string
+  categoria: string
+  tiempoChip: number | null
+  tiempoCaptura: number | null
+  tiempoCamara: number | null
+  diferencia: number | null
+  estado: ControversyEstado
+}
+
+export interface ResolveControversyRequest {
+  estado: ControversyEstado
+}
+
+export interface ControversySummaryDto {
+  abiertas: number
+  resueltas: number
+}

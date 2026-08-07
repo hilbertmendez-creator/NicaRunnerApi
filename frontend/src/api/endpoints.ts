@@ -6,6 +6,8 @@ import type {
   CategoryDto,
   CategoryStandingsDto,
   ChangePasswordRequest,
+  ControversyDto,
+  ControversySummaryDto,
   CreateCategoryRequest,
   CreatePublicTokenRequest,
   CreateRaceRequest,
@@ -24,6 +26,7 @@ import type {
   ResetPasswordRequest,
   ResultAuditDto,
   ResultDto,
+  ResolveControversyRequest,
   RunnerDto,
   UpdateCategoryRequest,
   UpdateRaceRequest,
@@ -69,6 +72,28 @@ export async function updateResult(
 
 export async function getResultAudit(raceId: number, resultId: number): Promise<ResultAuditDto[]> {
   const { data } = await apiClient.get<ResultAuditDto[]>(`/races/${raceId}/results/${resultId}/audit`)
+  return data
+}
+
+export async function getControversies(raceId: number): Promise<ControversyDto[]> {
+  const { data } = await apiClient.get<ControversyDto[]>(`/races/${raceId}/controversies`)
+  return data
+}
+
+export async function getControversiesSummary(raceId: number): Promise<ControversySummaryDto> {
+  const { data } = await apiClient.get<ControversySummaryDto>(`/races/${raceId}/controversies/summary`)
+  return data
+}
+
+export async function resolveControversy(
+  raceId: number,
+  controversyId: number,
+  request: ResolveControversyRequest,
+): Promise<ControversyDto> {
+  const { data } = await apiClient.post<ControversyDto>(
+    `/races/${raceId}/controversies/${controversyId}/resolve`,
+    request,
+  )
   return data
 }
 
