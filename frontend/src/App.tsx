@@ -17,6 +17,7 @@ import { RaceDetailPage } from './features/races/RaceDetailPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { PublicLinksPage } from './features/public-links/PublicLinksPage'
 import { PublicResultsPage } from './features/public-results/PublicResultsPage'
+import { ControversiasPage } from './features/controversias/ControversiasPage'
 import { UsersPage } from './features/users/UsersPage'
 import { CategoryCatalogPage } from './features/categories/CategoryCatalogPage'
 
@@ -47,6 +48,7 @@ function App() {
                 <Route element={<ProtectedRoute allowedRoles={['Administrador']} />}>
                   <Route path="/usuarios" element={<UsersPage />} />
                   <Route path="/categorias" element={<CategoryCatalogPage />} />
+                  <Route path="/controversias" element={<ControversiasPage />} />
                 </Route>
               </Route>
             </Route>

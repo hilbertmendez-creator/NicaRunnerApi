@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import type { ComponentType } from 'react'
 import { useAuth } from '../auth/auth-context'
+import { useRace } from '../hooks/useRace'
+import { getControversiesSummary } from '../api/endpoints'
 import logoEmblem from '../assets/logo-emblem.png'
 import { DashboardIcon } from './icons/DashboardIcon'
 import { RacesIcon } from './icons/RacesIcon'
@@ -57,10 +60,31 @@ interface SidebarProps {
 export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const { user } = useAuth()
   const isAdmin = user?.role === 'Administrador'
+  const { raceId } = useRace()
+  const [openCount, setOpenCount] = useState(0)
+
+  // Nav-badge de Controversias: conteo real de abiertas de la carrera activa
+  // (endpoint /summary). Se oculta cuando es 0 — ver render del badge.
+  useEffect(() => {
+    if (!raceId || !isAdmin) return
+    let cancelled = false
+    getControversiesSummary(raceId)
+      .then((summary) => {
+        if (!cancelled) setOpenCount(summary.abiertas)
+      })
+      .catch(() => {
+        if (!cancelled) setOpenCount(0)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [raceId, isAdmin])
 
   const groups = NAV_GROUPS.map((grp) => ({
     ...grp,
-    items: grp.items.filter((item) => !item.adminOnly || isAdmin),
+    items: grp.items
+      .map((item) => (item.to === '/controversias' ? { ...item, badge: openCount } : item))
+      .filter((item) => !item.adminOnly || isAdmin),
   })).filter((grp) => grp.items.length > 0)
 
   return (
