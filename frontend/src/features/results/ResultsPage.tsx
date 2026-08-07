@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
+import { useRace } from '../../hooks/useRace'
 import { getResults, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
@@ -12,7 +13,7 @@ export function ResultsPage() {
   const { user } = useAuth()
   const canEdit = user?.role === 'Administrador'
 
-  const [raceId, setRaceId] = useState<number | null>(null)
+  const { raceId } = useRace()
   const [results, setResults] = useState<ResultDto[]>([])
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState<ResultDto | null>(null)
@@ -92,7 +93,7 @@ export function ResultsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>Resultados</h1>
-        <RaceSelector value={raceId} onChange={setRaceId} />
+        <RaceSelector />
       </div>
 
       {loading && <LoadingText message="Cargando resultados..." />}

@@ -5,6 +5,7 @@ import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { RequirePasswordChanged } from './auth/RequirePasswordChanged'
 import { AppLayout } from './components/AppLayout'
+import { RaceProvider } from './components/RaceProvider'
 import { LoginPage } from './routes/LoginPage'
 import { ForgotPasswordPage } from './routes/ForgotPasswordPage'
 import { ResetPasswordPage } from './routes/ResetPasswordPage'
@@ -35,7 +36,7 @@ function App() {
             <Route path="/change-password" element={<ChangePasswordPage />} />
 
             <Route element={<RequirePasswordChanged />}>
-              <Route element={<AppLayout />}>
+              <Route element={<RaceProvider><AppLayout /></RaceProvider>}>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/carreras" element={<RacesPage />} />
                 <Route path="/carreras/:raceId" element={<RaceDetailPage />} />

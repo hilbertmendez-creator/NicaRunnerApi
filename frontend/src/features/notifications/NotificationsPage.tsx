@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
+import { useRace } from '../../hooks/useRace'
 import { notifyAll } from '../../api/endpoints'
 import type { NotifyAllSummaryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
@@ -10,7 +11,7 @@ export function NotificationsPage() {
   const { user } = useAuth()
   const canNotify = user?.role === 'Administrador'
 
-  const [raceId, setRaceId] = useState<number | null>(null)
+  const { raceId } = useRace()
   const [summary, setSummary] = useState<NotifyAllSummaryDto | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
@@ -34,7 +35,7 @@ export function NotificationsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={pageTitle}>Notificaciones</h1>
-        <RaceSelector value={raceId} onChange={setRaceId} />
+        <RaceSelector />
       </div>
 
       <section style={card}>

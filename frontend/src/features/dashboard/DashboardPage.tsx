@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
+import { useRace } from '../../hooks/useRace'
 import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
 import { getDashboard, getStandings } from '../../api/endpoints'
@@ -32,7 +32,7 @@ function connectionState(loading: boolean, hasData: boolean, error: unknown): Co
 }
 
 export function DashboardPage() {
-  const [raceId, setRaceId] = useState<number | null>(null)
+  const { raceId } = useRace()
 
   const dashboard = usePolling(
     () => (raceId ? getDashboard(raceId) : Promise.resolve(null)),
@@ -86,7 +86,7 @@ export function DashboardPage() {
             />
           )}
         </div>
-        <RaceSelector value={raceId} onChange={setRaceId} />
+        <RaceSelector />
       </div>
 
       {!raceId && <EmptyState message="Selecciona una carrera para ver su progreso." />}
