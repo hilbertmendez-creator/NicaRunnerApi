@@ -200,5 +200,7 @@ public class RaceCategoryService(
         rc.StartedBy?.Nombre,
         rc.ClosedUtc,
         rc.ClosedByUserId,
-        rc.ClosedBy?.Nombre);
+        rc.ClosedBy?.Nombre,
+        rc.StartOrigen,
+        rc.StartOffsetConfianzaMs);
 }
