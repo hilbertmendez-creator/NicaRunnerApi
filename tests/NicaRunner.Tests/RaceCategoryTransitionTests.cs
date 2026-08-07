@@ -221,6 +221,18 @@ public class RaceCategoryTransitionTests
     }
 
     [Fact]
+    public async Task ReopenAsync_CategoriaPlaneada_LanzaConflict()
+    {
+        var a = Assoc(3);
+        Setup(a);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            BuildService().ReopenAsync(1, new CategoryTransitionRequest([3]), JudgeId));
+
+        Assert.Equal(RaceCategoryStatus.Planeada, a.Estado);
+    }
+
+    [Fact]
     public async Task ReopenAsync_ConservaElStartUtcOriginal()
     {
         var arranque = new DateTime(2026, 8, 5, 10, 0, 0, DateTimeKind.Utc);
