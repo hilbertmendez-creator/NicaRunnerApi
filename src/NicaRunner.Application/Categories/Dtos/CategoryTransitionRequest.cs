@@ -9,4 +9,4 @@ namespace NicaRunner.Application.Categories.Dtos;
 /// de red, y eso no es un detalle de performance: es un dato falso.
 /// </summary>
 public record CategoryTransitionRequest(
-    [property: Required, MinLength(1)] List<int> CategoryIds);
+    [Required, MinLength(1)] List<int> CategoryIds);
