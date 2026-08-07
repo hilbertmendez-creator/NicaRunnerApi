@@ -1,4 +1,4 @@
-type MetricCardVariant = 'gray' | 'orange' | 'teal' | 'amber' | 'red'
+type MetricCardVariant = 'gray' | 'neutral' | 'orange' | 'teal' | 'amber' | 'red'
 
 interface MetricCardProps {
   label: string
@@ -10,6 +10,7 @@ interface MetricCardProps {
 
 const VARIANT_CLASSES: Record<MetricCardVariant, { bg: string; label: string; value: string }> = {
   gray: { bg: 'bg-white border border-zinc-200', label: 'text-zinc-500', value: 'text-zinc-900' },
+  neutral: { bg: 'bg-white border border-zinc-200', label: 'text-zinc-500', value: 'text-zinc-900' },
   orange: { bg: 'bg-dispute-50 border border-dispute-200', label: 'text-dispute-600', value: 'text-dispute-600' },
   teal: { bg: 'bg-official-50 border border-official-200', label: 'text-official-600', value: 'text-official-600' },
   amber: { bg: 'bg-dispute-50 border border-dispute-200', label: 'text-dispute-600', value: 'text-dispute-600' },
@@ -21,14 +22,18 @@ const SIZE_CLASSES = {
   md: { p: 'p-3', label: 'text-xs', value: 'text-xl' },
 }
 
+/** Neutral → valor grande (1.75rem) estilo `.kpi-value` de la referencia. */
+const NEUTRAL_VALUE_CLASS = 'text-[1.75rem]'
+
 export function MetricCard({ label, value, variant = 'gray', size = 'md', className = '' }: MetricCardProps) {
   const styles = VARIANT_CLASSES[variant]
   const sizeStyles = SIZE_CLASSES[size]
+  const valueClass = variant === 'neutral' ? NEUTRAL_VALUE_CLASS : sizeStyles.value
 
   return (
     <div className={`${styles.bg} ${sizeStyles.p} ${className}`}>
       <p className={`${styles.label} ${sizeStyles.label} mb-1 font-medium uppercase tracking-wide`}>{label}</p>
-      <p className={`${styles.value} ${sizeStyles.value} font-mono font-semibold tabular-nums`}>{value}</p>
+      <p className={`${styles.value} ${valueClass} font-mono font-semibold tabular-nums`}>{value}</p>
     </div>
   )
 }
