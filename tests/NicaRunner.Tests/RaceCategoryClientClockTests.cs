@@ -150,4 +150,59 @@ public class RaceCategoryClientClockTests
 
         Assert.Equal(recienToleable, a.StartUtc);
     }
+
+    [Fact]
+    public async Task StartAsync_MismaIdempotencyKeyQueUnaYaArrancada_DevuelveElEstadoActualSinLanzar()
+    {
+        var a = Assoc(3, RaceCategoryStatus.EnCurso);
+        a.StartUtc = new DateTime(2026, 8, 5, 10, 0, 0, DateTimeKind.Utc);
+        a.StartedByUserId = JudgeId;
+        a.StartOrigen = StartClockOrigen.Cliente;
+        a.StartIdempotencyKey = "retry-key-1";
+        Setup(a);
+
+        var result = await BuildService().StartAsync(
+            1, new CategoryTransitionRequest([3], IdempotencyKey: "retry-key-1"), JudgeId);
+
+        Assert.Single(result);
+        Assert.Equal(RaceCategoryStatus.EnCurso, result[0].Estado);
+        // No relanza: sigue EnCurso con el mismo StartUtc, no ConflictException.
+        Assert.Equal(a.StartUtc, result[0].StartUtc);
+    }
+
+    [Fact]
+    public async Task StartAsync_KeyDistintaSobreCategoriaYaEnCurso_LanzaConflict()
+    {
+        var a = Assoc(3, RaceCategoryStatus.EnCurso);
+        a.StartIdempotencyKey = "primer-disparo";
+        Setup(a);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            BuildService().StartAsync(1, new CategoryTransitionRequest([3], IdempotencyKey: "segundo-disparo"), JudgeId));
+    }
+
+    [Fact]
+    public async Task StartAsync_SinKeySobreCategoriaYaEnCurso_LanzaConflict()
+    {
+        var a = Assoc(3, RaceCategoryStatus.EnCurso);
+        a.StartIdempotencyKey = "primer-disparo";
+        Setup(a);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            BuildService().StartAsync(1, new CategoryTransitionRequest([3]), JudgeId));
+    }
+
+    [Fact]
+    public async Task StartAsync_KeyRepetidaPeroSoloParteDeLasCategoriasCoincide_LanzaConflict()
+    {
+        // Reintento parcial: la key coincide en 'a' pero 'b' es una categoría distinta
+        // que nunca arrancó con esa key. No es un replay legítimo — que falle fuerte.
+        var a = Assoc(3, RaceCategoryStatus.EnCurso);
+        a.StartIdempotencyKey = "retry-key-1";
+        var b = Assoc(7);
+        Setup(a, b);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            BuildService().StartAsync(1, new CategoryTransitionRequest([3, 7], IdempotencyKey: "retry-key-1"), JudgeId));
+    }
 }

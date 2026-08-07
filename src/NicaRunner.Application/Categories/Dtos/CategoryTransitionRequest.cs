@@ -16,4 +16,5 @@ public record CategoryTransitionRequest(
     [Required, MinLength(1)] List<int> CategoryIds,
     DateTime? StartUtcCliente = null,
     int? OffsetConfianzaMs = null,
-    int? CalibradoHaceMs = null);
+    int? CalibradoHaceMs = null,
+    string? IdempotencyKey = null);

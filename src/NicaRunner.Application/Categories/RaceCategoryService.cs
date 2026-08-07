@@ -53,7 +53,7 @@ public class RaceCategoryService(
         var race = await GetRaceOrThrowAsync(raceId, ct);
         var targets = await ResolveTargetsOrThrowAsync(raceId, request, ct);
 
-        var replay = (List<RaceCategoryDto>?)null; // Task 5 implements TryGetIdempotentReplay
+        var replay = TryGetIdempotentReplay(targets, request);
         if (replay is not null)
             return replay;
 
@@ -72,6 +72,7 @@ public class RaceCategoryService(
             target.StartedByUserId = actorUserId;
             target.StartOrigen = origen;
             target.StartOffsetConfianzaMs = offsetConfianzaMs;
+            target.StartIdempotencyKey = request.IdempotencyKey;
         }
 
         await SyncRaceStateAsync(race, ct);
@@ -162,6 +163,25 @@ public class RaceCategoryService(
         await raceCategoryRepository.SaveChangesAsync(ct);
 
         return targets.Select(ToDto).ToList();
+    }
+
+    /// <summary>
+    /// Reintento legítimo: TODAS las categorías pedidas ya llevan exactamente esta
+    /// key. Se devuelve su estado actual sin volver a mutar ni a chequear Planeada —
+    /// es la respuesta que el cliente ya recibió (o no recibió, por eso reintenta),
+    /// no una operación nueva. Coincidencia parcial (algunas sí, otras no) NO cuenta
+    /// como replay: cae al chequeo normal de estado, que va a rechazarla con
+    /// ConflictException — mezclar una key vieja con una categoría nueva no es un
+    /// reintento, es un request mal formado.
+    /// </summary>
+    private List<RaceCategoryDto>? TryGetIdempotentReplay(
+        List<RaceCategory> targets, CategoryTransitionRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
+            return null;
+
+        var todasConLaMismaKey = targets.All(t => t.StartIdempotencyKey == request.IdempotencyKey);
+        return todasConLaMismaKey ? targets.Select(ToDto).ToList() : null;
     }
 
     private async Task<List<RaceCategory>> ResolveTargetsOrThrowAsync(

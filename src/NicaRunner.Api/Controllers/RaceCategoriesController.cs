@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -36,11 +37,20 @@ public class RaceCategoriesController(IRaceCategoryService categoryService) : Co
     }
 
     // El juez de partida es Capturista: no puede ser Admin-only como Assign/Unassign.
+    // Idempotency-Key opcional, mismo patrón que ResultsController.Create — necesario
+    // para que un reintento offline (señal que va y viene) no falle sobre su propio
+    // éxito anterior.
     [HttpPost("start")]
     [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
     public async Task<ActionResult<List<RaceCategoryDto>>> Start(
-        int raceId, CategoryTransitionRequest request, CancellationToken ct) =>
-        Ok(await categoryService.StartAsync(raceId, request, GetUserId(), ct));
+        int raceId,
+        CategoryTransitionRequest request,
+        [FromHeader(Name = "Idempotency-Key"), MaxLength(64)] string? idempotencyKey,
+        CancellationToken ct)
+    {
+        var effective = request with { IdempotencyKey = idempotencyKey };
+        return Ok(await categoryService.StartAsync(raceId, effective, GetUserId(), ct));
+    }
 
     [HttpPost("close")]
     [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
