@@ -6,7 +6,7 @@ import { ConnectionStatusBadge, type ConnectionState } from '../../components/Co
 import { getDashboard, getStandings } from '../../api/endpoints'
 import { usePolling } from '../../hooks/usePolling'
 import { useRaceDashboardHub } from '../../hooks/useRaceDashboardHub'
-import { MetricCard, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import { MetricCard, DataTable, LoadingText, EmptyState, PosCell, Progress } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
 
@@ -54,19 +54,38 @@ export function DashboardPage() {
     { header: 'Dorsal', render: (r) => r.dorsal, className: MONO },
     { header: 'Nombre', render: (r) => r.nombre },
     { header: 'Categoría', render: (r) => r.nombreCategoria },
-    { header: 'Posición', render: (r) => r.posicion, className: MONO },
+    { header: 'Posición', render: (r) => <PosCell rank={r.posicion} /> },
     { header: 'Hora', render: (r) => formatTime(r.tiempoLlegada), className: MONO },
   ]
 
   const categoriasColumns: Column<CategoryProgressDto>[] = [
     { header: 'Categoría', render: (cat) => cat.nombreCategoria },
+    {
+      header: 'Progreso',
+      render: (cat) => {
+        const inscritos = cat.inscritos || 0
+        const con = inscritos ? Math.round((cat.conTiempo / inscritos) * 100) : 0
+        const pen = inscritos ? Math.round((cat.pendientes / inscritos) * 100) : 0
+        return (
+          <div className="flex items-center gap-3">
+            <Progress official={con} dispute={pen} className="w-32" />
+            <span
+              className="font-mono text-xs tabular-nums"
+              style={{ color: con >= pen ? 'var(--color-official-600)' : 'var(--color-dispute-600)' }}
+            >
+              {con}%
+            </span>
+          </div>
+        )
+      },
+    },
     { header: 'Inscritos', render: (cat) => cat.inscritos, className: MONO },
     { header: 'Con tiempo', render: (cat) => cat.conTiempo, className: MONO },
     { header: 'Pendientes', render: (cat) => cat.pendientes, className: MONO },
   ]
 
   const standingsColumns: Column<RunnerStandingDto>[] = [
-    { header: 'Pos.', render: (res) => res.posicion, className: MONO },
+    { header: 'Pos.', render: (res) => <PosCell rank={res.posicion} /> },
     { header: 'Dorsal', render: (res) => res.dorsal, className: MONO },
     { header: 'Nombre', render: (res) => res.nombre },
     { header: 'Hora', render: (res) => formatTime(res.tiempoLlegada), className: MONO },
