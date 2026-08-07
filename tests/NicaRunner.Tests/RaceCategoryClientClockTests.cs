@@ -205,4 +205,17 @@ public class RaceCategoryClientClockTests
         await Assert.ThrowsAsync<ConflictException>(() =>
             BuildService().StartAsync(1, new CategoryTransitionRequest([3, 7], IdempotencyKey: "retry-key-1"), JudgeId));
     }
+
+    // "" y null tienen que tratarse igual: un header Idempotency-Key vacío no es una
+    // key real, así que esto NO puede leerse como replay de nada.
+    [Fact]
+    public async Task StartAsync_IdempotencyKeyVacia_SeTrataComoAusente_LanzaConflict()
+    {
+        var a = Assoc(3, RaceCategoryStatus.EnCurso);
+        a.StartIdempotencyKey = "primer-disparo";
+        Setup(a);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            BuildService().StartAsync(1, new CategoryTransitionRequest([3], IdempotencyKey: ""), JudgeId));
+    }
 }
