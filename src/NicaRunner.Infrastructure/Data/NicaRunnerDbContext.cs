@@ -217,7 +217,7 @@ public class NicaRunnerDbContext : DbContext
         modelBuilder.Entity<Result>()
             .Property(r => r.DisputeMotivo)
             .HasConversion<string>()
-            .HasMaxLength(20);
+            .HasMaxLength(30);
 
         // DisputeGroupId apunta al Id de OTRO Result de la misma carrera (el "ancla"
         // del grupo) — no a una tabla DisputeGroup separada, esa no existe. FK
