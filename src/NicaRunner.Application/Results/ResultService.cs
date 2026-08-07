@@ -183,7 +183,13 @@ public class ResultService(
         // GetPlacingCountsAsync (ResultRepository) para que esta Posicion guardada nunca
         // contradiga el placing derivado que ve el enlace público de detalle del corredor.
         var results = await resultRepository.GetAllByCategoryAsync(raceId, categoryId, ct);
-        var ordered = results.OrderBy(r => r.TiempoLlegada).ThenBy(r => r.Id).ToList();
+        // Solo Valido cuenta para posiciones. Un tiempo en Controversia es dudoso por
+        // definición; uno Anulado no debería haber estado ahí. Premiar cualquiera de
+        // los dos sería premiar un dato que el propio sistema marcó como no confiable.
+        var ordered = results
+            .Where(r => r.Estado == ResultEstado.Valido)
+            .OrderBy(r => r.TiempoLlegada).ThenBy(r => r.Id)
+            .ToList();
 
         for (var i = 0; i < ordered.Count; i++)
             ordered[i].Posicion = i + 1;
