@@ -17,13 +17,28 @@ namespace NicaRunner.Api.Startup;
 /// DateTime que NO pase por ese converter (ej. columnas todavía TEXT/Sqlite-era
 /// sin reconciliar), donde Kind puede seguir llegando Unspecified.
 ///
+/// Read() normaliza lo mismo que Write(), en la otra dirección: un body JSON
+/// con un offset explícito que no sea "Z" (ej. "-06:00") se parsea con
+/// Kind=Local y los ticks reescritos a la hora local del proceso — comparar
+/// eso directo contra DateTime.UtcNow (los operadores de DateTime comparan
+/// ticks crudos, ignoran Kind) da un resultado silenciosamente equivocado
+/// salvo que el servidor corra en UTC. Sin este lado de lectura, cualquier
+/// DateTime que entra en un request body (ej. CategoryTransitionRequest.
+/// StartUtcCliente) hereda el mismo bug de Kind que ya costó el desfase de
+/// Nicaragua del lado de escritura.
+///
 /// Se aplica también a DateTime? porque System.Text.Json envuelve
 /// automáticamente los converters de tipos de valor para su forma Nullable<T>.
 /// </summary>
 public sealed class UtcDateTimeConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => reader.GetDateTime();
+    {
+        var value = reader.GetDateTime();
+        return value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            : value.ToUniversalTime();
+    }
 
     public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
     {

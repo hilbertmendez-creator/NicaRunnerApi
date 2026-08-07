@@ -354,6 +354,13 @@ public class NicaRunnerDbContext : DbContext
         modelBuilder.Entity<NotificationLog>().Property(e => e.SentAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
         modelBuilder.Entity<RaceCategory>().Property(rc => rc.StartUtc).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
         modelBuilder.Entity<RaceCategory>().Property(rc => rc.ClosedUtc).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<RaceCategory>()
+            .Property(rc => rc.StartOrigen)
+            .HasConversion<string>()
+            .HasMaxLength(30);
+        modelBuilder.Entity<RaceCategory>()
+            .Property(rc => rc.StartIdempotencyKey)
+            .HasMaxLength(64);
 
         // Decimal: FixPostgresDecimalColumns pasó Categories.Distancia de "text"
         // (herencia de Sqlite) a "numeric". El array hardcodeado de esa migración dice

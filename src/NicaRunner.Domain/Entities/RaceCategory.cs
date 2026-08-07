@@ -14,6 +14,9 @@ public class RaceCategory
     // Cero del cronómetro de esta categoría. Null mientras está Planeada.
     public DateTime? StartUtc { get; set; }
     public int? StartedByUserId { get; set; }
+    public StartClockOrigen? StartOrigen { get; set; }
+    public int? StartOffsetConfianzaMs { get; set; }
+    public string? StartIdempotencyKey { get; set; }
 
     // ClosedUtc es administrativo: nada se calcula a partir de él.
     public DateTime? ClosedUtc { get; set; }

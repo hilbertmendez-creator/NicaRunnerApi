@@ -53,27 +53,62 @@ public class RaceCategoryService(
         var race = await GetRaceOrThrowAsync(raceId, ct);
         var targets = await ResolveTargetsOrThrowAsync(raceId, request, ct);
 
+        var replay = TryGetIdempotentReplay(targets, request);
+        if (replay is not null)
+            return replay;
+
         var yaArrancadas = targets.Where(t => t.Estado != RaceCategoryStatus.Planeada).ToList();
         if (yaArrancadas.Count > 0)
             throw new ConflictException(
                 "Estas categorías ya no están Planeada: " +
                 string.Join(", ", yaArrancadas.Select(t => t.Category.NombreCategoria)) + ".");
 
-        // UNA sola lectura del reloj para las N categorías. Esto es el punto entero
-        // del endpoint: salieron con el mismo disparo, arrancan con el mismo cero.
-        var startUtc = DateTime.UtcNow;
+        var (startUtc, origen, offsetConfianzaMs) = ResolveStartClock(request);
 
         foreach (var target in targets)
         {
             target.Estado = RaceCategoryStatus.EnCurso;
             target.StartUtc = startUtc;
             target.StartedByUserId = actorUserId;
+            target.StartOrigen = origen;
+            target.StartOffsetConfianzaMs = offsetConfianzaMs;
+            target.StartIdempotencyKey = request.IdempotencyKey;
         }
 
         await SyncRaceStateAsync(race, ct);
         await raceCategoryRepository.SaveChangesAsync(ct);
 
         return targets.Select(ToDto).ToList();
+    }
+
+    // Margen de tolerancia por diferencias de reloj entre el dispositivo del juez y el
+    // servidor — no rechazar un disparo real por unos segundos de desfase. Mismo criterio
+    // que ResultService.FutureToleranceMinutes, duplicado a propósito: son constantes de
+    // dos servicios distintos, no vale crear una config compartida para dos números.
+    private const int FutureToleranceMinutes = 5;
+    private const int MaxPastHours = 12;
+
+    private static (DateTime StartUtc, StartClockOrigen Origen, int? OffsetConfianzaMs) ResolveStartClock(
+        CategoryTransitionRequest request)
+    {
+        if (request.StartUtcCliente is not { } startCliente)
+            return (DateTime.UtcNow, StartClockOrigen.Servidor, null);
+
+        if (startCliente > DateTime.UtcNow.AddMinutes(FutureToleranceMinutes))
+            throw new ValidationException("El instante de salida no puede ser más de 5 minutos en el futuro.");
+
+        if (startCliente < DateTime.UtcNow.AddHours(-MaxPastHours))
+            throw new ValidationException("El instante de salida no puede tener más de 12 horas de antigüedad.");
+
+        if (request.OffsetConfianzaMs is null)
+            return (startCliente, StartClockOrigen.ClienteSinCalibrar, null);
+
+        // calibradoHaceMs no se persiste: el contrato de RaceCategoryDto (spec §4.4) no
+        // lo incluye. Se acepta en el request y se usa solo para decidir si rechazar o
+        // no — nunca lo hace, "accepted, confidence marked low" en el spec no implica
+        // una tercera categoría de origen ni un campo nuevo; StartOffsetConfianzaMs ya
+        // es la evidencia que BO tiene para juzgar la calidad de esta salida offline.
+        return (startCliente, StartClockOrigen.Cliente, request.OffsetConfianzaMs);
     }
 
     public async Task<List<RaceCategoryDto>> CloseAsync(
@@ -128,6 +163,25 @@ public class RaceCategoryService(
         await raceCategoryRepository.SaveChangesAsync(ct);
 
         return targets.Select(ToDto).ToList();
+    }
+
+    /// <summary>
+    /// Reintento legítimo: TODAS las categorías pedidas ya llevan exactamente esta
+    /// key. Se devuelve su estado actual sin volver a mutar ni a chequear Planeada —
+    /// es la respuesta que el cliente ya recibió (o no recibió, por eso reintenta),
+    /// no una operación nueva. Coincidencia parcial (algunas sí, otras no) NO cuenta
+    /// como replay: cae al chequeo normal de estado, que va a rechazarla con
+    /// ConflictException — mezclar una key vieja con una categoría nueva no es un
+    /// reintento, es un request mal formado.
+    /// </summary>
+    private List<RaceCategoryDto>? TryGetIdempotentReplay(
+        List<RaceCategory> targets, CategoryTransitionRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
+            return null;
+
+        var todasConLaMismaKey = targets.All(t => t.StartIdempotencyKey == request.IdempotencyKey);
+        return todasConLaMismaKey ? targets.Select(ToDto).ToList() : null;
     }
 
     private async Task<List<RaceCategory>> ResolveTargetsOrThrowAsync(
@@ -200,5 +254,7 @@ public class RaceCategoryService(
         rc.StartedBy?.Nombre,
         rc.ClosedUtc,
         rc.ClosedByUserId,
-        rc.ClosedBy?.Nombre);
+        rc.ClosedBy?.Nombre,
+        rc.StartOrigen,
+        rc.StartOffsetConfianzaMs);
 }

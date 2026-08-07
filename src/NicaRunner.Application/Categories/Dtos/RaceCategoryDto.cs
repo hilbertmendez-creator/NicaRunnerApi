@@ -19,4 +19,6 @@ public record RaceCategoryDto(
     string? StartedByNombre = null,
     DateTime? ClosedUtc = null,
     int? ClosedByUserId = null,
-    string? ClosedByNombre = null);
+    string? ClosedByNombre = null,
+    StartClockOrigen? StartOrigen = null,
+    int? StartOffsetConfianzaMs = null);
