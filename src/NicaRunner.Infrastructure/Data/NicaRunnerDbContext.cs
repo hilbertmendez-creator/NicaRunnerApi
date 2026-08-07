@@ -13,6 +13,7 @@ public class NicaRunnerDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Race> Races => Set<Race>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Controversy> Controversies => Set<Controversy>();
     public DbSet<RaceCategory> RaceCategories => Set<RaceCategory>();
     public DbSet<Runner> Runners => Set<Runner>();
     public DbSet<Result> Results => Set<Result>();
@@ -162,6 +163,17 @@ public class NicaRunnerDbContext : DbContext
             .HasOne(a => a.Result)
             .WithMany(r => r.AuditEntries)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Controversias: FK a la carrera con cascada y un índice por race para
+        // el listado/summary. Estado se guarda como "Abierta"/"Resuelta" (contra
+        // el DWO abierto al backoffice); al resolver se setea ResolvedAt.
+        modelBuilder.Entity<Controversy>()
+            .HasOne(c => c.Race)
+            .WithMany()
+            .HasForeignKey(c => c.RaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Controversy>()
+            .HasIndex(c => c.RaceId);
 
         // Bitácora transversal (Usuarios/Carreras/Categorías). Append-only.
         modelBuilder.Entity<AuditLog>(e =>
