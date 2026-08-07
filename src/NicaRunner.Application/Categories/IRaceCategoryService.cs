@@ -7,4 +7,13 @@ public interface IRaceCategoryService
     Task<RaceCategoryDto> AssignAsync(int raceId, AssignCategoryRequest request, CancellationToken ct = default);
     Task<List<RaceCategoryDto>> GetAllByRaceAsync(int raceId, CancellationToken ct = default);
     Task UnassignAsync(int raceId, int categoryId, CancellationToken ct = default);
+
+    Task<List<RaceCategoryDto>> StartAsync(
+        int raceId, CategoryTransitionRequest request, int actorUserId, CancellationToken ct = default);
+
+    Task<List<RaceCategoryDto>> CloseAsync(
+        int raceId, CategoryTransitionRequest request, int actorUserId, CancellationToken ct = default);
+
+    Task<List<RaceCategoryDto>> ReopenAsync(
+        int raceId, CategoryTransitionRequest request, int actorUserId, CancellationToken ct = default);
 }

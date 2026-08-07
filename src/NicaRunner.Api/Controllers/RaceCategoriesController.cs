@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,4 +34,26 @@ public class RaceCategoriesController(IRaceCategoryService categoryService) : Co
         await categoryService.UnassignAsync(raceId, categoryId, ct);
         return NoContent();
     }
+
+    // El juez de partida es Capturista: no puede ser Admin-only como Assign/Unassign.
+    [HttpPost("start")]
+    [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
+    public async Task<ActionResult<List<RaceCategoryDto>>> Start(
+        int raceId, CategoryTransitionRequest request, CancellationToken ct) =>
+        Ok(await categoryService.StartAsync(raceId, request, GetUserId(), ct));
+
+    [HttpPost("close")]
+    [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
+    public async Task<ActionResult<List<RaceCategoryDto>>> Close(
+        int raceId, CategoryTransitionRequest request, CancellationToken ct) =>
+        Ok(await categoryService.CloseAsync(raceId, request, GetUserId(), ct));
+
+    // Reabrir corrige un error: mismo criterio que la reapertura de carrera, solo Admin.
+    [HttpPost("reopen")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<ActionResult<List<RaceCategoryDto>>> Reopen(
+        int raceId, CategoryTransitionRequest request, CancellationToken ct) =>
+        Ok(await categoryService.ReopenAsync(raceId, request, GetUserId(), ct));
+
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }
