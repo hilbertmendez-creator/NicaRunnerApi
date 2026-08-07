@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Infrastructure.Data;
@@ -9,6 +10,15 @@ public class NicaRunnerDbContext : DbContext
         : base(options)
     {
     }
+
+    // Npgsql exige Kind=Unspecified para escribir en timestamp without time zone; nuestro
+    // código siempre pasa DateTime.UtcNow (Kind=Utc), que sin esto Npgsql rechaza con
+    // NotSupportedException. SpecifyKind no mueve el reloj, solo saca la etiqueta — el
+    // valor que se guarda es el mismo instante UTC. Al leer, se vuelve a etiquetar como
+    // Utc: coherente con UtcDateTimeConverter (capa JSON), que asume exactamente esto.
+    private static readonly ValueConverter<DateTime, DateTime> UtcDateTimeValueConverter = new(
+        v => DateTime.SpecifyKind(v, DateTimeKind.Unspecified),
+        v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Race> Races => Set<Race>();
@@ -325,24 +335,25 @@ public class NicaRunnerDbContext : DbContext
 
         // DateTime: FixPostgresDateTimeColumns pasó estas columnas de "text" (herencia
         // de Sqlite) a "timestamp without time zone" — la convención real de esta base,
-        // no "timestamp with time zone".
-        modelBuilder.Entity<User>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<Race>().Property(e => e.FechaCarrera).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<Race>().Property(e => e.RaceStartUtc).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<Race>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<Race>().Property(e => e.UpdatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<RaceJudge>().Property(e => e.JoinedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<Runner>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<Result>().Property(e => e.TiempoLlegada).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<Result>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<Result>().Property(e => e.UpdatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<ResultAudit>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<PublicResultToken>().Property(e => e.FechaExpiracion).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<PublicResultToken>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<NotificationLog>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<NotificationLog>().Property(e => e.SentAt).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<RaceCategory>().Property(rc => rc.StartUtc).HasColumnType("timestamp without time zone");
-        modelBuilder.Entity<RaceCategory>().Property(rc => rc.ClosedUtc).HasColumnType("timestamp without time zone");
+        // no "timestamp with time zone". UtcDateTimeValueConverter (arriba) hace que
+        // Npgsql acepte los DateTime.UtcNow (Kind=Utc) que el código siempre produce.
+        modelBuilder.Entity<User>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<Race>().Property(e => e.FechaCarrera).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<Race>().Property(e => e.RaceStartUtc).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<Race>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<Race>().Property(e => e.UpdatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<RaceJudge>().Property(e => e.JoinedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<Runner>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<Result>().Property(e => e.TiempoLlegada).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<Result>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<Result>().Property(e => e.UpdatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<ResultAudit>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<PublicResultToken>().Property(e => e.FechaExpiracion).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<PublicResultToken>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<NotificationLog>().Property(e => e.CreatedAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<NotificationLog>().Property(e => e.SentAt).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<RaceCategory>().Property(rc => rc.StartUtc).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
+        modelBuilder.Entity<RaceCategory>().Property(rc => rc.ClosedUtc).HasColumnType("timestamp without time zone").HasConversion(UtcDateTimeValueConverter);
 
         // Decimal: FixPostgresDecimalColumns pasó Categories.Distancia de "text"
         // (herencia de Sqlite) a "numeric". El array hardcodeado de esa migración dice
