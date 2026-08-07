@@ -8,4 +8,5 @@ namespace NicaRunner.Application.Common.Interfaces;
 public interface IRaceDashboardNotifier
 {
     Task NotifyResultsChangedAsync(int raceId, CancellationToken ct = default);
+    Task NotifyDisputeOpenedAsync(int raceId, CancellationToken ct = default);
 }

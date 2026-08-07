@@ -1,3 +1,5 @@
+using NicaRunner.Domain.Entities;
+
 namespace NicaRunner.Application.Results.Dtos;
 
 public record ResultDto(
@@ -13,4 +15,8 @@ public record ResultDto(
     int CapturistaId,
     string CapturistaNombre,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    ResultEstado Estado,
+    string? DorsalPropuesto,
+    int? DisputeGroupId,
+    DisputeMotivo? DisputeMotivo);

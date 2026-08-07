@@ -14,9 +14,10 @@ public class ResultServiceIdempotencyTests
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceDashboardNotifier> _dashboardNotifier = new();
+    private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
 
     private ResultService BuildService() =>
-        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object);
+        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object, _raceCategories.Object);
 
     private void RaceExists(int raceId = 1, RaceStatus estado = RaceStatus.EnCurso)
     {

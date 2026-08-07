@@ -11,7 +11,8 @@ public class ResultService(
     IResultAuditRepository auditRepository,
     IRaceRepository raceRepository,
     IRunnerRepository runnerRepository,
-    IRaceDashboardNotifier raceDashboardNotifier) : IResultService
+    IRaceDashboardNotifier raceDashboardNotifier,
+    IRaceCategoryRepository raceCategoryRepository) : IResultService
 {
     public async Task<ResultDto> CreateAsync(int raceId, CreateResultRequest request, int capturistaId, string? idempotencyKey = null, CancellationToken ct = default)
     {
@@ -38,29 +39,19 @@ public class ResultService(
         if (race.RaceStartUtc is null)
             throw new ValidationException("La carrera todavía no arrancó.");
 
-        Runner? runner = null;
-        if (!string.IsNullOrWhiteSpace(request.Dorsal))
-        {
-            runner = await runnerRepository.GetByDorsalAsync(raceId, request.Dorsal, ct)
-                ?? throw new NotFoundException($"No existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
-
-            if (await resultRepository.ExistsByRunnerAsync(raceId, runner.Id, ct: ct))
-                throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
-        }
-
         // El servidor es la única fuente de verdad para el instante de llegada: lo toma de su
         // propio reloj al recibir el request, en vez de confiar en el reloj del celular del
         // juez (que puede estar desincronizado de forma distinta en cada dispositivo).
         var result = new Result
         {
             RaceId = raceId,
-            RunnerId = runner?.Id,
-            Dorsal = runner?.Dorsal,
             TiempoLlegada = DateTime.UtcNow,
-            CategoryId = runner?.CategoryId,
             CapturistaId = capturistaId,
             IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey
         };
+
+        if (!string.IsNullOrWhiteSpace(request.Dorsal))
+            await TryResolveDorsalAsync(result, request.Dorsal, raceId, capturistaId, ct);
 
         await resultRepository.AddAsync(result, ct);
         try
@@ -87,8 +78,8 @@ public class ResultService(
             throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
         }
 
-        if (runner is not null)
-            await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
+        if (result.CategoryId is { } categoryId)
+            await RecalculatePositionsAsync(raceId, categoryId, ct);
 
         await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
 
@@ -116,29 +107,30 @@ public class ResultService(
         var race = await GetRaceOrThrowAsync(raceId, ct);
         ValidateTiempoLlegada(race, request.TiempoLlegada);
 
-        var runner = await runnerRepository.GetByDorsalAsync(raceId, request.Dorsal, ct)
-            ?? throw new NotFoundException($"No existe un corredor con el dorsal '{request.Dorsal}' en esta carrera.");
-
-        if (runner.Id != result.RunnerId && await resultRepository.ExistsByRunnerAsync(raceId, runner.Id, resultId, ct))
-            throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
-
         var oldCategoryId = result.CategoryId;
+        var oldDorsal = result.Dorsal;
 
-        await RegisterAuditIfChangedAsync(result.Id, editorId, "Dorsal", result.Dorsal ?? "(sin asignar)", request.Dorsal, request.Razon, ct);
         await RegisterAuditIfChangedAsync(result.Id, editorId, "TiempoLlegada", result.TiempoLlegada.ToString("O"), request.TiempoLlegada.ToString("O"), request.Razon, ct);
-
-        result.Dorsal = request.Dorsal;
         result.TiempoLlegada = request.TiempoLlegada;
-        result.RunnerId = runner.Id;
-        result.CategoryId = runner.CategoryId;
         result.UpdatedAt = DateTime.UtcNow;
 
-        await resultRepository.SaveChangesAsync(ct);
+        var opened = await TryResolveDorsalAsync(result, request.Dorsal, raceId, editorId, ct);
 
-        if (oldCategoryId is not null)
-            await RecalculatePositionsAsync(raceId, oldCategoryId.Value, ct);
-        if (runner.CategoryId != oldCategoryId)
-            await RecalculatePositionsAsync(raceId, runner.CategoryId, ct);
+        if (!opened)
+        {
+            await RegisterAuditIfChangedAsync(result.Id, editorId, "Dorsal", oldDorsal ?? "(sin asignar)", request.Dorsal, request.Razon, ct);
+
+            await resultRepository.SaveChangesAsync(ct);
+
+            if (oldCategoryId is not null)
+                await RecalculatePositionsAsync(raceId, oldCategoryId.Value, ct);
+            if (result.CategoryId != oldCategoryId)
+                await RecalculatePositionsAsync(raceId, result.CategoryId!.Value, ct);
+        }
+        else
+        {
+            await resultRepository.SaveChangesAsync(ct);
+        }
 
         await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
 
@@ -197,6 +189,85 @@ public class ResultService(
         await resultRepository.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// El primer resultado de un grupo de disputa usa SU PROPIO Id como DisputeGroupId
+    /// — no hace falta una tabla ni una secuencia nueva, y es estable: dado el Id del
+    /// resultado más viejo del grupo, cualquiera puede reconstruir el grupo entero con
+    /// WHERE DisputeGroupId = ese Id.
+    /// </summary>
+    private static int ResolveDisputeGroupId(Result existing) =>
+        existing.DisputeGroupId ?? existing.Id;
+
+    /// <summary>
+    /// Corazón de F2/F3. Se llama con un Result que TODAVÍA no tiene Dorsal/CategoryId
+    /// aplicados (uno recién creado, o uno existente al que se le está por asignar).
+    /// Si el dorsal está libre y la categoría acepta captura ahora mismo, aplica
+    /// Dorsal/CategoryId de una y deja Estado=Valido — camino feliz, sin tocar nada
+    /// de disputa. Si no, deja el resultado en Controversia con la intención guardada
+    /// en DorsalPropuesto, SIN tocar Dorsal/CategoryId, y devuelve true para que el
+    /// caller sepa que no debe seguir con el resto del flujo normal (recálculo de
+    /// posiciones de una categoría a la que este resultado nunca entró).
+    /// </summary>
+    private async Task<bool> TryResolveDorsalAsync(
+        Result target, string dorsal, int raceId, int actorUserId, CancellationToken ct)
+    {
+        var runner = await runnerRepository.GetByDorsalAsync(raceId, dorsal, ct)
+            ?? throw new NotFoundException($"No existe un corredor con el dorsal '{dorsal}' en esta carrera.");
+
+        var yaOcupado = await resultRepository.ExistsByRunnerAsync(raceId, runner.Id, target.Id == 0 ? null : target.Id, ct);
+        if (yaOcupado)
+        {
+            var existing = await resultRepository.GetByRunnerWithCategoryAsync(raceId, runner.Id, ct)
+                ?? throw new NotFoundException($"Inconsistencia: dorsal '{dorsal}' marcado ocupado pero sin resultado asociado.");
+
+            var groupId = ResolveDisputeGroupId(existing);
+
+            // Posicion=0 en ambos: un resultado que deja de ser Valido no puede seguir
+            // mostrando una posición real. `target` normalmente entra acá sin posición
+            // propia todavía (recién creado, o nunca tuvo dorsal), pero el caso borde de
+            // reasignar el dorsal de un resultado YA posicionado a uno que resulta
+            // duplicado sí existe — resetear siempre es correcto y nunca destructivo.
+            target.Estado = ResultEstado.Controversia;
+            target.DorsalPropuesto = dorsal;
+            target.DisputeGroupId = groupId;
+            target.DisputeMotivo = Domain.Entities.DisputeMotivo.DorsalDuplicado;
+            target.Posicion = 0;
+
+            existing.Estado = ResultEstado.Controversia;
+            existing.DisputeGroupId = groupId;
+            existing.DisputeMotivo = Domain.Entities.DisputeMotivo.DorsalDuplicado;
+            existing.Posicion = 0;
+
+            await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Estado", ResultEstado.Valido.ToString(), ResultEstado.Controversia.ToString(), "Dorsal duplicado", ct);
+
+            if (existing.CategoryId is { } existingCategoryId)
+                await RecalculatePositionsAsync(raceId, existingCategoryId, ct);
+
+            await raceDashboardNotifier.NotifyDisputeOpenedAsync(raceId, ct);
+            return true;
+        }
+
+        var association = await raceCategoryRepository.GetAssociationAsync(raceId, runner.CategoryId, ct);
+        if (association is null || association.Estado != RaceCategoryStatus.EnCurso)
+        {
+            target.Estado = ResultEstado.Controversia;
+            target.DorsalPropuesto = dorsal;
+            target.DisputeMotivo = association?.Estado == RaceCategoryStatus.Terminada
+                ? Domain.Entities.DisputeMotivo.CategoriaCerrada
+                : Domain.Entities.DisputeMotivo.CategoriaSinSalida;
+            target.Posicion = 0; // mismo motivo que en la rama de dorsal duplicado, arriba
+
+            await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Estado", ResultEstado.Valido.ToString(), ResultEstado.Controversia.ToString(), target.DisputeMotivo.ToString()!, ct);
+            await raceDashboardNotifier.NotifyDisputeOpenedAsync(raceId, ct);
+            return true;
+        }
+
+        target.Dorsal = runner.Dorsal;
+        target.RunnerId = runner.Id;
+        target.CategoryId = runner.CategoryId;
+        return false;
+    }
+
     private async Task<Race> GetRaceOrThrowAsync(int raceId, CancellationToken ct) =>
         await raceRepository.GetByIdAsync(raceId, ct)
             ?? throw new NotFoundException($"No existe la carrera con id {raceId}.");
@@ -232,7 +303,11 @@ public class ResultService(
         result.CapturistaId,
         result.Capturista?.Nombre ?? string.Empty,
         result.CreatedAt,
-        result.UpdatedAt);
+        result.UpdatedAt,
+        result.Estado,
+        result.DorsalPropuesto,
+        result.DisputeGroupId,
+        result.DisputeMotivo);
 
     private static ResultAuditDto ToAuditDto(ResultAudit audit) => new(
         audit.Id,
