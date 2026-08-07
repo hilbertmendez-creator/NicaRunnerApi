@@ -35,10 +35,17 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-100">
-        <div className="w-full max-w-sm rounded-lg bg-white p-8 text-center shadow-md">
-          <p className="mb-4 text-sm text-gray-700">Este enlace de recuperación no es válido.</p>
-          <Link to="/forgot-password" className="text-sm text-blue-700 hover:underline">
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-app)' }}>
+        <div
+          className="w-full max-w-sm p-8 text-center"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--bd-card)',
+            borderRadius: 'var(--radius-card)',
+          }}
+        >
+          <p className="mb-4 text-sm" style={{ color: 'var(--text-lo)' }}>Este enlace de recuperación no es válido.</p>
+          <Link to="/forgot-password" className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>
             Solicitar un enlace nuevo
           </Link>
         </div>
@@ -47,9 +54,17 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-xl font-semibold text-gray-900">Restablecer contraseña</h1>
+    <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-app)' }}>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm p-8"
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--bd-card)',
+          borderRadius: 'var(--radius-card)',
+        }}
+      >
+        <h1 className="mb-6 text-xl font-semibold" style={{ color: 'var(--text-hi)' }}>Restablecer contraseña</h1>
 
         <Label htmlFor="new-password">Nueva contraseña</Label>
         <Input
@@ -73,7 +88,7 @@ export function ResetPasswordPage() {
           className="mb-4 w-full"
         />
 
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+        {error && <p className="mb-4 text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
 
         <Button type="submit" variant="primary" disabled={submitting} className="w-full">
           {submitting ? 'Guardando...' : 'Restablecer contraseña'}

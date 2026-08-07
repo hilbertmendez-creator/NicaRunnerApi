@@ -39,10 +39,18 @@ export function ChangePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-2 text-xl font-semibold text-gray-900">Cambia tu contraseña</h1>
-        <p className="mb-6 text-sm text-gray-600">
+    <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg-app)' }}>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm p-8"
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--bd-card)',
+          borderRadius: 'var(--radius-card)',
+        }}
+      >
+        <h1 className="mb-2 text-xl font-semibold" style={{ color: 'var(--text-hi)' }}>Cambia tu contraseña</h1>
+        <p className="mb-6 text-sm" style={{ color: 'var(--text-lo)' }}>
           Es tu primer inicio de sesión. Define una contraseña personal antes de continuar.
         </p>
 
@@ -78,12 +86,12 @@ export function ChangePasswordPage() {
           className="mb-4 w-full"
         />
 
-        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+        {error && <p className="mb-4 text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
 
         <Button type="submit" variant="primary" disabled={submitting} className="mb-3 w-full">
           {submitting ? 'Guardando...' : 'Cambiar contraseña'}
         </Button>
-        <button type="button" onClick={logout} className="w-full text-sm text-blue-700 hover:underline">
+        <button type="button" onClick={logout} className="w-full text-sm hover:underline" style={{ color: 'var(--accent)' }}>
           Cerrar sesión
         </button>
       </form>
