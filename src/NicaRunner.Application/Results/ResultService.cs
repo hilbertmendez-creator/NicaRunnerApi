@@ -166,7 +166,7 @@ public class ResultService(
         await auditRepository.AddAsync(new ResultAudit
         {
             ResultId = resultId,
-            AdminId = editorId,
+            ActorUserId = editorId,
             CampoModificado = campo,
             ValorAnterior = valorAnterior,
             ValorNuevo = valorNuevo,
@@ -231,7 +231,7 @@ public class ResultService(
     private static ResultAuditDto ToAuditDto(ResultAudit audit) => new(
         audit.Id,
         audit.ResultId,
-        audit.AdminId,
+        audit.ActorUserId,
         audit.CampoModificado,
         audit.ValorAnterior,
         audit.ValorNuevo,

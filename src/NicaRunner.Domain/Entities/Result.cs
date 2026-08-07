@@ -9,6 +9,17 @@ public class Result
     public DateTime TiempoLlegada { get; set; }
     public int Posicion { get; set; }
     public int? CategoryId { get; set; } // null hasta que el dorsal asignado resuelve la categoría
+    public ResultEstado Estado { get; set; } = ResultEstado.Valido;
+
+    // Intención, nunca aplicada: si Estado=Controversia por DorsalDuplicado, este es el
+    // dorsal que ESTE juez tipeó — Dorsal/CategoryId del registro quedan como estaban.
+    public string? DorsalPropuesto { get; set; }
+
+    // Ata los dos lados de un DorsalDuplicado. Null para CategoriaSinSalida/
+    // CategoriaCerrada — ahí no hay una "otra parte", el conflicto es contra el estado
+    // de la categoría, no contra otro resultado.
+    public int? DisputeGroupId { get; set; }
+    public DisputeMotivo? DisputeMotivo { get; set; }
     public int CapturistaId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
