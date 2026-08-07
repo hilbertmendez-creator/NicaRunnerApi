@@ -1,13 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { RaceSelector } from '../../components/RaceSelector'
 import { useRace } from '../../hooks/useRace'
-import { getResults, notifyResult } from '../../api/endpoints'
+import { getResults, notifyAll, notifyResult } from '../../api/endpoints'
 import type { ResultDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import {
+  Button,
+  DataTable,
+  LoadingText,
+  EmptyState,
+  Toolbar,
+  PosCell,
+  Pagination,
+  SectionHeader,
+} from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
+import { Select } from '@nicarunner/ui'
 import { EditResultModal } from './EditResultModal'
 import { AuditHistory } from './AuditHistory'
+
+const PAGE_SIZE = 20
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('es-NI', { hour12: false })
+}
 
 export function ResultsPage() {
   const { user } = useAuth()
@@ -19,6 +35,10 @@ export function ResultsPage() {
   const [editing, setEditing] = useState<ResultDto | null>(null)
   const [auditingId, setAuditingId] = useState<number | null>(null)
   const [notifyingId, setNotifyingId] = useState<number | null>(null)
+  const [notifyingAll, setNotifyingAll] = useState(false)
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
+  const [page, setPage] = useState(1)
 
   async function handleNotify(resultId: number) {
     setNotifyingId(resultId)
@@ -26,6 +46,17 @@ export function ResultsPage() {
       await notifyResult(resultId)
     } finally {
       setNotifyingId(null)
+    }
+  }
+
+  async function handleNotifyAll() {
+    if (!raceId) return
+    if (!confirm('¿Enviar notificaciones a todos los corredores con tiempo registrado?')) return
+    setNotifyingAll(true)
+    try {
+      await notifyAll(raceId)
+    } finally {
+      setNotifyingAll(false)
     }
   }
 
@@ -41,20 +72,50 @@ export function ResultsPage() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(reload, [raceId])
 
+  const categories = useMemo(
+    () => [...new Set(results.map((r) => r.categoriaNombre).filter(Boolean))].sort(),
+    [results],
+  )
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return results.filter((r) => {
+      if (category && r.categoriaNombre !== category) return false
+      if (!q) return true
+      return (
+        r.dorsal?.toLowerCase().includes(q) ||
+        r.runnerNombre.toLowerCase().includes(q) ||
+        formatTime(r.tiempoLlegada).toLowerCase().includes(q)
+      )
+    })
+  }, [results, search, category])
+
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE
+    return filtered.slice(start, start + PAGE_SIZE)
+  }, [filtered, page])
+
   const columns: Column<ResultDto>[] = [
     {
-      header: 'Posición',
-      render: (result) => result.posicion,
-      className: 'font-mono tabular-nums',
+      header: 'Pos',
+      render: (result) => <PosCell rank={result.posicion} />,
     },
     {
       header: 'Dorsal',
-      render: (result) => result.dorsal,
+      render: (result) => result.dorsal ?? '—',
       className: 'font-mono tabular-nums',
     },
     {
-      header: 'Hora de llegada',
-      render: (result) => new Date(result.tiempoLlegada).toLocaleString('es-NI'),
+      header: 'Nombre',
+      render: (result) => result.runnerNombre,
+    },
+    {
+      header: 'Categoría',
+      render: (result) => result.categoriaNombre ?? '—',
+    },
+    {
+      header: 'Tiempo oficial',
+      render: (result) => formatTime(result.tiempoLlegada),
       className: 'font-mono tabular-nums',
     },
     {
@@ -71,12 +132,12 @@ export function ResultsPage() {
           </Button>
           {canEdit && (
             <>
-              <Button size="sm" onClick={() => setEditing(result)}>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(result)}>
                 Editar
               </Button>
               <Button
                 size="sm"
-                variant="info"
+                variant="ghost"
                 onClick={() => handleNotify(result.id)}
                 disabled={notifyingId === result.id}
               >
@@ -91,20 +152,60 @@ export function ResultsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>Resultados</h1>
-        <RaceSelector />
-      </div>
+      <SectionHeader
+        title="Resultados oficiales"
+        subtitle={`${results.length} tiempos registrados`}
+        actions={
+          <>
+            <RaceSelector />
+            {canEdit && (
+              <Button variant="info" onClick={handleNotifyAll} disabled={!raceId || notifyingAll}>
+                {notifyingAll ? 'Enviando...' : 'Notificar a todos'}
+              </Button>
+            )}
+          </>
+        }
+      />
+
+      <Toolbar
+        searchPlaceholder="Buscar por dorsal, nombre o tiempo..."
+        onSearch={(value) => {
+          setSearch(value)
+          setPage(1)
+        }}
+      >
+        <Select
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value)
+            setPage(1)
+          }}
+          className="w-auto"
+          aria-label="Filtrar por categoría"
+        >
+          <option value="">Todas las categorías</option>
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </Select>
+      </Toolbar>
 
       {loading && <LoadingText message="Cargando resultados..." />}
 
       {!loading && raceId && (
-        <DataTable
-          columns={columns}
-          data={results}
-          rowKey={(result) => result.id}
-          emptyState={<EmptyState message="Esta carrera no tiene resultados capturados todavía." />}
-        />
+        <>
+          <DataTable
+            columns={columns}
+            data={pageItems}
+            rowKey={(result) => result.id}
+            emptyState={<EmptyState message="Esta carrera no tiene resultados capturados todavía." />}
+          />
+          {filtered.length > 0 && (
+            <Pagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onChange={setPage} />
+          )}
+        </>
       )}
 
       {editing && raceId && (
