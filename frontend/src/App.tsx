@@ -17,6 +17,7 @@ import { RaceDetailPage } from './features/races/RaceDetailPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { PublicLinksPage } from './features/public-links/PublicLinksPage'
 import { PublicResultsPage } from './features/public-results/PublicResultsPage'
+import { RunnerSharePage } from './features/runner-share/RunnerSharePage'
 import { ControversiasPage } from './features/controversias/ControversiasPage'
 import { UsersPage } from './features/users/UsersPage'
 import { CategoryCatalogPage } from './features/categories/CategoryCatalogPage'
@@ -32,6 +33,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/resultados/:token" element={<PublicResultsPage />} />
+          <Route path="/corredor/:shareKey" element={<RunnerSharePage />} />
 
           <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Lector']} />}>
             <Route path="/change-password" element={<ChangePasswordPage />} />

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { getPublicResults } from '../../api/endpoints'
 import type { PublicRaceResultsDto, PublicRunnerResultDto } from '../../api/types'
 import { Badge } from '@nicarunner/ui'
+import { encodeShareKey } from '../runner-share/shareKey'
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-NI', { hour12: false })
@@ -153,8 +154,13 @@ export function PublicResultsPage() {
                         <td className="py-1.5 font-mono tabular-nums">{res.posicion}</td>
                         <td className="py-1.5 font-mono tabular-nums">{res.dorsal}</td>
                         <td className="py-1.5">
-                          {/* TODO(slice 6.3): runner-share route /corredor/:shareKey — enlace a shareKey cuando exista el codec. */}
-                          {res.nombre}
+                          <Link
+                            to={`/corredor/${encodeShareKey(token ?? '', res.runnerId)}`}
+                            className="font-medium no-underline"
+                            style={{ color: 'var(--accent)' }}
+                          >
+                            {res.nombre}
+                          </Link>
                         </td>
                         <td className="py-1.5 font-mono tabular-nums">{formatTime(res.tiempoLlegada)}</td>
                       </tr>
