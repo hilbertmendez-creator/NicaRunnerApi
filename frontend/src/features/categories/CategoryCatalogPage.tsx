@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { deleteCategoryCatalogEntry, getCategoryAudit, getCategoryCatalog } from '../../api/endpoints'
 import type { CategoryDto } from '../../api/types'
-import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
+import { Button, DataTable, LoadingText, EmptyState, SectionHeader } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import { CategoryCatalogFormModal } from './CategoryCatalogFormModal'
 import { EntityAuditHistory } from '../../components/EntityAuditHistory'
@@ -31,6 +31,7 @@ export function CategoryCatalogPage() {
   }
 
   const columns: Column<CategoryDto>[] = [
+    { header: 'Orden', render: (cat) => cat.orden, className: 'font-mono tabular-nums' },
     { header: 'Código', render: (cat) => cat.codigo, className: 'font-mono' },
     { header: 'Nombre', render: (cat) => cat.nombreCategoria },
     { header: 'Descripción', render: (cat) => cat.descripcion ?? '—' },
@@ -40,7 +41,7 @@ export function CategoryCatalogPage() {
       className: 'font-mono tabular-nums',
     },
     {
-      header: 'Edad',
+      header: 'Rango edad',
       render: (cat) => `${cat.edadMinima}–${cat.edadMaxima}`,
       className: 'font-mono tabular-nums',
     },
@@ -66,11 +67,15 @@ export function CategoryCatalogPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
-        <Button variant="primary" onClick={() => setShowCreate(true)}>
-          Nueva categoría
-        </Button>
-      </div>
+      <SectionHeader
+        title="Categorías del sistema"
+        subtitle={`${sortedCategories.length} categorías ordenadas por código · usadas como catálogo maestro para todas las carreras`}
+        actions={
+          <Button variant="primary" onClick={() => setShowCreate(true)}>
+            + Nueva categoría
+          </Button>
+        }
+      />
 
       {loading && <LoadingText message="Cargando categorías..." />}
 
