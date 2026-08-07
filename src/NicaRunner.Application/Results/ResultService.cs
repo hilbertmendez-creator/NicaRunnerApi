@@ -50,10 +50,15 @@ public class ResultService(
             IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey
         };
 
-        if (!string.IsNullOrWhiteSpace(request.Dorsal))
-            await TryResolveDorsalAsync(result, request.Dorsal, raceId, capturistaId, ct);
-
         await resultRepository.AddAsync(result, ct);
+
+        // Primer save: SIN dorsal todavía, así que la única UK que puede chocar acá es
+        // (RaceId, IdempotencyKey) — RunnerId sigue null, esa UK no puede violarse en
+        // este INSERT. Necesitamos el Id real de `result` ANTES de que
+        // TryResolveDorsalAsync pueda escribir un ResultAudit o forzar un SaveChanges
+        // intermedio vía RecalculatePositionsAsync (rama de disputa) — un ResultAudit
+        // con ResultId=0 viola su FK real contra Results, y eso pasaba ANTES de este
+        // fix porque TryResolveDorsalAsync corría antes que este AddAsync/save.
         try
         {
             await resultRepository.SaveNewResultAsync(ct);
@@ -69,12 +74,27 @@ public class ResultService(
             if (winner is null) throw;
             return ToDto(winner);
         }
+
+        if (!string.IsNullOrWhiteSpace(request.Dorsal))
+            await TryResolveDorsalAsync(result, request.Dorsal, raceId, capturistaId, ct);
+
+        // Segundo save: persiste lo que TryResolveDorsalAsync haya dejado en `result`
+        // — Dorsal/RunnerId/CategoryId en el camino feliz, o Estado/DorsalPropuesto/
+        // DisputeGroupId/DisputeMotivo si abrió una disputa. Reusa SaveNewResultAsync
+        // por su traducción de la UK de RunnerId a RunnerResultConflictException — el
+        // nombre quedó de cuando esto era un solo insert, pero la traducción de
+        // constraint-violation no depende de que sea un INSERT o un UPDATE.
+        try
+        {
+            await resultRepository.SaveNewResultAsync(ct);
+        }
         catch (RunnerResultConflictException)
         {
             // A diferencia del conflicto de Idempotency-Key, acá no hay
             // "ganador" que devolver: dos capturas distintas del mismo dorsal
             // es un error real, y el perdedor debe enterarse igual que en el
-            // chequeo previo (ExistsByRunnerAsync) — mismo mensaje.
+            // chequeo previo (ExistsByRunnerAsync dentro de TryResolveDorsalAsync)
+            // — mismo mensaje.
             throw new ConflictException($"El corredor con dorsal '{request.Dorsal}' ya tiene un tiempo registrado en esta carrera.");
         }
 
