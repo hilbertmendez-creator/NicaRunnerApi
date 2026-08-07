@@ -10,4 +10,10 @@ public interface IRaceCategoryService
 
     Task<List<RaceCategoryDto>> StartAsync(
         int raceId, CategoryTransitionRequest request, int actorUserId, CancellationToken ct = default);
+
+    Task<List<RaceCategoryDto>> CloseAsync(
+        int raceId, CategoryTransitionRequest request, int actorUserId, CancellationToken ct = default);
+
+    Task<List<RaceCategoryDto>> ReopenAsync(
+        int raceId, CategoryTransitionRequest request, int actorUserId, CancellationToken ct = default);
 }

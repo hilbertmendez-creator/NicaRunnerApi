@@ -156,4 +156,81 @@ public class RaceCategoryTransitionTests
         await Assert.ThrowsAsync<NotFoundException>(() =>
             BuildService().StartAsync(1, new CategoryTransitionRequest([3]), JudgeId));
     }
+
+    [Fact]
+    public async Task CloseAsync_CategoriaEnCurso_LaCierraYAtribuye()
+    {
+        var a = Assoc(3, RaceCategoryStatus.EnCurso);
+        Setup(a);
+
+        await BuildService().CloseAsync(1, new CategoryTransitionRequest([3]), JudgeId);
+
+        Assert.Equal(RaceCategoryStatus.Terminada, a.Estado);
+        Assert.NotNull(a.ClosedUtc);
+        Assert.Equal(JudgeId, a.ClosedByUserId);
+    }
+
+    [Fact]
+    public async Task CloseAsync_TodasCerradas_DerivaRaceEstadoATerminada()
+    {
+        var a = Assoc(3, RaceCategoryStatus.EnCurso);
+        var b = Assoc(7, RaceCategoryStatus.Terminada);
+        var race = Setup(a, b);
+
+        await BuildService().CloseAsync(1, new CategoryTransitionRequest([3]), JudgeId);
+
+        Assert.Equal(RaceStatus.Terminada, race.Estado);
+    }
+
+    [Fact]
+    public async Task CloseAsync_CategoriaTodaviaPlaneada_LanzaConflict()
+    {
+        var a = Assoc(3);
+        Setup(a);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            BuildService().CloseAsync(1, new CategoryTransitionRequest([3]), JudgeId));
+
+        Assert.Equal(RaceCategoryStatus.Planeada, a.Estado);
+    }
+
+    [Fact]
+    public async Task ReopenAsync_CategoriaTerminada_VuelveAEnCursoYLimpiaElCierre()
+    {
+        var a = Assoc(3, RaceCategoryStatus.Terminada);
+        a.ClosedUtc = new DateTime(2026, 8, 5, 12, 0, 0, DateTimeKind.Utc);
+        a.ClosedByUserId = 7;
+        var race = Setup(a);
+
+        await BuildService().ReopenAsync(1, new CategoryTransitionRequest([3]), JudgeId);
+
+        Assert.Equal(RaceCategoryStatus.EnCurso, a.Estado);
+        Assert.Null(a.ClosedUtc);
+        Assert.Null(a.ClosedByUserId);
+        Assert.Equal(RaceStatus.EnCurso, race.Estado);
+    }
+
+    [Fact]
+    public async Task ReopenAsync_CategoriaEnCurso_LanzaConflict()
+    {
+        var a = Assoc(3, RaceCategoryStatus.EnCurso);
+        Setup(a);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            BuildService().ReopenAsync(1, new CategoryTransitionRequest([3]), JudgeId));
+    }
+
+    [Fact]
+    public async Task ReopenAsync_ConservaElStartUtcOriginal()
+    {
+        var arranque = new DateTime(2026, 8, 5, 10, 0, 0, DateTimeKind.Utc);
+        var a = Assoc(3, RaceCategoryStatus.Terminada);
+        a.StartUtc = arranque;
+        Setup(a);
+
+        await BuildService().ReopenAsync(1, new CategoryTransitionRequest([3]), JudgeId);
+
+        // Reabrir corrige un cierre equivocado. NO vuelve a disparar la salida.
+        Assert.Equal(arranque, a.StartUtc);
+    }
 }
