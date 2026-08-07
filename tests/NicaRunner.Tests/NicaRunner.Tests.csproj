@@ -24,6 +24,13 @@
     <ProjectReference Include="..\..\src\NicaRunner.Application\NicaRunner.Application.csproj" />
     <ProjectReference Include="..\..\src\NicaRunner.Domain\NicaRunner.Domain.csproj" />
     <ProjectReference Include="..\..\src\NicaRunner.Infrastructure\NicaRunner.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\NicaRunner.Api\NicaRunner.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Necesario para compilar tests que reflejan sobre atributos de ASP.NET Core
+         (p. ej. el role-gate [Authorize(Roles = "Administrador")] del controller). -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
 </Project>
