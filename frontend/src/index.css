@@ -281,3 +281,231 @@ body {
   background: var(--live-dot, #22C55E);
   animation: pulse-live 1.4s ease-in-out infinite;
 }
+
+/* ────────────────────────────────────────────────────────────
+   App Shell (design D2): sidebar colapsable, topbar, user-menu.
+   Ancho del rail guiado por --sb-w (52px colapsado ↔ 210px
+   expandido), igual que la referencia Race-Day Control Room.
+   ──────────────────────────────────────────────────────────── */
+:root {
+  --sb-w-collapsed: 52px;
+  --sb-w-expanded: 210px;
+  --sb-w: var(--sb-w-expanded);
+  --topbar-h: 56px;
+  --shadow-md: 0 4px 16px rgba(11, 18, 32, 0.18);
+}
+
+.shell-root {
+  --sb-w: var(--sb-w-expanded);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+.shell-root.sb-collapsed {
+  --sb-w: var(--sb-w-collapsed);
+}
+
+/* ── Sidebar rail ── */
+.sb-rail {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: var(--sb-w);
+  border-right: 1px solid var(--bd);
+  background: var(--bg-sb);
+  overflow-x: hidden;
+  transition: width 0.2s ease, transform 0.2s ease;
+}
+
+/* En móvil el drawer siempre abre con ancho expandido (210px) */
+@media (max-width: 1023px) {
+  .sb-rail { width: var(--sb-w-expanded); }
+}
+
+.sb-brand {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid var(--bd);
+}
+.sb-brand-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sb-brand-main { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+.sb-brand-text { font: 700 13px Inter; color: var(--sb-text); white-space: nowrap; }
+.sb-brand-status { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+
+.shell-root.sb-collapsed .sb-brand { display: flex; justify-content: center; padding-left: 0; padding-right: 0; }
+.shell-root.sb-collapsed .sb-brand-text,
+.shell-root.sb-collapsed .sb-brand-status { display: none; }
+
+/* ── Nav ── */
+.sb-nav { padding: 8px; flex: 1; overflow-y: auto; overflow-x: hidden; }
+.sb-group-label {
+  padding: 5px 8px;
+  font: 500 9px Inter;
+  color: var(--sb-muted);
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  margin: 8px 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.shell-root.sb-collapsed .sb-group-label { display: none; }
+
+.sb-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  border-left: 2.5px solid transparent;
+  text-decoration: none;
+  margin-bottom: 1px;
+  color: var(--sb-muted);
+  font: 500 12.5px Inter;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: color 0.15s, background 0.15s, padding 0.15s;
+}
+.sb-nav-item:hover { color: var(--sb-text); background: var(--bg-hover); }
+.sb-nav-item.active { color: var(--sb-text); background: var(--sb-active-bg); border-left-color: var(--sb-active-bd); }
+.sb-nav-item svg { flex-shrink: 0; }
+.sb-nav-label { flex: 1; overflow: hidden; text-overflow: ellipsis; opacity: 1; transition: opacity 0.15s; }
+
+.shell-root.sb-collapsed .sb-nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+.shell-root.sb-collapsed .sb-nav-label { flex: 0 0 0; opacity: 0; width: 0; margin-left: 0; }
+
+.sb-nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-badge);
+  background: var(--color-dispute-600);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Botones de ícono (hamburguesa, chevron) ── */
+.sb-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--gh-bd);
+  color: var(--gh-text);
+  background: transparent;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+.sb-icon-btn:hover { color: var(--text-hi); background: var(--bg-hover); }
+
+/* ── Topbar ── */
+.sb-topbar {
+  height: var(--topbar-h);
+  flex-shrink: 0;
+  background: var(--bg-topbar);
+  border-bottom: 1px solid var(--bd);
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  gap: 12px;
+}
+.sb-topbar-title { font: 600 14px Inter; color: var(--text-hi); }
+.sb-topbar-subtitle { font: 400 10.5px Inter; color: var(--text-xs); margin-top: 1px; }
+
+/* Chip de carrera en vivo */
+.race-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--ctrl-h);
+  max-width: 240px;
+  padding: 0 12px;
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-btn);
+  background: var(--bg-card);
+  font-size: 13px;
+  color: var(--text-lo);
+  white-space: nowrap;
+  cursor: default;
+}
+.race-select:hover { border-color: var(--accent); }
+.race-select-name { overflow: hidden; text-overflow: ellipsis; }
+
+/* ── User-menu (dropdown) ── */
+.user-menu { position: relative; }
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px 2px 4px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: none;
+  cursor: pointer;
+  color: var(--text-hi);
+  font: 500 13px Inter;
+  transition: background 0.15s;
+}
+.user-menu-trigger:hover { background: var(--bg-hover); }
+.user-avatar-sm {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 11px Inter;
+  line-height: 1;
+}
+.user-menu-chevron { transition: transform 0.15s; }
+.user-menu.open .user-menu-chevron { transform: rotate(180deg); }
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 210px;
+  background: var(--bg-card);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-md);
+  padding: 12px;
+  text-align: left;
+}
+.dropdown-name { display: block; font: 600 13px Inter; color: var(--text-hi); }
+.dropdown-role { display: block; font: 400 11px Inter; color: var(--text-lo); margin-top: 2px; }
+.dropdown-sep { height: 1px; background: var(--bd); margin: 10px 0; }
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-btn);
+  background: none;
+  cursor: pointer;
+  font: 500 13px Inter;
+  color: var(--text-hi);
+  transition: background 0.15s;
+}
+.dropdown-item:hover { background: var(--bg-hover); }
+.dropdown-item.logout { color: var(--color-critical-600); }
+.dropdown-item.logout:hover { background: var(--color-critical-50); }
+.dropdown-item svg { flex-shrink: 0; }
