@@ -5,7 +5,7 @@ import type { RaceDto } from '../../api/types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { CategoriesTab } from '../categories/CategoriesTab'
 import { RunnersTab } from '../runners/RunnersTab'
-import { Tabs } from '@nicarunner/ui'
+import { Button, Tabs } from '@nicarunner/ui'
 
 type Tab = 'categorias' | 'corredores'
 
@@ -50,14 +50,22 @@ export function RaceDetailPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <Link to="/carreras" className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>
-          ← Carreras
-        </Link>
-      </div>
-
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>{race?.nombre ?? 'Cargando...'}</h1>
+        <Link to="/carreras">
+          <Button variant="ghost" size="sm">
+            ← Volver
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>{race?.nombre ?? 'Cargando...'}</h1>
+          {/* Meta-subtitle: el DTO de carrera no expone distancia ni inscritos, así que
+              se muestra la fecha cuando está disponible (gap documentado). */}
+          {race && (
+            <p className="text-sm" style={{ color: 'var(--text-lo)' }}>
+              {`${new Date(race.fechaCarrera).toLocaleDateString('es-NI', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+            </p>
+          )}
+        </div>
         {race && <StatusBadge status={race.estado} />}
       </div>
 
