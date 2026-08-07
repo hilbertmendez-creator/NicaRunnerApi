@@ -357,7 +357,7 @@ public class NicaRunnerDbContext : DbContext
         modelBuilder.Entity<RaceCategory>()
             .Property(rc => rc.StartOrigen)
             .HasConversion<string>()
-            .HasMaxLength(20);
+            .HasMaxLength(30);
         modelBuilder.Entity<RaceCategory>()
             .Property(rc => rc.StartIdempotencyKey)
             .HasMaxLength(64);
