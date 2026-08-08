@@ -221,13 +221,16 @@ public class ResultService(
         if (group.Count == 0)
             throw new NotFoundException($"No existe una disputa abierta con id {disputeGroupId} en la carrera {raceId}.");
 
-        // Este PR solo resuelve DorsalDuplicado. CategoriaSinSalida/CategoriaCerrada se
-        // resuelven corrigiendo el StartUtc de la categoría — esa capacidad todavía no
-        // existe (ver el PR que la agrega). Fallar acá con un mensaje claro es mejor
-        // que fingir soporte a medias.
+        // Este endpoint solo resuelve DorsalDuplicado. CategoriaSinSalida/CategoriaCerrada
+        // se resuelven por otra vía: corrigiendo el StartUtc de la categoría o reabriéndola,
+        // y en ambos casos la cascada de ResolvePendingCategoryDisputesAsync las reintenta
+        // sola. Fallar acá con un mensaje que apunte al endpoint correcto es mejor que
+        // fingir soporte a medias.
         if (group.Any(r => r.DisputeMotivo != Domain.Entities.DisputeMotivo.DorsalDuplicado))
             throw new ValidationException(
-                "Esta disputa se resuelve corrigiendo el StartUtc de la categoría, no asignando un dorsal. Todavía no soportado.");
+                "Esta disputa se resuelve corrigiendo el StartUtc de la categoría " +
+                "(POST .../categories/{categoryId}/correct-start) o reabriéndola " +
+                "(POST .../categories/reopen), no asignando un dorsal acá.");
 
         var touchedCategories = new HashSet<int>();
 
@@ -291,6 +294,64 @@ public class ResultService(
 
         var startUtcByCategoryId = await GetStartUtcByCategoryIdAsync(raceId, ct);
         return group.Select(r => ToDto(r, startUtcByCategoryId)).ToList();
+    }
+
+    /// <summary>
+    /// PR 2b. Reusa TryResolveDorsalAsync en vez de reimplementar sus chequeos: para
+    /// cada Controversia candidata, vuelve a intentar el MISMO dorsal propuesto. Si la
+    /// categoría de destino ya es EnCurso y el dorsal sigue libre, TryResolveDorsalAsync
+    /// toma el camino feliz y deja Dorsal/RunnerId/CategoryId aplicados — acá solo falta
+    /// terminar de limpiar el estado de disputa. Si el dorsal se lo ganó alguien más
+    /// mientras tanto, TryResolveDorsalAsync ya deja el nuevo motivo (típicamente
+    /// DorsalDuplicado) y no hay nada más que hacer con esa fila en este pase.
+    /// </summary>
+    public async Task<int> ResolvePendingCategoryDisputesAsync(
+        int raceId, int categoryId, int actorUserId, string razon, CancellationToken ct = default)
+    {
+        var disputed = await resultRepository.GetDisputedByRaceAsync(raceId, ct);
+        var candidates = disputed
+            .Where(r => r.DisputeMotivo == Domain.Entities.DisputeMotivo.CategoriaSinSalida
+                     || r.DisputeMotivo == Domain.Entities.DisputeMotivo.CategoriaCerrada)
+            .Where(r => !string.IsNullOrWhiteSpace(r.DorsalPropuesto))
+            .ToList();
+
+        var resolvedCount = 0;
+        var touchedAny = false;
+
+        foreach (var target in candidates)
+        {
+            var runner = await runnerRepository.GetByDorsalAsync(raceId, target.DorsalPropuesto!, ct);
+            if (runner is null || runner.CategoryId != categoryId)
+                continue; // esta disputa es de OTRA categoría (o el dorsal ya no existe) — no nos toca acá
+
+            touchedAny = true;
+            var stillDisputed = await TryResolveDorsalAsync(target, target.DorsalPropuesto!, raceId, actorUserId, ct);
+            if (stillDisputed)
+                continue; // TryResolveDorsalAsync ya dejó su propio motivo/estado nuevo — nada más que hacer
+
+            target.Estado = ResultEstado.Valido;
+            target.DorsalPropuesto = null;
+            target.DisputeMotivo = null;
+            target.UpdatedAt = DateTime.UtcNow;
+            await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Estado", ResultEstado.Controversia.ToString(), ResultEstado.Valido.ToString(), razon, ct);
+            resolvedCount++;
+        }
+
+        // Igual si terminaron todas SiguenDisputadas: TryResolveDorsalAsync puede haber
+        // mutado entidades trackeadas (p.ej. el lado "existing" de un nuevo
+        // DorsalDuplicado) que necesitan este flush aunque resolvedCount quede en 0.
+        if (!touchedAny)
+            return 0;
+
+        await resultRepository.SaveChangesAsync(ct);
+
+        if (resolvedCount > 0)
+        {
+            await RecalculatePositionsAsync(raceId, categoryId, ct);
+            await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
+        }
+
+        return resolvedCount;
     }
 
     public async Task<List<DisputeGroupDto>> GetOpenDisputesAsync(int raceId, CancellationToken ct = default)
