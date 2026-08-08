@@ -25,7 +25,7 @@ public class ResultService(
         {
             var existing = await resultRepository.GetByIdempotencyKeyAsync(raceId, idempotencyKey, ct);
             if (existing is not null)
-                return ToDto(existing);
+                return ToDto(existing, await GetStartUtcByCategoryIdAsync(raceId, ct));
         }
 
         // Captures only when EnCurso (domain rule). RaceStartUtc alone is not enough:
@@ -72,7 +72,7 @@ public class ResultService(
             // — es un estado imposible que merece visibilidad.
             var winner = await resultRepository.GetByIdempotencyKeyAsync(raceId, idempotencyKey, ct);
             if (winner is null) throw;
-            return ToDto(winner);
+            return ToDto(winner, await GetStartUtcByCategoryIdAsync(raceId, ct));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Dorsal))
