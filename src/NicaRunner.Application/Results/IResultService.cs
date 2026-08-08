@@ -34,4 +34,12 @@ public interface IResultService
 
     /// <summary>Lista los grupos de disputa abiertos (Estado=Controversia) de la carrera.</summary>
     Task<List<DisputeGroupDto>> GetOpenDisputesAsync(int raceId, CancellationToken ct = default);
+
+    /// <summary>
+    /// PR 2b: reintenta cada resultado en Controversia de `categoryId` cuyo motivo sea
+    /// CategoriaSinSalida o CategoriaCerrada, ahora que la categoría volvió a EnCurso
+    /// (por CorrectStartAsync o por ReopenAsync). Devuelve cuántos volvieron a Valido.
+    /// </summary>
+    Task<int> ResolvePendingCategoryDisputesAsync(
+        int raceId, int categoryId, int actorUserId, string razon, CancellationToken ct = default);
 }

@@ -1,6 +1,7 @@
 using NicaRunner.Application.Categories.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Results;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Categories;
@@ -9,7 +10,8 @@ public class RaceCategoryService(
     IRaceCategoryRepository raceCategoryRepository,
     ICategoryRepository categoryRepository,
     IRaceRepository raceRepository,
-    IRunnerRepository runnerRepository) : IRaceCategoryService
+    IRunnerRepository runnerRepository,
+    IResultService resultService) : IRaceCategoryService
 {
     public async Task<RaceCategoryDto> AssignAsync(int raceId, AssignCategoryRequest request, CancellationToken ct = default)
     {
@@ -79,6 +81,46 @@ public class RaceCategoryService(
         await raceCategoryRepository.SaveChangesAsync(ct);
 
         return targets.Select(ToDto).ToList();
+    }
+
+    public async Task<RaceCategoryDto> CorrectStartAsync(
+        int raceId, int categoryId, CorrectCategoryStartRequest request, int actorUserId, CancellationToken ct = default)
+    {
+        var race = await GetRaceOrThrowAsync(raceId, ct);
+
+        var target = await raceCategoryRepository.GetAssociationAsync(raceId, categoryId, ct)
+            ?? throw new NotFoundException($"La categoría {categoryId} no está asignada a la carrera {raceId}.");
+
+        if (target.Estado != RaceCategoryStatus.Planeada)
+            throw new ConflictException(
+                $"Solo se puede corregir el arranque de una categoría Planeada. Esta está {target.Estado}.");
+
+        if (request.StartUtc > DateTime.UtcNow)
+            throw new ValidationException("La hora corregida no puede ser futura.");
+
+        target.Estado = RaceCategoryStatus.EnCurso;
+        target.StartUtc = request.StartUtc;
+        target.StartedByUserId = actorUserId;
+        target.StartOrigen = StartClockOrigen.CorreccionAdmin;
+        target.StartOffsetConfianzaMs = null;
+
+        await SyncRaceStateAsync(race, ct);
+        await raceCategoryRepository.SaveChangesAsync(ct);
+
+        // La corrección de UNA categoría ya persistió arriba; la cascada de disputas es
+        // un segundo save independiente (mismo patrón de dos fases que CreateAsync en
+        // ResultService) — si esto fallara, la categoría ya quedó bien arrancada, que es
+        // la corrección real e irreversible.
+        //
+        // El reintento NO es volver a llamar acá: este endpoint exige Planeada y la
+        // categoría ya quedó EnCurso, así que una segunda llamada da 409. La vía de
+        // recuperación es close + reopen de la categoría — ReopenAsync dispara la misma
+        // cascada, y como no toca StartUtc, la corrección que acaba de persistir se
+        // respeta. Las disputas quedan en Controversia mientras tanto: visibles en
+        // GET .../results/disputes, nunca perdidas.
+        await resultService.ResolvePendingCategoryDisputesAsync(raceId, categoryId, actorUserId, request.Razon, ct);
+
+        return ToDto(target);
     }
 
     // Margen de tolerancia por diferencias de reloj entre el dispositivo del juez y el
@@ -161,6 +203,15 @@ public class RaceCategoryService(
 
         await SyncRaceStateAsync(race, ct);
         await raceCategoryRepository.SaveChangesAsync(ct);
+
+        // Motivo CategoriaCerrada: con la categoría otra vez EnCurso, cualquier captura
+        // que había quedado en Controversia por llegar mientras estaba Terminada puede
+        // reintentarse — mismo helper que usa CorrectStartAsync para CategoriaSinSalida.
+        // StartUtc no se tocó (ver comentario arriba), así que el cero sigue siendo el
+        // mismo que tenía la categoría antes de cerrarse.
+        foreach (var target in targets)
+            await resultService.ResolvePendingCategoryDisputesAsync(
+                raceId, target.CategoryId, actorUserId, "Categoría reabierta", ct);
 
         return targets.Select(ToDto).ToList();
     }

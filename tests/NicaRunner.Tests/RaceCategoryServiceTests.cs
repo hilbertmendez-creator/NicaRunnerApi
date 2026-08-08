@@ -3,6 +3,7 @@ using NicaRunner.Application.Categories;
 using NicaRunner.Application.Categories.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Results;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Tests;
@@ -13,9 +14,10 @@ public class RaceCategoryServiceTests
     private readonly Mock<ICategoryRepository> _categories = new();
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<IRunnerRepository> _runners = new();
+    private readonly Mock<IResultService> _resultService = new();
 
     private RaceCategoryService BuildService() =>
-        new(_raceCategories.Object, _categories.Object, _races.Object, _runners.Object);
+        new(_raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object);
 
     private static Race SomeRace(int id = 1) => new() { Id = id, Nombre = "Carrera", JoinCode = "ABC123" };
 

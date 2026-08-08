@@ -52,6 +52,16 @@ public class RaceCategoriesController(IRaceCategoryService categoryService) : Co
         return Ok(await categoryService.StartAsync(raceId, effective, GetUserId(), ct));
     }
 
+    // PR 2b, motivo CategoriaSinSalida: corrige el arranque de una categoría Planeada
+    // que nunca se disparó. Admin-only — a diferencia de `start` (Admin + Capturista,
+    // el "Dar salida" en tiempo real del juez), esto es una corrección administrativa
+    // retroactiva, mismo criterio que `reopen`.
+    [HttpPost("{categoryId:int}/correct-start")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<ActionResult<RaceCategoryDto>> CorrectStart(
+        int raceId, int categoryId, CorrectCategoryStartRequest request, CancellationToken ct) =>
+        Ok(await categoryService.CorrectStartAsync(raceId, categoryId, request, GetUserId(), ct));
+
     [HttpPost("close")]
     [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
     public async Task<ActionResult<List<RaceCategoryDto>>> Close(
