@@ -96,4 +96,40 @@ public class RaceCategoryServiceTests
 
         await Assert.ThrowsAsync<NotFoundException>(() => BuildService().UnassignAsync(1, 5));
     }
+
+    // El listado tiene que decir el estado REAL de cada categoría. Antes mapeaba por el
+    // overload de catálogo (ToDto(Category)), que no conoce la fila RaceCategory, así que
+    // toda categoría salía con los defaults del DTO: Planeada, sin StartUtc, sin juez —
+    // aunque en la base estuviera EnCurso hace media hora. La pantalla de Salida del móvil
+    // se construye sobre estos campos: sin esto no puede distinguir qué falta arrancar.
+    [Fact]
+    public async Task GetAllByRaceAsync_CategoriaEnCurso_ReportaSuEstadoYArranqueReales()
+    {
+        var startUtc = new DateTime(2026, 8, 8, 14, 3, 11, DateTimeKind.Utc);
+        var association = new RaceCategory
+        {
+            RaceId = 1,
+            CategoryId = 5,
+            Estado = RaceCategoryStatus.EnCurso,
+            StartUtc = startUtc,
+            StartedByUserId = 42,
+            StartedBy = new User { Id = 42, Nombre = "Juez de Partida", Email = "juez@test.local" },
+            StartOrigen = StartClockOrigen.Servidor,
+            Category = new Category { Id = 5, Codigo = "JUV", NombreCategoria = "Juvenil", Distancia = 5 }
+        };
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(SomeRace());
+        _raceCategories.Setup(rc => rc.GetAssociationsByRaceAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([association]);
+
+        var dtos = await BuildService().GetAllByRaceAsync(1);
+
+        var dto = Assert.Single(dtos);
+        Assert.Equal(5, dto.CategoryId);
+        Assert.Equal("JUV", dto.Codigo);
+        Assert.Equal(RaceCategoryStatus.EnCurso, dto.Estado);
+        Assert.Equal(startUtc, dto.StartUtc);
+        Assert.Equal(42, dto.StartedByUserId);
+        Assert.Equal("Juez de Partida", dto.StartedByNombre);
+        Assert.Equal(StartClockOrigen.Servidor, dto.StartOrigen);
+    }
 }
