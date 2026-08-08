@@ -60,5 +60,16 @@ public class ResultsController(IResultService resultService) : ControllerBase
     public async Task<ActionResult<List<ResultAuditDto>>> GetAudit(int raceId, int resultId, CancellationToken ct) =>
         Ok(await resultService.GetAuditAsync(raceId, resultId, ct));
 
+    // F4 del spec: el autor deshace lo suyo mientras la carrera sigue EnCurso; un
+    // Admin deshace cualquier captura, siempre. isAdmin se resuelve del rol del
+    // token, no de un parámetro que el cliente pudiera falsear.
+    [HttpPost("{resultId:int}/void")]
+    [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
+    public async Task<ActionResult<ResultDto>> Void(int raceId, int resultId, VoidResultRequest request, CancellationToken ct)
+    {
+        var isAdmin = User.IsInRole(nameof(UserRole.Administrador));
+        return Ok(await resultService.VoidAsync(raceId, resultId, request, GetUserId(), isAdmin, ct));
+    }
+
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

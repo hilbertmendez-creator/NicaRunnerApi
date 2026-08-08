@@ -17,4 +17,12 @@ public interface IResultService
     Task<ResultDto> GetByIdAsync(int raceId, int resultId, CancellationToken ct = default);
     Task<ResultDto> UpdateAsync(int raceId, int resultId, UpdateResultRequest request, int editorId, CancellationToken ct = default);
     Task<List<ResultAuditDto>> GetAuditAsync(int raceId, int resultId, CancellationToken ct = default);
+
+    /// <summary>
+    /// D5: el autor de la captura puede deshacer lo suyo mientras la carrera no esté
+    /// Terminada; un Admin puede deshacer cualquier captura, siempre. Pasa el resultado
+    /// a Estado=Anulado, resetea su Posicion a 0 y recalcula las posiciones de la
+    /// categoría afectada.
+    /// </summary>
+    Task<ResultDto> VoidAsync(int raceId, int resultId, VoidResultRequest request, int actorUserId, bool isAdmin, CancellationToken ct = default);
 }

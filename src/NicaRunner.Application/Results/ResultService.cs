@@ -162,6 +162,47 @@ public class ResultService(
         return ToDto(saved ?? result, startUtcByCategoryId);
     }
 
+    public async Task<ResultDto> VoidAsync(
+        int raceId, int resultId, VoidResultRequest request, int actorUserId, bool isAdmin, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Razon))
+            throw new ValidationException("La razón es obligatoria para deshacer una captura.");
+
+        var result = await GetResultOrThrowAsync(raceId, resultId, ct);
+        var race = await GetRaceOrThrowAsync(raceId, ct);
+
+        // D5: el autor puede deshacer lo suyo mientras la carrera no esté Terminada;
+        // el Admin puede deshacer cualquiera, siempre. Esto es intencionalmente MÁS
+        // estricto para el autor que para el Admin — la carrera cerrada es la línea
+        // que separa "todavía estoy en la meta corrigiendo mis propios toques" de
+        // "esto ya se convirtió en resultado oficial, ahora es cosa de BO".
+        if (!isAdmin)
+        {
+            if (result.CapturistaId != actorUserId)
+                throw new ForbiddenException("Solo podés deshacer capturas que vos mismo registraste.");
+            if (race.Estado == RaceStatus.Terminada)
+                throw new ForbiddenException("La carrera ya terminó — pedile a un Admin que la deshaga.");
+        }
+
+        var oldCategoryId = result.CategoryId;
+
+        await RegisterAuditIfChangedAsync(result.Id, actorUserId, "Estado", result.Estado.ToString(), ResultEstado.Anulado.ToString(), request.Razon, ct);
+        result.Estado = ResultEstado.Anulado;
+        result.Posicion = 0; // un resultado Anulado no puede seguir mostrando una posición real
+        result.UpdatedAt = DateTime.UtcNow;
+
+        await resultRepository.SaveChangesAsync(ct);
+
+        if (oldCategoryId is not null)
+            await RecalculatePositionsAsync(raceId, oldCategoryId.Value, ct);
+
+        await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
+
+        var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
+        var startUtcByCategoryId = await GetStartUtcByCategoryIdAsync(raceId, ct);
+        return ToDto(saved ?? result, startUtcByCategoryId);
+    }
+
     public async Task<List<ResultAuditDto>> GetAuditAsync(int raceId, int resultId, CancellationToken ct = default)
     {
         await GetResultOrThrowAsync(raceId, resultId, ct);
