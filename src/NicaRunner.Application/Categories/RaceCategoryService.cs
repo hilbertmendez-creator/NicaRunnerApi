@@ -204,6 +204,15 @@ public class RaceCategoryService(
         await SyncRaceStateAsync(race, ct);
         await raceCategoryRepository.SaveChangesAsync(ct);
 
+        // Motivo CategoriaCerrada: con la categoría otra vez EnCurso, cualquier captura
+        // que había quedado en Controversia por llegar mientras estaba Terminada puede
+        // reintentarse — mismo helper que usa CorrectStartAsync para CategoriaSinSalida.
+        // StartUtc no se tocó (ver comentario arriba), así que el cero sigue siendo el
+        // mismo que tenía la categoría antes de cerrarse.
+        foreach (var target in targets)
+            await resultService.ResolvePendingCategoryDisputesAsync(
+                raceId, target.CategoryId, actorUserId, "Categoría reabierta", ct);
+
         return targets.Select(ToDto).ToList();
     }
 
