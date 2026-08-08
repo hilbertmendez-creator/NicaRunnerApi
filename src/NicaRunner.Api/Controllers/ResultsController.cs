@@ -71,5 +71,18 @@ public class ResultsController(IResultService resultService) : ControllerBase
         return Ok(await resultService.VoidAsync(raceId, resultId, request, GetUserId(), isAdmin, ct));
     }
 
+    // F5 del spec, acotado a DorsalDuplicado en este PR. Admin-only, mismo criterio de
+    // acceso que GetAudit arriba — disputas son un asunto de Admin/BO, no se amplía el
+    // acceso de Lector sin que se pida explícitamente.
+    [HttpGet("disputes")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<ActionResult<List<DisputeGroupDto>>> GetDisputes(int raceId, CancellationToken ct) =>
+        Ok(await resultService.GetOpenDisputesAsync(raceId, ct));
+
+    [HttpPost("disputes/{disputeGroupId:int}/resolve")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    public async Task<ActionResult<List<ResultDto>>> ResolveDispute(int raceId, int disputeGroupId, ResolveDisputeGroupRequest request, CancellationToken ct) =>
+        Ok(await resultService.ResolveDisputeAsync(raceId, disputeGroupId, request, GetUserId(), ct));
+
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

@@ -203,6 +203,103 @@ public class ResultService(
         return ToDto(saved ?? result, startUtcByCategoryId);
     }
 
+    public async Task<List<ResultDto>> ResolveDisputeAsync(
+        int raceId, int disputeGroupId, ResolveDisputeGroupRequest request, int actorUserId, CancellationToken ct = default)
+    {
+        await GetRaceOrThrowAsync(raceId, ct);
+
+        var disputed = await resultRepository.GetDisputedByRaceAsync(raceId, ct);
+        var group = disputed.Where(r => (r.DisputeGroupId ?? r.Id) == disputeGroupId).ToList();
+        if (group.Count == 0)
+            throw new NotFoundException($"No existe una disputa abierta con id {disputeGroupId} en la carrera {raceId}.");
+
+        // Este PR solo resuelve DorsalDuplicado. CategoriaSinSalida/CategoriaCerrada se
+        // resuelven corrigiendo el StartUtc de la categoría — esa capacidad todavía no
+        // existe (ver el PR que la agrega). Fallar acá con un mensaje claro es mejor
+        // que fingir soporte a medias.
+        if (group.Any(r => r.DisputeMotivo != Domain.Entities.DisputeMotivo.DorsalDuplicado))
+            throw new ValidationException(
+                "Esta disputa se resuelve corrigiendo el StartUtc de la categoría, no asignando un dorsal. Todavía no soportado.");
+
+        var touchedCategories = new HashSet<int>();
+
+        foreach (var assignment in request.Asignaciones)
+        {
+            var target = group.FirstOrDefault(r => r.Id == assignment.ResultId)
+                ?? throw new NotFoundException($"El resultado {assignment.ResultId} no pertenece a esta disputa.");
+
+            await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Dorsal", target.Dorsal ?? "(sin asignar)", assignment.Dorsal ?? "(sin asignar)", request.Razon, ct);
+
+            target.Dorsal = assignment.Dorsal;
+            target.DorsalPropuesto = null;
+            target.DisputeGroupId = null;
+            target.DisputeMotivo = null;
+            target.Estado = ResultEstado.Valido;
+            target.UpdatedAt = DateTime.UtcNow;
+
+            if (assignment.Dorsal is not null)
+            {
+                var runner = await runnerRepository.GetByDorsalAsync(raceId, assignment.Dorsal, ct);
+                target.RunnerId = runner?.Id;
+                target.CategoryId = runner?.CategoryId;
+            }
+
+            if (target.CategoryId is { } cid)
+                touchedCategories.Add(cid);
+        }
+
+        foreach (var resultId in request.Anular)
+        {
+            var target = group.FirstOrDefault(r => r.Id == resultId)
+                ?? throw new NotFoundException($"El resultado {resultId} no pertenece a esta disputa.");
+
+            await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Estado", target.Estado.ToString(), ResultEstado.Anulado.ToString(), request.Razon, ct);
+
+            if (target.CategoryId is { } cid)
+                touchedCategories.Add(cid);
+
+            target.Estado = ResultEstado.Anulado;
+            target.DorsalPropuesto = null;
+            target.DisputeGroupId = null;
+            target.DisputeMotivo = null;
+            target.Posicion = 0; // ya era 0 desde que entró en Controversia — reset explícito igual, por defensa
+            target.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await resultRepository.SaveChangesAsync(ct);
+
+        foreach (var categoryId in touchedCategories)
+            await RecalculatePositionsAsync(raceId, categoryId, ct);
+
+        await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
+
+        var startUtcByCategoryId = await GetStartUtcByCategoryIdAsync(raceId, ct);
+        return group.Select(r => ToDto(r, startUtcByCategoryId)).ToList();
+    }
+
+    public async Task<List<DisputeGroupDto>> GetOpenDisputesAsync(int raceId, CancellationToken ct = default)
+    {
+        await GetRaceOrThrowAsync(raceId, ct);
+
+        var disputed = await resultRepository.GetDisputedByRaceAsync(raceId, ct);
+        var startUtcByCategoryId = await GetStartUtcByCategoryIdAsync(raceId, ct);
+        return disputed
+            .GroupBy(r => r.DisputeGroupId ?? r.Id)
+            .Select(g =>
+            {
+                var first = g.OrderBy(r => r.TiempoLlegada).First();
+                return new DisputeGroupDto(
+                    g.Key,
+                    raceId,
+                    first.DisputeMotivo!.Value,
+                    first.DorsalPropuesto ?? first.Dorsal,
+                    g.Min(r => r.UpdatedAt),
+                    g.Select(r => ToDto(r, startUtcByCategoryId)).ToList());
+            })
+            .OrderBy(g => g.AbiertaUtc)
+            .ToList();
+    }
+
     public async Task<List<ResultAuditDto>> GetAuditAsync(int raceId, int resultId, CancellationToken ct = default)
     {
         await GetResultOrThrowAsync(raceId, resultId, ct);

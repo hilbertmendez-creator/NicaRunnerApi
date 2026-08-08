@@ -25,4 +25,13 @@ public interface IResultService
     /// categoría afectada.
     /// </summary>
     Task<ResultDto> VoidAsync(int raceId, int resultId, VoidResultRequest request, int actorUserId, bool isAdmin, CancellationToken ct = default);
+
+    /// <summary>
+    /// F5, acotado a DorsalDuplicado en este PR. Resuelve un grupo de disputa
+    /// aplicando las asignaciones de dorsal indicadas y anulando el resto.
+    /// </summary>
+    Task<List<ResultDto>> ResolveDisputeAsync(int raceId, int disputeGroupId, ResolveDisputeGroupRequest request, int actorUserId, CancellationToken ct = default);
+
+    /// <summary>Lista los grupos de disputa abiertos (Estado=Controversia) de la carrera.</summary>
+    Task<List<DisputeGroupDto>> GetOpenDisputesAsync(int raceId, CancellationToken ct = default);
 }
