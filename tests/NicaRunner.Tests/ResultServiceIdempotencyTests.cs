@@ -14,9 +14,18 @@ public class ResultServiceIdempotencyTests
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceDashboardNotifier> _dashboardNotifier = new();
+    private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
+
+    public ResultServiceIdempotencyTests()
+    {
+        // Default sin arrancar ninguna categoría: estos tests no ejercitan ElapsedMillis,
+        // solo necesitan que ToDto no reviente por un lookup null (Task 5).
+        _raceCategories.Setup(rc => rc.GetAssociationsByRaceAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RaceCategory>());
+    }
 
     private ResultService BuildService() =>
-        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object);
+        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object, _raceCategories.Object);
 
     private void RaceExists(int raceId = 1, RaceStatus estado = RaceStatus.EnCurso)
     {
@@ -53,7 +62,12 @@ public class ResultServiceIdempotencyTests
         Assert.Equal(42, dto.Id);
         _results.Verify(r => r.GetByIdempotencyKeyAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
-        _results.Verify(r => r.SaveNewResultAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Dos saves: el primero persiste el Result "pelado" para obtener un Id real
+        // ANTES de que la resolución de dorsal pueda escribir un ResultAudit (ver fix
+        // de la disputa con FK a Results); el segundo persiste lo que haya dejado
+        // TryResolveDorsalAsync. Sin dorsal en el request, el segundo save no cambia
+        // nada, pero igual corre — es el mismo código que en el camino con dorsal.
+        _results.Verify(r => r.SaveNewResultAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     // POST con Idempotency-Key nuevo: hace lookup (falla), crea normal y
@@ -179,7 +193,12 @@ public class ResultServiceIdempotencyTests
         _runners.Setup(r => r.GetByDorsalAsync(1, "101", It.IsAny<CancellationToken>())).ReturnsAsync(runner);
         _results.Setup(r => r.ExistsByRunnerAsync(1, 3, null, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _results.Setup(r => r.AddAsync(It.IsAny<Result>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        _results.Setup(r => r.SaveNewResultAsync(It.IsAny<CancellationToken>()))
+        // Primer save (Result pelado, sin dorsal todavía): ok, como en la BD real —
+        // RunnerId sigue null en ese INSERT, esa UK no puede chocar ahí. El conflicto
+        // de dorsal concurrente sólo puede aparecer en el SEGUNDO save, después de que
+        // TryResolveDorsalAsync escribió Dorsal/RunnerId en `result`.
+        _results.SetupSequence(r => r.SaveNewResultAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
             .ThrowsAsync(new RunnerResultConflictException());
 
         var ex = await Assert.ThrowsAsync<ConflictException>(

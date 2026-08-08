@@ -207,6 +207,43 @@ public class NicaRunnerDbContext : DbContext
             .WithMany(r => r.AuditEntries)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<Result>()
+            .Property(r => r.Estado)
+            .HasConversion<string>()
+            .HasMaxLength(16);
+        modelBuilder.Entity<Result>()
+            .Property(r => r.DorsalPropuesto)
+            .HasMaxLength(32); // mismo límite que Result.Dorsal
+        modelBuilder.Entity<Result>()
+            .Property(r => r.DisputeMotivo)
+            .HasConversion<string>()
+            .HasMaxLength(30);
+
+        // DisputeGroupId apunta al Id de OTRO Result de la misma carrera (el "ancla"
+        // del grupo) — no a una tabla DisputeGroup separada, esa no existe. FK
+        // autorreferenciada + índice: sin esto, un bug de copy-paste podría dejar un
+        // DisputeGroupId apuntando a cualquier entero sin que nada lo note hasta que
+        // una query de resolución de disputas lo intente usar. Restrict porque anular
+        // o resolver un lado del grupo pasa por poner DisputeGroupId=null explícitamente
+        // (ver ResolveDisputeAsync), nunca por borrar la fila.
+        modelBuilder.Entity<Result>()
+            .HasOne<Result>()
+            .WithMany()
+            .HasForeignKey(r => r.DisputeGroupId)
+            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Result>()
+            .HasIndex(r => r.DisputeGroupId);
+
+        // Convención EF no resuelve ResultAudit.Admin (nav) contra ActorUserId (columna)
+        // — el nombre de la propiedad de navegación no cambió a propósito (ver el
+        // comentario en ResultAudit.cs), así que sin este HasForeignKey explícito EF
+        // generaría una FK shadow duplicada e inútil en vez de usar la columna real.
+        modelBuilder.Entity<ResultAudit>()
+            .HasOne(a => a.Admin)
+            .WithMany()
+            .HasForeignKey(a => a.ActorUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Bitácora transversal (Usuarios/Carreras/Categorías). Append-only.
         modelBuilder.Entity<AuditLog>(e =>
         {

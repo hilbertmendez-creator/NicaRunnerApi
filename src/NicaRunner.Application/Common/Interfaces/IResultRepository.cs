@@ -13,6 +13,9 @@ public interface IResultRepository
     Task<bool> ExistsByRunnerAsync(int raceId, int runnerId, int? excludeResultId = null, CancellationToken ct = default);
     Task<Result?> GetByIdempotencyKeyAsync(int raceId, string idempotencyKey, CancellationToken ct = default);
 
+    /// <summary>Todos los resultados en Controversia de la carrera, con Category y Capturista precargados.</summary>
+    Task<List<Result>> GetDisputedByRaceAsync(int raceId, CancellationToken ct = default);
+
     /// <summary>
     /// design.md Decisión 3: el resultado de un corredor en una carrera, con Category
     /// precargada (seek por el índice único filtrado IX_Results_RaceId_RunnerId).

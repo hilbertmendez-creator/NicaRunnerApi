@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NicaRunner.Infrastructure.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NicaRunner.Infrastructure.Migrations
 {
     [DbContext(typeof(NicaRunnerDbContext))]
-    partial class NicaRunnerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260807121101_AddResultDisputeState")]
+    partial class AddResultDisputeState
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -400,8 +403,8 @@ namespace NicaRunner.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("DisputeMotivo")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Dorsal")
                         .HasColumnType("text");

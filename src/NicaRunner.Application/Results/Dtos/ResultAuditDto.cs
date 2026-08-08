@@ -3,7 +3,7 @@ namespace NicaRunner.Application.Results.Dtos;
 public record ResultAuditDto(
     int Id,
     int ResultId,
-    int AdminId,
+    int ActorUserId,
     string CampoModificado,
     string ValorAnterior,
     string ValorNuevo,

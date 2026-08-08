@@ -50,6 +50,15 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
             .ThenBy(r => r.Posicion)
             .ToListAsync(ct);
 
+    public Task<List<Result>> GetDisputedByRaceAsync(int raceId, CancellationToken ct = default) =>
+        context.Results
+            .Include(r => r.Runner)
+            .Include(r => r.Category)
+            .Include(r => r.Capturista)
+            .Where(r => r.RaceId == raceId && r.Estado == ResultEstado.Controversia)
+            .OrderBy(r => r.DisputeGroupId).ThenBy(r => r.TiempoLlegada)
+            .ToListAsync(ct);
+
     public Task<List<Result>> GetAllByCategoryAsync(int raceId, int categoryId, CancellationToken ct = default) =>
         context.Results
             .Where(r => r.RaceId == raceId && r.CategoryId == categoryId)

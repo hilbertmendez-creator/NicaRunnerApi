@@ -97,7 +97,7 @@ public class DisputeService(
             await auditRepository.AddAsync(new ResultAudit
             {
                 ResultId = result.Id,
-                AdminId = actorUserId,
+                ActorUserId = actorUserId,
                 CampoModificado = "TiempoLlegada",
                 ValorAnterior = anterior.ToString("O"),
                 ValorNuevo = nuevo.ToString("O"),

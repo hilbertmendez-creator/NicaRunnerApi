@@ -8,4 +8,8 @@ public class RaceDashboardNotifier(IHubContext<RaceDashboardHub> hubContext) : I
     public Task NotifyResultsChangedAsync(int raceId, CancellationToken ct = default) =>
         hubContext.Clients.Group(RaceDashboardHub.GroupName(raceId))
             .SendAsync("resultsChanged", raceId, cancellationToken: ct);
+
+    public Task NotifyDisputeOpenedAsync(int raceId, CancellationToken ct = default) =>
+        hubContext.Clients.Group(RaceDashboardHub.GroupName(raceId))
+            .SendAsync("disputeOpened", raceId, cancellationToken: ct);
 }

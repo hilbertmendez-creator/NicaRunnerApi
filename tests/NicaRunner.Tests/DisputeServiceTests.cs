@@ -145,7 +145,7 @@ public class DisputeServiceTests
         Assert.NotNull(audit);
         Assert.Equal("TiempoLlegada", audit!.CampoModificado);
         Assert.Equal("Controversia resuelta: Checkpoint", audit.Razon);
-        Assert.Equal(9, audit.AdminId);
+        Assert.Equal(9, audit.ActorUserId);
         _disputes.Verify(d => d.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
