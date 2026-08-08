@@ -110,8 +110,14 @@ public class RaceCategoryService(
         // La corrección de UNA categoría ya persistió arriba; la cascada de disputas es
         // un segundo save independiente (mismo patrón de dos fases que CreateAsync en
         // ResultService) — si esto fallara, la categoría ya quedó bien arrancada, que es
-        // la corrección real; la cascada se puede reintentar llamando de nuevo a este
-        // mismo endpoint (TryResolveDorsalAsync es idempotente para el camino feliz).
+        // la corrección real e irreversible.
+        //
+        // El reintento NO es volver a llamar acá: este endpoint exige Planeada y la
+        // categoría ya quedó EnCurso, así que una segunda llamada da 409. La vía de
+        // recuperación es close + reopen de la categoría — ReopenAsync dispara la misma
+        // cascada, y como no toca StartUtc, la corrección que acaba de persistir se
+        // respeta. Las disputas quedan en Controversia mientras tanto: visibles en
+        // GET .../results/disputes, nunca perdidas.
         await resultService.ResolvePendingCategoryDisputesAsync(raceId, categoryId, actorUserId, request.Razon, ct);
 
         return ToDto(target);
