@@ -33,8 +33,14 @@ public class RaceCategoryService(
     {
         await EnsureRaceExistsAsync(raceId, ct);
 
-        var categories = await raceCategoryRepository.GetAllByRaceAsync(raceId, ct);
-        return categories.Select(ToDto).ToList();
+        // Las asociaciones, no el catálogo: ToDto(Category) no puede ver la fila
+        // RaceCategory, así que devolvía los defaults del DTO (Planeada, sin StartUtc, sin
+        // juez) para TODA categoría, sin importar su estado real. Este endpoint es la
+        // fuente de la pantalla de Salida del móvil, que existe justamente para distinguir
+        // qué categorías faltan arrancar de las que ya salieron y a qué hora.
+        // GetAssociationsByRaceAsync ya trae Category/StartedBy/ClosedBy y ordena por Orden.
+        var associations = await raceCategoryRepository.GetAssociationsByRaceAsync(raceId, ct);
+        return associations.Select(ToDto).ToList();
     }
 
     public async Task UnassignAsync(int raceId, int categoryId, CancellationToken ct = default)
