@@ -34,9 +34,9 @@ public class ResultVoidTests
     private ResultService BuildService() =>
         new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object);
 
-    private Result Setup(RaceStatus raceStatus = RaceStatus.EnCurso, int capturistaId = Author, int? categoryId = 5)
+    private Result Setup(RaceStatus raceStatus = RaceStatus.EnCurso, int capturistaId = Author, int? categoryId = 5, int? runnerId = null, string? dorsal = null)
     {
-        var result = new Result { Id = 1, RaceId = 1, CapturistaId = capturistaId, CategoryId = categoryId, Estado = ResultEstado.Valido, TiempoLlegada = DateTime.UtcNow };
+        var result = new Result { Id = 1, RaceId = 1, CapturistaId = capturistaId, CategoryId = categoryId, RunnerId = runnerId, Dorsal = dorsal, Estado = ResultEstado.Valido, TiempoLlegada = DateTime.UtcNow };
         _results.Setup(r => r.GetByIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(result);
         _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Race { Id = 1, Nombre = "C", JoinCode = "X", Estado = raceStatus });
@@ -105,6 +105,23 @@ public class ResultVoidTests
 
         await Assert.ThrowsAsync<ValidationException>(() =>
             BuildService().VoidAsync(1, 1, new VoidResultRequest(""), Author, isAdmin: false));
+    }
+
+    [Fact]
+    public async Task VoidAsync_LiberaRunnerIdYDorsal()
+    {
+        // Postgres real (no este mock): IX_Results_RaceId_RunnerId es único por
+        // (RaceId, RunnerId) sin importar Estado. Si un Anulado retuviera su
+        // RunnerId, ni una nueva captura de ese dorsal ni una resolución de
+        // disputa podrían asignárselo a otro resultado sin un 500 por violación
+        // de UK — bug real encontrado en la verificación manual de PR2a Task 8.
+        var result = Setup(runnerId: 7, dorsal: "701");
+
+        var dto = await BuildService().VoidAsync(1, 1, new VoidResultRequest("toque fantasma"), Author, isAdmin: false);
+
+        Assert.Null(result.RunnerId);
+        Assert.Null(result.Dorsal);
+        Assert.Null(dto.Dorsal);
     }
 
     [Fact]

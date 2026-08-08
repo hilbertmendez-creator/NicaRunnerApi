@@ -187,7 +187,15 @@ public class ResultService(
         var oldCategoryId = result.CategoryId;
 
         await RegisterAuditIfChangedAsync(result.Id, actorUserId, "Estado", result.Estado.ToString(), ResultEstado.Anulado.ToString(), request.Razon, ct);
+        // Libera el dorsal/corredor: IX_Results_RaceId_RunnerId es único por (RaceId,
+        // RunnerId) sin importar Estado, así que un Anulado que retuviera su RunnerId
+        // seguiría "ocupando" al corredor para siempre — ni una nueva captura de ese
+        // dorsal ni una futura resolución de disputa podrían asignárselo a otro
+        // resultado sin chocar contra la UK real de Postgres.
+        await RegisterAuditIfChangedAsync(result.Id, actorUserId, "Dorsal", result.Dorsal ?? "(sin asignar)", "(sin asignar)", request.Razon, ct);
         result.Estado = ResultEstado.Anulado;
+        result.Dorsal = null;
+        result.RunnerId = null;
         result.Posicion = 0; // un resultado Anulado no puede seguir mostrando una posición real
         result.UpdatedAt = DateTime.UtcNow;
 
@@ -254,11 +262,19 @@ public class ResultService(
                 ?? throw new NotFoundException($"El resultado {resultId} no pertenece a esta disputa.");
 
             await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Estado", target.Estado.ToString(), ResultEstado.Anulado.ToString(), request.Razon, ct);
+            // Mismo motivo que VoidAsync: liberar RunnerId/Dorsal es obligatorio, no
+            // cosmético. El lado "ganador" del grupo (Asignaciones, arriba) puede estar
+            // reclamando ESTE MISMO RunnerId ahora mismo — sin esto, el SaveChangesAsync
+            // de abajo choca contra IX_Results_RaceId_RunnerId (confirmado con Postgres
+            // real: dos filas vivas con el mismo RunnerId en la misma carrera).
+            await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Dorsal", target.Dorsal ?? "(sin asignar)", "(sin asignar)", request.Razon, ct);
 
             if (target.CategoryId is { } cid)
                 touchedCategories.Add(cid);
 
             target.Estado = ResultEstado.Anulado;
+            target.Dorsal = null;
+            target.RunnerId = null;
             target.DorsalPropuesto = null;
             target.DisputeGroupId = null;
             target.DisputeMotivo = null;

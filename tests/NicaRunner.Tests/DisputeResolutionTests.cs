@@ -34,12 +34,18 @@ public class DisputeResolutionTests
 
     private (Result a, Result b) DorsalDuplicateGroup()
     {
-        var a = new Result { Id = 10, RaceId = 1, Dorsal = "105", CategoryId = 5, Estado = ResultEstado.Controversia, DisputeGroupId = 10, DisputeMotivo = Domain.Entities.DisputeMotivo.DorsalDuplicado, TiempoLlegada = DateTime.UtcNow.AddMinutes(-5) };
+        // `a` retiene RunnerId=3 (así queda una fila que "ganó" el dorsal antes de que
+        // la disputa se abriera — igual que el lado existing de TryResolveDorsalAsync).
+        // Postgres real exige liberarlo al anular `a`, o el update de `b` a ese mismo
+        // RunnerId choca contra IX_Results_RaceId_RunnerId (bug real, PR2a Task 8).
+        var a = new Result { Id = 10, RaceId = 1, Dorsal = "105", RunnerId = 3, CategoryId = 5, Estado = ResultEstado.Controversia, DisputeGroupId = 10, DisputeMotivo = Domain.Entities.DisputeMotivo.DorsalDuplicado, TiempoLlegada = DateTime.UtcNow.AddMinutes(-5) };
         var b = new Result { Id = 11, RaceId = 1, Dorsal = null, DorsalPropuesto = "105", CategoryId = null, Estado = ResultEstado.Controversia, DisputeGroupId = 10, DisputeMotivo = Domain.Entities.DisputeMotivo.DorsalDuplicado, TiempoLlegada = DateTime.UtcNow.AddMinutes(-3) };
         _results.Setup(r => r.GetDisputedByRaceAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync([a, b]);
         _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Race { Id = 1, Nombre = "C", JoinCode = "X", Estado = RaceStatus.EnCurso });
         _results.Setup(r => r.GetAllByCategoryAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+        _runners.Setup(r => r.GetByDorsalAsync(1, "105", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Runner { Id = 3, RaceId = 1, Nombre = "Corredor", Dorsal = "105", CategoryId = 5 });
         return (a, b);
     }
 
@@ -57,10 +63,16 @@ public class DisputeResolutionTests
         Assert.Equal(ResultEstado.Anulado, a.Estado);
         Assert.Equal(ResultEstado.Valido, b.Estado);
         Assert.Equal("105", b.Dorsal);
+        Assert.Equal(3, b.RunnerId);
         Assert.Null(b.DorsalPropuesto);
         Assert.Null(b.DisputeGroupId);
         Assert.Null(b.DisputeMotivo);
         Assert.Null(a.DisputeGroupId);
+        // El lado anulado debe soltar el RunnerId/Dorsal que retenía — si no, esta
+        // misma reasignación (RunnerId=3 a `b`, arriba) choca contra
+        // IX_Results_RaceId_RunnerId en Postgres real (bug real, PR2a Task 8).
+        Assert.Null(a.RunnerId);
+        Assert.Null(a.Dorsal);
     }
 
     [Fact]
