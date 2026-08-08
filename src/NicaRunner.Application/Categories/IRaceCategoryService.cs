@@ -16,4 +16,12 @@ public interface IRaceCategoryService
 
     Task<List<RaceCategoryDto>> ReopenAsync(
         int raceId, CategoryTransitionRequest request, int actorUserId, CancellationToken ct = default);
+
+    /// <summary>
+    /// PR 2b, motivo CategoriaSinSalida: corrige el StartUtc de una categoría Planeada
+    /// que nunca arrancó a tiempo, la pasa a EnCurso, y dispara la cascada que revalida
+    /// cualquier captura que había quedado en Controversia contra ella.
+    /// </summary>
+    Task<RaceCategoryDto> CorrectStartAsync(
+        int raceId, int categoryId, CorrectCategoryStartRequest request, int actorUserId, CancellationToken ct = default);
 }

@@ -3,6 +3,7 @@ using NicaRunner.Application.Categories;
 using NicaRunner.Application.Categories.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Results;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Tests;
@@ -13,11 +14,12 @@ public class RaceCategoryTransitionTests
     private readonly Mock<ICategoryRepository> _categories = new();
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<IRunnerRepository> _runners = new();
+    private readonly Mock<IResultService> _resultService = new();
 
     private const int JudgeId = 42;
 
     private RaceCategoryService BuildService() =>
-        new(_raceCategories.Object, _categories.Object, _races.Object, _runners.Object);
+        new(_raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object);
 
     private static RaceCategory Assoc(int categoryId, RaceCategoryStatus estado = RaceCategoryStatus.Planeada) =>
         new()
