@@ -19,4 +19,5 @@ public record ResultDto(
     ResultEstado Estado,
     string? DorsalPropuesto,
     int? DisputeGroupId,
-    DisputeMotivo? DisputeMotivo);
+    DisputeMotivo? DisputeMotivo,
+    long? ElapsedMillis = null);

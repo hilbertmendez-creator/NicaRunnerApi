@@ -104,7 +104,8 @@ public class ResultService(
         await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
 
         var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
-        return ToDto(saved ?? result);
+        var startUtcByCategoryId = await GetStartUtcByCategoryIdAsync(raceId, ct);
+        return ToDto(saved ?? result, startUtcByCategoryId);
     }
 
     public async Task<PaginatedList<ResultDto>> GetAllByRaceAsync(int raceId, int limit = 50, int offset = 0, CancellationToken ct = default)
@@ -112,13 +113,15 @@ public class ResultService(
         await GetRaceOrThrowAsync(raceId, ct);
 
         var paginated = await resultRepository.GetPaginatedByRaceAsync(raceId, limit, offset, ct);
-        return new PaginatedList<ResultDto>(paginated.Items.Select(ToDto).ToList(), paginated.TotalCount);
+        var startUtcByCategoryId = await GetStartUtcByCategoryIdAsync(raceId, ct);
+        return new PaginatedList<ResultDto>(paginated.Items.Select(r => ToDto(r, startUtcByCategoryId)).ToList(), paginated.TotalCount);
     }
 
     public async Task<ResultDto> GetByIdAsync(int raceId, int resultId, CancellationToken ct = default)
     {
         var result = await GetResultOrThrowAsync(raceId, resultId, ct);
-        return ToDto(result);
+        var startUtcByCategoryId = await GetStartUtcByCategoryIdAsync(raceId, ct);
+        return ToDto(result, startUtcByCategoryId);
     }
 
     public async Task<ResultDto> UpdateAsync(int raceId, int resultId, UpdateResultRequest request, int editorId, CancellationToken ct = default)
@@ -155,7 +158,8 @@ public class ResultService(
         await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
 
         var saved = await resultRepository.GetByIdAsync(raceId, result.Id, ct);
-        return ToDto(saved ?? result);
+        var startUtcByCategoryId = await GetStartUtcByCategoryIdAsync(raceId, ct);
+        return ToDto(saved ?? result, startUtcByCategoryId);
     }
 
     public async Task<List<ResultAuditDto>> GetAuditAsync(int raceId, int resultId, CancellationToken ct = default)
@@ -310,24 +314,41 @@ public class ResultService(
         await resultRepository.GetByIdAsync(raceId, resultId, ct)
             ?? throw new NotFoundException($"No existe el resultado con id {resultId} en la carrera {raceId}.");
 
-    private static ResultDto ToDto(Result result) => new(
-        result.Id,
-        result.RaceId,
-        result.RunnerId,
-        result.Runner?.Nombre ?? string.Empty,
-        result.Dorsal,
-        result.TiempoLlegada,
-        result.Posicion,
-        result.CategoryId,
-        result.Category?.NombreCategoria ?? string.Empty,
-        result.CapturistaId,
-        result.Capturista?.Nombre ?? string.Empty,
-        result.CreatedAt,
-        result.UpdatedAt,
-        result.Estado,
-        result.DorsalPropuesto,
-        result.DisputeGroupId,
-        result.DisputeMotivo);
+    private async Task<Dictionary<int, DateTime?>> GetStartUtcByCategoryIdAsync(int raceId, CancellationToken ct)
+    {
+        var associations = await raceCategoryRepository.GetAssociationsByRaceAsync(raceId, ct);
+        return associations.ToDictionary(a => a.CategoryId, a => a.StartUtc);
+    }
+
+    private static ResultDto ToDto(Result result, IReadOnlyDictionary<int, DateTime?>? startUtcByCategoryId = null)
+    {
+        long? elapsedMillis = null;
+        if (result.CategoryId is { } categoryId
+            && startUtcByCategoryId?.GetValueOrDefault(categoryId) is { } startUtc)
+        {
+            elapsedMillis = (long)(result.TiempoLlegada - startUtc).TotalMilliseconds;
+        }
+
+        return new(
+            result.Id,
+            result.RaceId,
+            result.RunnerId,
+            result.Runner?.Nombre ?? string.Empty,
+            result.Dorsal,
+            result.TiempoLlegada,
+            result.Posicion,
+            result.CategoryId,
+            result.Category?.NombreCategoria ?? string.Empty,
+            result.CapturistaId,
+            result.Capturista?.Nombre ?? string.Empty,
+            result.CreatedAt,
+            result.UpdatedAt,
+            result.Estado,
+            result.DorsalPropuesto,
+            result.DisputeGroupId,
+            result.DisputeMotivo,
+            elapsedMillis);
+    }
 
     private static ResultAuditDto ToAuditDto(ResultAudit audit) => new(
         audit.Id,

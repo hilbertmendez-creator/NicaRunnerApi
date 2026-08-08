@@ -16,6 +16,14 @@ public class ResultPositionExclusionTests
     private readonly Mock<IRaceDashboardNotifier> _notifier = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
 
+    public ResultPositionExclusionTests()
+    {
+        // Default sin arrancar ninguna categoría: estos tests no ejercitan ElapsedMillis,
+        // solo necesitan que ToDto no reviente por un lookup null (Task 5).
+        _raceCategories.Setup(rc => rc.GetAssociationsByRaceAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RaceCategory>());
+    }
+
     private ResultService BuildService() =>
         new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object);
 

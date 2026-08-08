@@ -18,6 +18,14 @@ public class ResultDisputeTests
 
     private const int JudgeB = 43;
 
+    public ResultDisputeTests()
+    {
+        // Default sin arrancar ninguna categoría: los tests de este archivo no ejercitan
+        // ElapsedMillis, solo necesitan que ToDto no reviente por un lookup null (Task 5).
+        _raceCategories.Setup(rc => rc.GetAssociationsByRaceAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RaceCategory>());
+    }
+
     private ResultService BuildService() =>
         new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object);
 
