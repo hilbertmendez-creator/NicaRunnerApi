@@ -101,30 +101,32 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
 
         {!user && (
           <>
-            <Label htmlFor="user-email">Email</Label>
+            <Label htmlFor="user-email" required>Email</Label>
             <Input
               id="user-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder="correo@ejemplo.com"
               className="mb-3 w-full"
             />
           </>
         )}
 
-        <Label htmlFor="user-nombre">Nombre</Label>
+        <Label htmlFor="user-nombre" required>Nombre</Label>
         <Input
           id="user-nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
+          placeholder="Ej: Juan Pérez"
           className="mb-3 w-full"
         />
 
         {user && (
           <>
-            <Label htmlFor="user-username">Alias</Label>
+            <Label htmlFor="user-username" required>Alias</Label>
             <Input
               id="user-username"
               value={username}
@@ -134,6 +136,7 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
               maxLength={30}
               pattern={ALIAS_PATTERN}
               title="3-30 caracteres: minúsculas, números, puntos, guiones o guiones bajos"
+              placeholder="usuario.ejemplo"
               className="mb-3 w-full"
             />
           </>

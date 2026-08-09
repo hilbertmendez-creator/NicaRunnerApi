@@ -29,6 +29,17 @@ public class ExcelRunnerParserTests
         Assert.Equal("Infantil", lookupSheet.Cell(1, 1).GetString());
         Assert.Equal("Juvenil", lookupSheet.Cell(2, 1).GetString());
         Assert.True(lookupSheet.Visibility == XLWorksheetVisibility.Hidden || lookupSheet.Visibility == XLWorksheetVisibility.VeryHidden);
+
+        // Regresión: una referencia directa a un rango de otra hoja como origen de una lista
+        // de validación de datos hace que Excel pida reparar el archivo al abrirlo. El fix usa
+        // un rango con nombre (defined name) como origen en su lugar.
+        var definedName = Assert.Single(workbook.DefinedNames);
+        Assert.True(definedName.IsValid);
+
+        var categoriaValidation = Assert.Single(
+            sheet.DataValidations,
+            dv => dv.AllowedValues == XLAllowedValues.List && dv.MinValue.StartsWith('='));
+        Assert.Equal($"={definedName.Name}", categoriaValidation.MinValue);
     }
 
     [Fact]

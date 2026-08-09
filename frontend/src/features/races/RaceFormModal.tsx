@@ -100,13 +100,14 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           {race ? 'Editar carrera' : 'Nueva carrera'}
         </h2>
 
-        <Label htmlFor="race-nombre">Nombre</Label>
+        <Label htmlFor="race-nombre" required>Nombre</Label>
         <Input
           id="race-nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
           maxLength={150}
+          placeholder="Ej: Maratón de León 2026"
           className="mb-1 w-full"
         />
         {fieldErrors['Nombre'] && (
@@ -120,6 +121,7 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           value={descripcion ?? ''}
           onChange={(e) => setDescripcion(e.target.value)}
           rows={2}
+          placeholder="Detalles adicionales sobre la carrera (opcional)"
           className="mb-1 w-full"
         />
         {fieldErrors['Descripcion'] && (
@@ -127,7 +129,7 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
         )}
         {!fieldErrors['Descripcion'] && <div className="mb-3" />}
 
-        <Label htmlFor="race-fecha">Fecha de la carrera</Label>
+        <Label htmlFor="race-fecha" required>Fecha de la carrera</Label>
         <Input
           id="race-fecha"
           type="date"

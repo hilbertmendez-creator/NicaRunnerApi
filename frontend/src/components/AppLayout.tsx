@@ -83,14 +83,19 @@ const PAGE_TITLES: Record<string, string> = {
 }
 
 const SIDEBAR_KEY = 'nicarunner-sidebar-expanded'
+// Tailwind 'xl' breakpoint: a partir de acá el rail colapsado deja de ganar espacio
+// útil, así que arranca desplegado salvo que el usuario ya haya elegido lo contrario.
+const LARGE_SCREEN_BREAKPOINT = 1280
 
 export function AppLayout() {
   const { user } = useAuth()
   const { raceId } = useActiveRace()
-  // boundary validation: any stored value other than the literal 'true' is false
   const [expanded, setExpanded] = useState(() => {
     try {
-      return localStorage.getItem(SIDEBAR_KEY) === 'true'
+      const stored = localStorage.getItem(SIDEBAR_KEY)
+      if (stored === 'true') return true
+      if (stored === 'false') return false
+      return window.innerWidth >= LARGE_SCREEN_BREAKPOINT
     } catch {
       return false
     }

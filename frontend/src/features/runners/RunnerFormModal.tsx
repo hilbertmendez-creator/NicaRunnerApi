@@ -84,13 +84,14 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
 
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="runner-nombre">Nombre</Label>
+            <Label htmlFor="runner-nombre" required>Nombre</Label>
             <Input
               id="runner-nombre"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               required
               maxLength={150}
+              placeholder="Ej: Ana"
               className="w-full"
             />
           </div>
@@ -101,6 +102,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
               value={apellidos ?? ''}
               onChange={(e) => setApellidos(e.target.value)}
               maxLength={150}
+              placeholder="Ej: Pérez (opcional)"
               className="w-full"
             />
           </div>
@@ -108,13 +110,14 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
 
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="runner-dorsal">Dorsal</Label>
+            <Label htmlFor="runner-dorsal" required>Dorsal</Label>
             <Input
               id="runner-dorsal"
               value={dorsal}
               onChange={(e) => setDorsal(e.target.value)}
               required
               maxLength={20}
+              placeholder="Ej: 101"
               className="w-full"
             />
           </div>
@@ -145,7 +148,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
             />
           </div>
           <div>
-            <Label htmlFor="runner-edad">Edad</Label>
+            <Label htmlFor="runner-edad" required>Edad</Label>
             <Input
               id="runner-edad"
               type="number"
@@ -155,6 +158,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
               onChange={(e) => setEdadManual(Number(e.target.value))}
               disabled={edadCalculada !== null}
               required
+              placeholder="18"
               className="w-full"
             />
           </div>
@@ -166,10 +170,11 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
           value={club ?? ''}
           onChange={(e) => setClub(e.target.value)}
           maxLength={150}
+          placeholder="Opcional"
           className="mb-3 w-full"
         />
 
-        <Label htmlFor="runner-categoria">Categoría</Label>
+        <Label htmlFor="runner-categoria" required>Categoría</Label>
         <Select
           id="runner-categoria"
           value={categoryId}
@@ -190,6 +195,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
           value={telefono ?? ''}
           onChange={(e) => setTelefono(e.target.value)}
           maxLength={20}
+          placeholder="Ej: 8888-8888 (opcional)"
           className="mb-3 w-full"
         />
 
@@ -199,6 +205,7 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
           type="email"
           value={email ?? ''}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder="correo@ejemplo.com (opcional)"
           className="mb-3 w-full"
         />
 

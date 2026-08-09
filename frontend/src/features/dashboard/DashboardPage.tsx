@@ -10,6 +10,7 @@ import { DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import { KpiBar } from './KpiBar'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
+import { cardTitle } from '../../theme/styles'
 
 const POLL_INTERVAL_MS = 5000
 
@@ -54,8 +55,6 @@ const cardStyle: CSSProperties = {
   borderRadius: 'var(--r-card)',
   padding: 14,
 }
-const cardTitleStyle: CSSProperties = { color: 'var(--tx-hi)' }
-
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-NI', { hour12: false })
 }
@@ -200,7 +199,7 @@ export function DashboardPage() {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
             <section className="flex flex-col gap-2" style={cardStyle}>
-              <h2 className="text-sm font-semibold" style={cardTitleStyle}>Últimos resultados capturados</h2>
+              <h2 className="text-sm font-semibold" style={cardTitle}>Últimos resultados capturados</h2>
               <DataTable
                 columns={ultimosResultadosColumns}
                 data={dashboard.data.ultimosResultados}
@@ -211,7 +210,7 @@ export function DashboardPage() {
             </section>
 
             <section className="flex flex-col gap-2" style={cardStyle}>
-              <h2 className="text-sm font-semibold" style={cardTitleStyle}>Progreso por categoría</h2>
+              <h2 className="text-sm font-semibold" style={cardTitle}>Progreso por categoría</h2>
               <DataTable
                 columns={categoriasColumns}
                 data={dashboard.data.categorias}
@@ -227,7 +226,7 @@ export function DashboardPage() {
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {standings.data.map((cat) => (
             <div key={cat.categoryId} className="flex flex-col gap-2" style={cardStyle}>
-              <h3 className="text-sm font-semibold" style={cardTitleStyle}>
+              <h3 className="text-sm font-semibold" style={cardTitle}>
                 {cat.nombreCategoria} ({cat.distancia} km)
               </h3>
               <DataTable

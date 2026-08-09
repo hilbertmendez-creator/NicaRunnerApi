@@ -54,7 +54,7 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
 
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="cat-codigo">Código corto</Label>
+            <Label htmlFor="cat-codigo" required>Código corto</Label>
             <Input
               id="cat-codigo"
               value={codigo}
@@ -64,11 +64,12 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
               maxLength={10}
               pattern="[A-Za-z0-9]+"
               title="Alfanumérico, sin espacios ni símbolos"
+              placeholder="Ej: JUV"
               className="w-full"
             />
           </div>
           <div>
-            <Label htmlFor="cat-orden">Orden</Label>
+            <Label htmlFor="cat-orden" required>Orden</Label>
             <Input
               id="cat-orden"
               type="number"
@@ -76,18 +77,20 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
               value={orden}
               onChange={(e) => setOrden(Number(e.target.value))}
               required
+              placeholder="0"
               className="w-full"
             />
           </div>
         </div>
 
-        <Label htmlFor="cat-nombre">Nombre</Label>
+        <Label htmlFor="cat-nombre" required>Nombre</Label>
         <Input
           id="cat-nombre"
           value={nombreCategoria}
           onChange={(e) => setNombreCategoria(e.target.value)}
           required
           maxLength={100}
+          placeholder="Ej: Juvenil"
           className="mb-3 w-full"
         />
 
@@ -98,12 +101,13 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
           onChange={(e) => setDescripcion(e.target.value)}
           rows={2}
           maxLength={300}
+          placeholder="Descripción breve de la categoría (opcional)"
           className="mb-3 w-full"
         />
 
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
-            <Label htmlFor="cat-distancia">Distancia (km)</Label>
+            <Label htmlFor="cat-distancia" required>Distancia (km)</Label>
             <Input
               id="cat-distancia"
               type="number"
@@ -113,11 +117,12 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
               value={distancia}
               onChange={(e) => setDistancia(Number(e.target.value))}
               required
+              placeholder="5.0"
               className="w-full"
             />
           </div>
           <div>
-            <Label htmlFor="cat-edad-min">Edad mínima</Label>
+            <Label htmlFor="cat-edad-min" required>Edad mínima</Label>
             <Input
               id="cat-edad-min"
               type="number"
@@ -126,11 +131,12 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
               value={edadMinima}
               onChange={(e) => setEdadMinima(Number(e.target.value))}
               required
+              placeholder="0"
               className="w-full"
             />
           </div>
           <div>
-            <Label htmlFor="cat-edad-max">Edad máxima</Label>
+            <Label htmlFor="cat-edad-max" required>Edad máxima</Label>
             <Input
               id="cat-edad-max"
               type="number"
@@ -139,6 +145,7 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
               value={edadMaxima}
               onChange={(e) => setEdadMaxima(Number(e.target.value))}
               required
+              placeholder="120"
               className="w-full"
             />
           </div>
