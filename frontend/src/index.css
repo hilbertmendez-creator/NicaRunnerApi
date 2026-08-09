@@ -245,6 +245,18 @@ body {
   border-color: var(--accent);
 }
 
+/* Caret de <select> dibujado en el propio control (sin wrapper: preserva w-full/mb-3 de los callers) */
+.nr-ui-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg,  transparent 50%, var(--tx-md) 50%),
+    linear-gradient(135deg, var(--tx-md) 50%, transparent 50%);
+  background-position: calc(100% - 15px) calc(50% - 1px), calc(100% - 11px) calc(50% - 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
 /* Dot animado "En vivo" — señal de carrera activa (no decoración) */
 .dot-live {
   width: 6px;
