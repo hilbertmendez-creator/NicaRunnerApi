@@ -63,6 +63,11 @@ body {
   /* task 3 — sidebar rail */
   --sb-w-collapsed: 52px;
   --sb-w-expanded:  210px;
+
+  /* task 5 — medallas de podio (paleta de marca, no rol semántico) */
+  --medal-gold-core:   #F59E0B; --medal-gold-face:   #FBBF24; --medal-gold-edge:   #D97706;
+  --medal-silver-core: #94A3B8; --medal-silver-face: #CBD5E1; --medal-silver-edge: #94A3B8;
+  --medal-bronze-core: #B45309; --medal-bronze-face: #D97706; --medal-bronze-edge: #92400E;
 }
 
 /* ── THEME: DARK ── */

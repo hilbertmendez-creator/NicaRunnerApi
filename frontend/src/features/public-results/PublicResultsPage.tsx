@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ErrorAlert } from '@nicarunner/ui'
 import { getPublicResults } from '../../api/endpoints'
 import type { PublicRaceResultsDto } from '../../api/types'
+import { PositionBadge } from '../../components/PositionBadge'
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-NI', { hour12: false })
@@ -118,7 +119,9 @@ export function PublicResultsPage() {
                               cursor: clickable ? 'pointer' : 'default',
                             }}
                           >
-                            <td className="py-1.5">{res.posicion}</td>
+                            <td className="py-1.5">
+                              <PositionBadge position={res.posicion} />
+                            </td>
                             <td className="py-1.5 font-mono tabular-nums">{res.dorsal}</td>
                             <td className="max-w-[14rem] py-1.5" style={{ overflowWrap: 'anywhere' }}>
                               {res.nombre}

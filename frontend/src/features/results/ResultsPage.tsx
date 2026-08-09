@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/auth-context'
 import { useActiveRace } from '../../hooks/useActiveRace'
 import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
+import { PositionBadge } from '../../components/PositionBadge'
 import { EditResultModal } from './EditResultModal'
 import { AuditHistory } from './AuditHistory'
 
@@ -50,7 +51,7 @@ export function ResultsPage() {
   const columns: Column<ResultDto>[] = [
     {
       header: 'Posición',
-      render: (result) => result.posicion,
+      render: (result) => <PositionBadge position={result.posicion} />,
       className: 'font-mono tabular-nums',
     },
     {
