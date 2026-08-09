@@ -553,6 +553,7 @@ tbody tr:nth-child(n+9) { animation: none; }
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  text-align: left;
 }
 .nr-sidebar.expanded .nav-label { display: inline-block; }
 .nr-sidebar.expanded .sb-tooltip { display: none; }
