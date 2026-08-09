@@ -118,6 +118,8 @@ export interface RaceDashboardDto {
   totalPendientes: number
   categorias: CategoryProgressDto[]
   ultimosResultados: RecentResultDto[]
+  tiempoEnCursoSegundos: number | null
+  ritmoPromedioSegundosPorKm: number | null
 }
 
 export interface RunnerStandingDto {
