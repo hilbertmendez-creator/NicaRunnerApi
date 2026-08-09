@@ -67,8 +67,14 @@ public class ExcelRunnerParser : IExcelRunnerParser
                 lookupSheet.Cell(i + 1, 1).Value = categories[i].NombreCategoria;
             lookupSheet.Hide();
 
+            // Excel no admite de forma confiable una referencia directa a un rango de otra
+            // hoja como origen de una lista de validación de datos: el archivo abre pidiendo
+            // reparación. Un rango con nombre (defined name) sí es un origen válido.
+            const string categoriaListName = "CategoriasImportLookup";
+            lookupSheet.Range(1, 1, categories.Count, 1).AddToNamed(categoriaListName);
+
             var categoriaRange = sheet.Range(2, 9, TemplateDataRows, 9);
-            categoriaRange.CreateDataValidation().List(lookupSheet.Range(1, 1, categories.Count, 1));
+            categoriaRange.CreateDataValidation().List($"={categoriaListName}");
         }
 
         using var stream = new MemoryStream();
