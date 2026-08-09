@@ -5,6 +5,7 @@ import { getControversiasOpenCount } from '../api/endpoints'
 import { useAuth } from '../auth/auth-context'
 import { CONTROVERSIAS_CHANGED_EVENT } from '../features/controversias/ControversiasPage'
 import { useActiveRace } from '../hooks/useActiveRace'
+import { NicaRunnerLogo } from '../routes/NicaRunnerLogo'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { TopbarRaceSelect } from './TopbarRaceSelect'
 import { UserAccountMenu } from './UserAccountMenu'
@@ -81,10 +82,20 @@ const PAGE_TITLES: Record<string, string> = {
   '/dorsales-en-disputa': 'Dorsales en disputa',
 }
 
+const SIDEBAR_KEY = 'nicarunner-sidebar-expanded'
+
 export function AppLayout() {
   const { user } = useAuth()
   const { raceId } = useActiveRace()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  // boundary validation: any stored value other than the literal 'true' is false
+  const [expanded, setExpanded] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === 'true'
+    } catch {
+      return false
+    }
+  })
+  const [mobileOpen, setMobileOpen] = useState(false) // ephemeral drawer state, never persisted
   const [openDisputeCount, setOpenDisputeCount] = useState(0)
   const location = useLocation()
   const navigate = useNavigate()
@@ -108,6 +119,23 @@ export function AppLayout() {
     return () => window.removeEventListener(CONTROVERSIAS_CHANGED_EVENT, refreshOpenCount)
   }, [refreshOpenCount])
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_KEY, expanded ? 'true' : 'false')
+    } catch {
+      /* modo privado: nada que persistir */
+    }
+  }, [expanded])
+
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mobileOpen])
+
   const visibleNav = NAV.filter((item) => {
     if (item === 'sep') return true
     if (item.adminOnly) return user?.role === 'Administrador'
@@ -116,23 +144,15 @@ export function AppLayout() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-app)' }}>
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,.5)',
-            zIndex: 30,
-          }}
-        />
-      )}
+      <div
+        className={`nr-scrim ${mobileOpen ? 'visible' : ''}`}
+        aria-hidden="true"
+        onClick={() => setMobileOpen(false)}
+      />
 
       <aside
-        className={`nr-sidebar ${sidebarOpen ? 'open' : 'closed'}`}
+        className={`nr-sidebar ${mobileOpen ? 'open' : 'closed'} ${expanded ? 'expanded' : ''}`}
         style={{
-          width: 52,
           flexShrink: 0,
           background: 'var(--bg-sb)',
           display: 'flex',
@@ -144,32 +164,45 @@ export function AppLayout() {
           zIndex: 20,
         }}
       >
+        <button
+          type="button"
+          className="nr-sb-toggle"
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Contraer menú' : 'Expandir menú'}
+          onClick={() => setExpanded((e) => !e)}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 7,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            color: 'var(--sb-muted)',
+            marginBottom: 8,
+            flexShrink: 0,
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M2 4h11M2 7.5h11M2 11h11" />
+          </svg>
+        </button>
+
         <div
           style={{
             width: 32,
             height: 32,
             borderRadius: 7,
-            background: 'var(--ac)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 14,
             flexShrink: 0,
-            color: '#fff',
           }}
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M2 13L6 3l3 6 2-3 3 7" />
-          </svg>
+          <NicaRunnerLogo className="h-6 w-6" style={{ color: 'var(--ac)' }} />
         </div>
 
         <nav
@@ -219,7 +252,7 @@ export function AppLayout() {
                   }
                   onClick={() => {
                     navigate(item.path)
-                    setSidebarOpen(false)
+                    setMobileOpen(false)
                   }}
                   style={{
                     width: 36,
@@ -253,6 +286,7 @@ export function AppLayout() {
                     strokeLinejoin="round"
                     dangerouslySetInnerHTML={{ __html: item.icon }}
                   />
+                  <span className="nav-label">{item.label}</span>
                   {showBadge && (
                     <span
                       aria-hidden="true"
@@ -297,8 +331,6 @@ export function AppLayout() {
             )
           })}
         </nav>
-
-        <UserAccountMenu />
       </aside>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -317,7 +349,7 @@ export function AppLayout() {
         >
           <button
             type="button"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setMobileOpen(true)}
             aria-label="Abrir menú"
             className="mobile-menu-btn nr-icon-btn"
             style={{
@@ -360,6 +392,7 @@ export function AppLayout() {
 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ThemeSwitcher />
+            <UserAccountMenu />
             <div style={{ height: 18, width: 1, background: 'var(--bd)', margin: '0 4px' }} />
             <button
               type="button"

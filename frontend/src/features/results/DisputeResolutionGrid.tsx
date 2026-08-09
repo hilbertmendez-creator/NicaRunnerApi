@@ -174,7 +174,7 @@ export function DisputeResolutionGrid({
         </span>
       </div>
 
-      <div style={{ ...tableWrap }}>
+      <div className="table-scroll" style={{ ...tableWrap }}>
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr

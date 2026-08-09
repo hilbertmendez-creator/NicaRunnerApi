@@ -119,3 +119,29 @@ describe('DataTable pagination under load', () => {
     expect(onPageChange).toHaveBeenCalledWith(1)
   })
 })
+
+describe('DataTable wrapperClassName', () => {
+  const data: Row[] = [{ id: 1, name: 'User 1' }]
+
+  function desktopWrapper(container: HTMLElement) {
+    // Único elemento con la clase table-scroll: el contenedor de escritorio (sm:block).
+    return container.querySelector('.table-scroll') as HTMLElement
+  }
+
+  it('is additive: omitting wrapperClassName leaves the default wrapper classes unchanged', () => {
+    // Escenario: Existing DataTable callers compile unchanged
+    const { container } = render(<DataTable columns={columns} data={data} rowKey={(r) => r.id} />)
+
+    const classes = desktopWrapper(container).className.trim().split(/\s+/)
+    expect(classes).toEqual(['table-scroll', 'hidden', 'overflow-x-auto', 'sm:block'])
+  })
+
+  it('appends the supplied class rather than replacing the default wrapper classes', () => {
+    const { container } = render(
+      <DataTable columns={columns} data={data} rowKey={(r) => r.id} wrapperClassName="no-stagger" />,
+    )
+
+    const classes = desktopWrapper(container).className.trim().split(/\s+/)
+    expect(classes).toEqual(['table-scroll', 'hidden', 'overflow-x-auto', 'sm:block', 'no-stagger'])
+  })
+})

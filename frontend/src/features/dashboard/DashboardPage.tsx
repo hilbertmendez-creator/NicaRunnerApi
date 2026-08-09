@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
+import { PositionBadge } from '../../components/PositionBadge'
 import { getDashboard, getStandings } from '../../api/endpoints'
 import { usePolling } from '../../hooks/usePolling'
 import { useRaceDashboardHub } from '../../hooks/useRaceDashboardHub'
@@ -88,7 +89,7 @@ export function DashboardPage() {
     { header: 'Dorsal', render: (r) => r.dorsal, className: MONO },
     { header: 'Nombre', render: (r) => r.nombre },
     { header: 'Categoría', render: (r) => r.nombreCategoria },
-    { header: 'Posición', render: (r) => r.posicion, className: MONO },
+    { header: 'Posición', render: (r) => <PositionBadge position={r.posicion} />, className: MONO },
     { header: 'Hora', render: (r) => formatTime(r.tiempoLlegada), className: MONO },
   ]
 
@@ -100,7 +101,7 @@ export function DashboardPage() {
   ]
 
   const standingsColumns: Column<RunnerStandingDto>[] = [
-    { header: 'Pos.', render: (res) => res.posicion, className: MONO },
+    { header: 'Pos.', render: (res) => <PositionBadge position={res.posicion} />, className: MONO },
     { header: 'Dorsal', render: (res) => res.dorsal, className: MONO },
     { header: 'Nombre', render: (res) => res.nombre },
     { header: 'Hora', render: (res) => formatTime(res.tiempoLlegada), className: MONO },
@@ -205,6 +206,7 @@ export function DashboardPage() {
                 data={dashboard.data.ultimosResultados}
                 rowKey={(r) => r.resultId}
                 emptyState={<EmptyState message="Sin resultados capturados todavía." />}
+                wrapperClassName="no-stagger"
               />
             </section>
 
@@ -214,6 +216,7 @@ export function DashboardPage() {
                 columns={categoriasColumns}
                 data={dashboard.data.categorias}
                 rowKey={(cat) => cat.categoryId}
+                wrapperClassName="no-stagger"
               />
             </section>
           </div>
@@ -231,6 +234,7 @@ export function DashboardPage() {
                 columns={standingsColumns}
                 data={cat.resultados}
                 rowKey={(res) => res.runnerId}
+                wrapperClassName="no-stagger"
               />
             </div>
           ))}

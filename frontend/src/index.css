@@ -58,6 +58,258 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ── Escalas no cromáticas / paleta de marca (independientes del tema) ── */
+:root {
+  /* task 3 — sidebar rail */
+  --sb-w-collapsed: 52px;
+  --sb-w-expanded:  210px;
+
+  /* task 5 — medallas de podio (paleta de marca, no rol semántico) */
+  --medal-gold-core:   #F59E0B; --medal-gold-face:   #FBBF24; --medal-gold-edge:   #D97706;
+  --medal-silver-core: #94A3B8; --medal-silver-face: #CBD5E1; --medal-silver-edge: #94A3B8;
+  --medal-bronze-core: #B45309; --medal-bronze-face: #D97706; --medal-bronze-edge: #92400E;
+
+  /* task 8 — escala de movimiento */
+  --dur-micro: 100ms; --dur-fast: 150ms; --dur-normal: 250ms; --dur-slow: 350ms;
+  --ease-out:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   ANIMATION SYSTEM — Race-Day Control Room
+   Keyframes defined here; standard class names (.card, .kpi-card,
+   .badge, .modal-*, tbody tr) auto-inherit animations on every
+   screen. New features get motion for free by using these classes.
+   ============================================================ */
+
+/* --- Keyframes --- */
+@keyframes nr-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nr-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes nr-scale-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@keyframes nr-badge-pop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  65%  { transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes nr-progress-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes nr-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes nr-toast-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)     scale(1); }
+}
+
+@keyframes nr-toast-out {
+  from { opacity: 1; transform: translateY(0);    max-height: 80px; margin-bottom: 0.5rem; }
+  to   { opacity: 0; transform: translateY(-6px); max-height: 0;   margin-bottom: 0; }
+}
+
+/* --- Topbar entrance --- */
+.app-topbar {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) both;
+}
+
+/* --- Page header & toolbar --- */
+.page-header {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) both;
+}
+.section-header {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) 30ms both;
+}
+.toolbar {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) 60ms both;
+}
+
+/* --- KPI tiles — staggered entrance --- */
+.kpi-card {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) both;
+}
+.kpi-grid .kpi-card:nth-child(1) { animation-delay: 60ms; }
+.kpi-grid .kpi-card:nth-child(2) { animation-delay: 110ms; }
+.kpi-grid .kpi-card:nth-child(3) { animation-delay: 160ms; }
+.kpi-grid .kpi-card:nth-child(4) { animation-delay: 210ms; }
+.kpi-grid .kpi-card:nth-child(5) { animation-delay: 260ms; }
+
+/* --- Cards --- */
+.card {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) 80ms both;
+}
+.content-2col > .card:nth-child(1) { animation-delay: 100ms; }
+.content-2col > .card:nth-child(2) { animation-delay: 160ms; }
+
+/* Login/auth screens */
+.login-card {
+  animation: nr-scale-in var(--dur-slow) var(--ease-spring) both;
+}
+.login-brand {
+  animation: nr-fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* --- Badges --- */
+.badge {
+  animation: nr-badge-pop var(--dur-normal) var(--ease-spring) both;
+}
+.nav-badge {
+  animation: nr-badge-pop 0.35s var(--ease-spring) 0.4s both;
+}
+
+/* --- Sidebar nav items — staggered load --- */
+.nav-item {
+  animation: nr-fade-in var(--dur-fast) var(--ease-out) both;
+}
+.app-sidebar .nav-item:nth-child(1) { animation-delay: 30ms; }
+.app-sidebar .nav-item:nth-child(2) { animation-delay: 55ms; }
+.app-sidebar .nav-item:nth-child(3) { animation-delay: 80ms; }
+.app-sidebar .nav-item:nth-child(4) { animation-delay: 105ms; }
+.app-sidebar .nav-item:nth-child(5) { animation-delay: 130ms; }
+.app-sidebar .nav-item:nth-child(6) { animation-delay: 155ms; }
+.app-sidebar .nav-item:nth-child(7) { animation-delay: 180ms; }
+.app-sidebar .nav-item:nth-child(8) { animation-delay: 205ms; }
+
+/* Translate derecha en hover solo cuando el sidebar está expandido */
+.app-sidebar.expanded .nav-item:hover { transform: translateX(3px); }
+
+/* --- Table rows — staggered, sin animar >8 filas --- */
+tbody tr {
+  animation: nr-fade-in var(--dur-fast) var(--ease-out) both;
+}
+tbody tr:nth-child(1) { animation-delay: 80ms; }
+tbody tr:nth-child(2) { animation-delay: 110ms; }
+tbody tr:nth-child(3) { animation-delay: 140ms; }
+tbody tr:nth-child(4) { animation-delay: 170ms; }
+tbody tr:nth-child(5) { animation-delay: 200ms; }
+tbody tr:nth-child(6) { animation-delay: 230ms; }
+tbody tr:nth-child(7) { animation-delay: 260ms; }
+tbody tr:nth-child(8) { animation-delay: 290ms; }
+tbody tr:nth-child(n+9) { animation: none; }
+
+/* Opt-out: tablas en vivo o de refresco frecuente no deben re-escalonar en cada poll */
+.no-stagger tbody tr { animation: none; }
+
+/* --- Progress bar fill --- */
+.progress-fill {
+  transform-origin: left center;
+  animation: nr-progress-fill 0.7s var(--ease-spring) 0.4s both;
+}
+
+/* --- Modal animations --- */
+.modal-overlay {
+  animation: nr-fade-in var(--dur-fast) var(--ease-out);
+}
+.modal-card {
+  animation: nr-scale-in var(--dur-normal) var(--ease-spring);
+  transform-origin: center top;
+}
+
+/* --- Button active press feedback --- */
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* --- Tabs — active indicator transition --- */
+.tab {
+  transition: color var(--dur-fast) var(--ease-out),
+              border-bottom-color var(--dur-fast) var(--ease-out);
+}
+
+/* ============================================================
+   UTILITY / BUILDING BLOCKS
+   Clases listas para usar en features nuevas.
+   ============================================================ */
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-hover) 25%,
+    var(--bd-inner)  50%,
+    var(--bg-hover) 75%
+  );
+  background-size: 200% 100%;
+  animation: nr-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--r-btn);
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+.skeleton * { visibility: hidden; }
+
+/* Spinner */
+.spinner {
+  display: inline-flex;
+  width: 16px; height: 16px;
+  border: 2px solid var(--bd);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: nr-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.spinner-sm { width: 12px; height: 12px; }
+.spinner-lg { width: 28px; height: 28px; border-width: 3px; }
+
+/* Toast notification system */
+.toast-stack {
+  position: fixed; top: 1rem; right: 1rem; z-index: 100;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  pointer-events: none; max-width: 400px;
+}
+.toast {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  padding: 0.75rem; background: var(--bg-card);
+  border: 1px solid var(--bd); border-radius: var(--r-card);
+  box-shadow: var(--shadow-md); font-size: 0.875rem; color: var(--tx-hi);
+  pointer-events: all;
+  animation: nr-toast-in var(--dur-normal) var(--ease-spring) both;
+}
+.toast-title { font-weight: 600; font-size: 0.875rem; color: var(--tx-hi); }
+.toast-body  { font-size: 0.8125rem; color: var(--tx-md); margin-top: 2px; }
+.toast-icon  { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+.toast-success { border-left: 3px solid var(--ok-tx); }
+.toast-error   { border-left: 3px solid var(--er-tx); }
+.toast-warning { border-left: 3px solid var(--wn-tx); }
+.toast-info    { border-left: 3px solid var(--accent); }
+.toast.dismissing {
+  animation: nr-toast-out 0.2s var(--ease-in-out) forwards;
+  overflow: hidden;
+}
+
+/* On-demand animation classes */
+.anim-fade-up  { animation: nr-fade-up  var(--dur-normal) var(--ease-spring) both; }
+.anim-fade-in  { animation: nr-fade-in  var(--dur-fast)   var(--ease-out)    both; }
+.anim-scale-in { animation: nr-scale-in var(--dur-normal) var(--ease-spring) both; }
+
+/* Stagger container — los hijos hacen fade-up escalonado */
+.anim-stagger > * {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) both;
+}
+.anim-stagger > *:nth-child(1) { animation-delay:   0ms; }
+.anim-stagger > *:nth-child(2) { animation-delay:  50ms; }
+.anim-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.anim-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.anim-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.anim-stagger > *:nth-child(6) { animation-delay: 250ms; }
+
 /* ── THEME: DARK ── */
 [data-theme="dark"] {
   --bg-app:   #080E1A;
@@ -245,6 +497,18 @@ body {
   border-color: var(--accent);
 }
 
+/* Caret de <select> dibujado en el propio control (sin wrapper: preserva w-full/mb-3 de los callers) */
+.nr-ui-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg,  transparent 50%, var(--tx-md) 50%),
+    linear-gradient(135deg, var(--tx-md) 50%, transparent 50%);
+  background-position: calc(100% - 15px) calc(50% - 1px), calc(100% - 11px) calc(50% - 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
 /* Dot animado "En vivo" — señal de carrera activa (no decoración) */
 .dot-live {
   width: 6px;
@@ -266,6 +530,85 @@ body {
   button:hover > .sb-tooltip { opacity: 1; }
 }
 
+/* ── Sidebar: rail colapsado/expandido (persistido) ── */
+.nr-sidebar { width: var(--sb-w-collapsed); transition: width .2s cubic-bezier(0.16, 1, 0.3, 1); }
+.nr-sidebar.expanded { width: var(--sb-w-expanded); }
+
+.nr-scrim { display: none; } /* desktop: inerte pase lo que pase */
+
+.nr-sidebar.expanded .nr-nav-wrap { width: 100% !important; margin: 0 !important; }
+.nr-sidebar.expanded .nr-nav-btn {
+  width: 100% !important;
+  justify-content: flex-start !important;
+  padding-inline: 10px !important;
+  gap: 10px;
+}
+
+/* Etiquetas y tooltip — decisión de producto #1: el tooltip sigue siendo la
+   affordance del rail colapsado; se apaga cuando ya hay etiqueta visible. */
+.nr-sidebar .nav-label { display: none; }
+.nr-sidebar.expanded .nav-label { display: inline; }
+.nr-sidebar.expanded .sb-tooltip { display: none; }
+
+/* ── Menú de cuenta: siempre montado, transiciona vía .open ── */
+.user-menu-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+.user-menu-chevron {
+  transition: transform .15s ease;
+}
+.user-menu.open .user-menu-chevron {
+  transform: rotate(180deg);
+}
+.user-menu-dropdown {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
+}
+.user-menu.open .user-menu-dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition: opacity .15s ease, transform .15s ease, visibility 0s;
+}
+
+/* ── Resultados públicos: filtro por categoría, tabla con scroll acotado ── */
+.public-results-scroll {
+  max-height: 420px;
+  overflow: auto;
+}
+.public-results-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-card);
+}
+
+/* ── Scrollbar tematizado para tablas con overflow horizontal ── */
+.table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--tx-lo) transparent;
+}
+.table-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.table-scroll::-webkit-scrollbar-thumb {
+  background: var(--tx-lo);
+  border-radius: 4px;
+}
+.table-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--tx-md);
+}
+
 /* Touch / coarse pointer: chrome targets ≥44×44 (ThemeSwitcher bar) */
 @media (pointer: coarse) {
   .nr-nav-btn {
@@ -284,8 +627,8 @@ body {
     height: auto !important;
   }
   .nr-account-btn {
-    width: 44px !important;
-    height: 44px !important;
+    min-height: 44px !important;
+    height: auto !important;
   }
   .nr-topbar {
     min-height: 56px !important;
@@ -363,21 +706,29 @@ body {
     padding-inline: 12px !important;
     gap: 10px;
   }
-  .nr-sidebar .sb-tooltip {
-    position: static !important;
-    opacity: 1 !important;
-    transform: none !important;
-    background: transparent !important;
-    color: inherit !important;
-    padding: 0 !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    pointer-events: none;
-  }
   .nr-sidebar nav {
     padding: 0 4px !important;
     align-items: stretch !important;
   }
+  .nr-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(0,0,0,.5);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .2s ease, visibility 0s linear .2s;
+  }
+  .nr-scrim.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity .2s ease, visibility 0s;
+  }
+  .nr-sb-toggle { display: none !important; } /* el drawer se cierra con scrim / Escape / navegar */
+  .nr-sidebar .nav-label { display: inline; } /* el drawer siempre va etiquetado */
   .nr-main {
     padding: 16px !important;
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
@@ -417,35 +768,25 @@ a:focus:not(:focus-visible) {
   }
 }
 
-/*
-  Reduced motion: keep state meaning, drop nonessential loops.
-  No global animation:0.01ms kill — that destroys useful feedback.
-*/
+/* Deroga la decisión previa (scoped-only reduced motion) por instrucción
+   explícita del usuario — ver cuerpo del commit de esta tarea. */
 @media (prefers-reduced-motion: reduce) {
-  .dot-live {
-    animation: none;
-    opacity: 1;
-    transform: none;
+  /* Sin este override, el blanket kill de abajo acortaría duraciones pero no
+     el retraso de visibility, dejando "Cerrar sesión" enfocable-pero-invisible
+     por 150ms. */
+  .user-menu-dropdown {
+    transition-delay: 0s !important;
   }
+}
 
-  .nr-spinner {
-    animation: none;
-  }
-
-  .nr-sidebar {
-    transition: none !important;
-  }
-
-  .sb-tooltip {
-    transition: none;
-  }
-
-  .pb-fill {
-    animation: none !important;
-    width: var(--prog-width, 72%) !important;
-  }
-
-  .nr-nav-btn {
-    transition: none !important;
+/* ============================================================
+   ACCESIBILIDAD — DEBE SER LA ÚLTIMA REGLA DEL ARCHIVO
+   Deshabilita todas las animaciones para usuarios que lo prefieren.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
   }
 }
