@@ -349,6 +349,26 @@ body {
   background: var(--bg-card);
 }
 
+/* ── Scrollbar tematizado para tablas con overflow horizontal ── */
+.table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--tx-lo) transparent;
+}
+.table-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.table-scroll::-webkit-scrollbar-thumb {
+  background: var(--tx-lo);
+  border-radius: 4px;
+}
+.table-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--tx-md);
+}
+
 /* Touch / coarse pointer: chrome targets ≥44×44 (ThemeSwitcher bar) */
 @media (pointer: coarse) {
   .nr-nav-btn {

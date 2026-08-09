@@ -21,6 +21,9 @@ interface DataTableProps<T> {
   pageIndex?: number
   pageCount?: number
   onPageChange?: (page: number) => void
+
+  /** Clases extra para el contenedor de la tabla (≥sm). Additive — nunca reemplaza las clases de layout. */
+  wrapperClassName?: string
 }
 
 export function DataTable<T>({
@@ -33,6 +36,7 @@ export function DataTable<T>({
   pageIndex,
   pageCount,
   onPageChange,
+  wrapperClassName = '',
 }: DataTableProps<T>) {
   if (isLoading) {
     return <LoadingText message={loadingMessage} />
@@ -82,7 +86,7 @@ export function DataTable<T>({
 
       {/* Tabla — sm y mayores */}
       <div
-        className="hidden overflow-x-auto sm:block"
+        className={`table-scroll hidden overflow-x-auto sm:block ${wrapperClassName}`}
         style={{
           border: '1px solid var(--bd-card, #e4e4e7)',
           background: 'var(--bg-card, #ffffff)',

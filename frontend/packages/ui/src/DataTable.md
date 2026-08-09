@@ -23,3 +23,7 @@ The primary way to show tabular data (runners, results, categories). Below the `
 ## Theming note
 
 Card background/border/header shading come from app-level theme tokens (`--bg-card`, `--bd-card`, `--bg-th`, `--text-hi`, `--text-th`, `--bd-row`, `--bd`) with built-in fallbacks — see Modal's docs for the same note.
+
+## `wrapperClassName`
+
+Optional, additive extra classes for the ≥`sm` table's outer scroll container — it's appended to (never replaces) the hardcoded `table-scroll hidden overflow-x-auto sm:block` string, so omitting it renders every existing call site unchanged. Every table already gets a themed horizontal scrollbar via `table-scroll`; use `wrapperClassName` for opt-in behavior on top of that, e.g. `"no-stagger"` to disable the row fade-in stagger on tables that refresh frequently.
