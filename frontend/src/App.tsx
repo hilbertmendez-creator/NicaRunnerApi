@@ -16,6 +16,7 @@ import { RacesPage } from './features/races/RacesPage'
 import { RaceDetailPage } from './features/races/RaceDetailPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { ControversiasPage } from './features/controversias/ControversiasPage'
+import { ResultDisputesPage } from './features/results/ResultDisputesPage'
 import { PublicLinksPage } from './features/public-links/PublicLinksPage'
 import { PublicResultsPage } from './features/public-results/PublicResultsPage'
 import { RunnerSharePage } from './features/public-results/RunnerSharePage'
@@ -57,6 +58,7 @@ function App() {
                 <Route element={<ProtectedRoute allowedRoles={['Administrador']} />}>
                   <Route path="/usuarios" element={<UsersPage />} />
                   <Route path="/categorias" element={<CategoryCatalogPage />} />
+                  <Route path="/dorsales-en-disputa" element={<ResultDisputesPage />} />
                 </Route>
               </Route>
             </Route>
