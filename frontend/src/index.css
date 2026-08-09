@@ -546,8 +546,15 @@ tbody tr:nth-child(n+9) { animation: none; }
 
 /* Etiquetas y tooltip — decisión de producto #1: el tooltip sigue siendo la
    affordance del rail colapsado; se apaga cuando ya hay etiqueta visible. */
-.nr-sidebar .nav-label { display: none; }
-.nr-sidebar.expanded .nav-label { display: inline; }
+.nr-sidebar .nav-label {
+  display: none;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.nr-sidebar.expanded .nav-label { display: inline-block; }
 .nr-sidebar.expanded .sb-tooltip { display: none; }
 
 /* ── Menú de cuenta: siempre montado, transiciona vía .open ── */
@@ -728,7 +735,7 @@ tbody tr:nth-child(n+9) { animation: none; }
     transition: opacity .2s ease, visibility 0s;
   }
   .nr-sb-toggle { display: none !important; } /* el drawer se cierra con scrim / Escape / navegar */
-  .nr-sidebar .nav-label { display: inline; } /* el drawer siempre va etiquetado */
+  .nr-sidebar .nav-label { display: inline-block; } /* el drawer siempre va etiquetado */
   .nr-main {
     padding: 16px !important;
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
