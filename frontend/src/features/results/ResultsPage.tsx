@@ -113,6 +113,7 @@ export function ResultsPage() {
           pageIndex={pageIndex}
           pageCount={Math.ceil(totalCount / pageSize)}
           onPageChange={setPageIndex}
+          wrapperClassName="no-stagger"
         />
       )}
 

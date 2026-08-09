@@ -68,7 +68,247 @@ body {
   --medal-gold-core:   #F59E0B; --medal-gold-face:   #FBBF24; --medal-gold-edge:   #D97706;
   --medal-silver-core: #94A3B8; --medal-silver-face: #CBD5E1; --medal-silver-edge: #94A3B8;
   --medal-bronze-core: #B45309; --medal-bronze-face: #D97706; --medal-bronze-edge: #92400E;
+
+  /* task 8 — escala de movimiento */
+  --dur-micro: 100ms; --dur-fast: 150ms; --dur-normal: 250ms; --dur-slow: 350ms;
+  --ease-out:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ============================================================
+   ANIMATION SYSTEM — Race-Day Control Room
+   Keyframes defined here; standard class names (.card, .kpi-card,
+   .badge, .modal-*, tbody tr) auto-inherit animations on every
+   screen. New features get motion for free by using these classes.
+   ============================================================ */
+
+/* --- Keyframes --- */
+@keyframes nr-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nr-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes nr-scale-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@keyframes nr-badge-pop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  65%  { transform: scale(1.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes nr-progress-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes nr-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes nr-toast-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)     scale(1); }
+}
+
+@keyframes nr-toast-out {
+  from { opacity: 1; transform: translateY(0);    max-height: 80px; margin-bottom: 0.5rem; }
+  to   { opacity: 0; transform: translateY(-6px); max-height: 0;   margin-bottom: 0; }
+}
+
+/* --- Topbar entrance --- */
+.app-topbar {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) both;
+}
+
+/* --- Page header & toolbar --- */
+.page-header {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) both;
+}
+.section-header {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) 30ms both;
+}
+.toolbar {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) 60ms both;
+}
+
+/* --- KPI tiles — staggered entrance --- */
+.kpi-card {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) both;
+}
+.kpi-grid .kpi-card:nth-child(1) { animation-delay: 60ms; }
+.kpi-grid .kpi-card:nth-child(2) { animation-delay: 110ms; }
+.kpi-grid .kpi-card:nth-child(3) { animation-delay: 160ms; }
+.kpi-grid .kpi-card:nth-child(4) { animation-delay: 210ms; }
+.kpi-grid .kpi-card:nth-child(5) { animation-delay: 260ms; }
+
+/* --- Cards --- */
+.card {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) 80ms both;
+}
+.content-2col > .card:nth-child(1) { animation-delay: 100ms; }
+.content-2col > .card:nth-child(2) { animation-delay: 160ms; }
+
+/* Login/auth screens */
+.login-card {
+  animation: nr-scale-in var(--dur-slow) var(--ease-spring) both;
+}
+.login-brand {
+  animation: nr-fade-in var(--dur-slow) var(--ease-out) both;
+}
+
+/* --- Badges --- */
+.badge {
+  animation: nr-badge-pop var(--dur-normal) var(--ease-spring) both;
+}
+.nav-badge {
+  animation: nr-badge-pop 0.35s var(--ease-spring) 0.4s both;
+}
+
+/* --- Sidebar nav items — staggered load --- */
+.nav-item {
+  animation: nr-fade-in var(--dur-fast) var(--ease-out) both;
+}
+.app-sidebar .nav-item:nth-child(1) { animation-delay: 30ms; }
+.app-sidebar .nav-item:nth-child(2) { animation-delay: 55ms; }
+.app-sidebar .nav-item:nth-child(3) { animation-delay: 80ms; }
+.app-sidebar .nav-item:nth-child(4) { animation-delay: 105ms; }
+.app-sidebar .nav-item:nth-child(5) { animation-delay: 130ms; }
+.app-sidebar .nav-item:nth-child(6) { animation-delay: 155ms; }
+.app-sidebar .nav-item:nth-child(7) { animation-delay: 180ms; }
+.app-sidebar .nav-item:nth-child(8) { animation-delay: 205ms; }
+
+/* Translate derecha en hover solo cuando el sidebar está expandido */
+.app-sidebar.expanded .nav-item:hover { transform: translateX(3px); }
+
+/* --- Table rows — staggered, sin animar >8 filas --- */
+tbody tr {
+  animation: nr-fade-in var(--dur-fast) var(--ease-out) both;
+}
+tbody tr:nth-child(1) { animation-delay: 80ms; }
+tbody tr:nth-child(2) { animation-delay: 110ms; }
+tbody tr:nth-child(3) { animation-delay: 140ms; }
+tbody tr:nth-child(4) { animation-delay: 170ms; }
+tbody tr:nth-child(5) { animation-delay: 200ms; }
+tbody tr:nth-child(6) { animation-delay: 230ms; }
+tbody tr:nth-child(7) { animation-delay: 260ms; }
+tbody tr:nth-child(8) { animation-delay: 290ms; }
+tbody tr:nth-child(n+9) { animation: none; }
+
+/* Opt-out: tablas en vivo o de refresco frecuente no deben re-escalonar en cada poll */
+.no-stagger tbody tr { animation: none; }
+
+/* --- Progress bar fill --- */
+.progress-fill {
+  transform-origin: left center;
+  animation: nr-progress-fill 0.7s var(--ease-spring) 0.4s both;
+}
+
+/* --- Modal animations --- */
+.modal-overlay {
+  animation: nr-fade-in var(--dur-fast) var(--ease-out);
+}
+.modal-card {
+  animation: nr-scale-in var(--dur-normal) var(--ease-spring);
+  transform-origin: center top;
+}
+
+/* --- Button active press feedback --- */
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* --- Tabs — active indicator transition --- */
+.tab {
+  transition: color var(--dur-fast) var(--ease-out),
+              border-bottom-color var(--dur-fast) var(--ease-out);
+}
+
+/* ============================================================
+   UTILITY / BUILDING BLOCKS
+   Clases listas para usar en features nuevas.
+   ============================================================ */
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-hover) 25%,
+    var(--bd-inner)  50%,
+    var(--bg-hover) 75%
+  );
+  background-size: 200% 100%;
+  animation: nr-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--r-btn);
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+.skeleton * { visibility: hidden; }
+
+/* Spinner */
+.spinner {
+  display: inline-flex;
+  width: 16px; height: 16px;
+  border: 2px solid var(--bd);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: nr-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.spinner-sm { width: 12px; height: 12px; }
+.spinner-lg { width: 28px; height: 28px; border-width: 3px; }
+
+/* Toast notification system */
+.toast-stack {
+  position: fixed; top: 1rem; right: 1rem; z-index: 100;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  pointer-events: none; max-width: 400px;
+}
+.toast {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  padding: 0.75rem; background: var(--bg-card);
+  border: 1px solid var(--bd); border-radius: var(--r-card);
+  box-shadow: var(--shadow-md); font-size: 0.875rem; color: var(--tx-hi);
+  pointer-events: all;
+  animation: nr-toast-in var(--dur-normal) var(--ease-spring) both;
+}
+.toast-title { font-weight: 600; font-size: 0.875rem; color: var(--tx-hi); }
+.toast-body  { font-size: 0.8125rem; color: var(--tx-md); margin-top: 2px; }
+.toast-icon  { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+.toast-success { border-left: 3px solid var(--ok-tx); }
+.toast-error   { border-left: 3px solid var(--er-tx); }
+.toast-warning { border-left: 3px solid var(--wn-tx); }
+.toast-info    { border-left: 3px solid var(--accent); }
+.toast.dismissing {
+  animation: nr-toast-out 0.2s var(--ease-in-out) forwards;
+  overflow: hidden;
+}
+
+/* On-demand animation classes */
+.anim-fade-up  { animation: nr-fade-up  var(--dur-normal) var(--ease-spring) both; }
+.anim-fade-in  { animation: nr-fade-in  var(--dur-fast)   var(--ease-out)    both; }
+.anim-scale-in { animation: nr-scale-in var(--dur-normal) var(--ease-spring) both; }
+
+/* Stagger container — los hijos hacen fade-up escalonado */
+.anim-stagger > * {
+  animation: nr-fade-up var(--dur-normal) var(--ease-spring) both;
+}
+.anim-stagger > *:nth-child(1) { animation-delay:   0ms; }
+.anim-stagger > *:nth-child(2) { animation-delay:  50ms; }
+.anim-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.anim-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.anim-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.anim-stagger > *:nth-child(6) { animation-delay: 250ms; }
 
 /* ── THEME: DARK ── */
 [data-theme="dark"] {
@@ -528,42 +768,25 @@ a:focus:not(:focus-visible) {
   }
 }
 
-/*
-  Reduced motion: keep state meaning, drop nonessential loops.
-  No global animation:0.01ms kill — that destroys useful feedback.
-*/
+/* Deroga la decisión previa (scoped-only reduced motion) por instrucción
+   explícita del usuario — ver cuerpo del commit de esta tarea. */
 @media (prefers-reduced-motion: reduce) {
-  .dot-live {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-
-  .nr-spinner {
-    animation: none;
-  }
-
-  .nr-sidebar {
-    transition: none !important;
-  }
-
-  .sb-tooltip {
-    transition: none;
-  }
-
-  .pb-fill {
-    animation: none !important;
-    width: var(--prog-width, 72%) !important;
-  }
-
-  .nr-nav-btn {
-    transition: none !important;
-  }
-
-  /* Sin este override, la caída del blanket kill (tarea 8) acortaría duraciones
-     pero no el retraso de visibility, dejando "Cerrar sesión" enfocable-pero-
-     invisible por 150ms. */
+  /* Sin este override, el blanket kill de abajo acortaría duraciones pero no
+     el retraso de visibility, dejando "Cerrar sesión" enfocable-pero-invisible
+     por 150ms. */
   .user-menu-dropdown {
     transition-delay: 0s !important;
+  }
+}
+
+/* ============================================================
+   ACCESIBILIDAD — DEBE SER LA ÚLTIMA REGLA DEL ARCHIVO
+   Deshabilita todas las animaciones para usuarios que lo prefieren.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
   }
 }

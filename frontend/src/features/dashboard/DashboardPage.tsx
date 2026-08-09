@@ -206,6 +206,7 @@ export function DashboardPage() {
                 data={dashboard.data.ultimosResultados}
                 rowKey={(r) => r.resultId}
                 emptyState={<EmptyState message="Sin resultados capturados todavía." />}
+                wrapperClassName="no-stagger"
               />
             </section>
 
@@ -215,6 +216,7 @@ export function DashboardPage() {
                 columns={categoriasColumns}
                 data={dashboard.data.categorias}
                 rowKey={(cat) => cat.categoryId}
+                wrapperClassName="no-stagger"
               />
             </section>
           </div>
@@ -232,6 +234,7 @@ export function DashboardPage() {
                 columns={standingsColumns}
                 data={cat.resultados}
                 rowKey={(res) => res.runnerId}
+                wrapperClassName="no-stagger"
               />
             </div>
           ))}
