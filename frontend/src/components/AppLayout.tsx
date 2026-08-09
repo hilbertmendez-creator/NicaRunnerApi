@@ -61,6 +61,12 @@ const NAV: Array<NavItem | 'sep'> = [
     adminOnly: true,
     icon: '<path d="M2 4h12M2 8h12M2 12h12"/><circle cx="5" cy="4" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="7" cy="12" r="1.5" fill="currentColor" stroke="none"/>',
   },
+  {
+    path: '/dorsales-en-disputa',
+    label: 'Dorsales en disputa',
+    adminOnly: true,
+    icon: '<rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5.5 6h5M5.5 10h3"/>',
+  },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
@@ -72,6 +78,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/usuarios': 'Usuarios',
   '/categorias': 'Categorías',
   '/enlaces': 'Enlaces',
+  '/dorsales-en-disputa': 'Dorsales en disputa',
 }
 
 export function AppLayout() {

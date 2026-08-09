@@ -135,6 +135,15 @@ export interface CategoryStandingsDto {
   resultados: RunnerStandingDto[]
 }
 
+// Result — Valido cuenta para posiciones y podio; Controversia queda en revisión (dos
+// resultados reclamando el mismo dorsal); Anulado es una captura deshecha (nunca borrado
+// físico). JsonStringEnumConverter → PascalCase strings, igual que DisputeEstado.
+export type ResultEstado = 'Valido' | 'Controversia' | 'Anulado'
+
+// DorsalDuplicado tiene DisputeGroupId (dos lados). CategoriaSinSalida/CategoriaCerrada
+// se resuelven corrigiendo el StartUtc de la categoría, no desde la pestaña de disputas.
+export type DisputeMotivo = 'DorsalDuplicado' | 'CategoriaSinSalida' | 'CategoriaCerrada'
+
 export interface ResultDto {
   id: number
   raceId: number
@@ -149,6 +158,11 @@ export interface ResultDto {
   capturistaNombre: string
   createdAt: string
   updatedAt: string
+  estado: ResultEstado
+  dorsalPropuesto: string | null
+  disputeGroupId: number | null
+  disputeMotivo: DisputeMotivo | null
+  elapsedMillis: number | null
 }
 
 export interface UpdateResultRequest {
@@ -385,4 +399,26 @@ export interface ResolveDisputeRequest {
 
 export interface OpenDisputeCountDto {
   count: number
+}
+
+// Dorsales en disputa (DorsalDuplicado, Result.Estado) — Admin-only, distinto de
+// Controversias (TimingDispute: chip vs. checkpoint vs. cámara) de arriba.
+export interface DisputeGroupDto {
+  disputeGroupId: number
+  raceId: number
+  motivo: DisputeMotivo
+  dorsalEnDisputa: string | null
+  abiertaUtc: string
+  resultados: ResultDto[]
+}
+
+export interface DisputeAssignment {
+  resultId: number
+  dorsal: string | null
+}
+
+export interface ResolveDisputeGroupRequest {
+  asignaciones: DisputeAssignment[]
+  anular: number[]
+  razon: string
 }

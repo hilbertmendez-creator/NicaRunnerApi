@@ -12,6 +12,7 @@ import type {
   CreateRunnerRequest,
   CreateUserRequest,
   CurrentUserDto,
+  DisputeGroupDto,
   ForgotPasswordRequest,
   ImportRunnersResultDto,
   NotificationDto,
@@ -25,6 +26,7 @@ import type {
   RaceDashboardDto,
   RaceDto,
   ResetPasswordRequest,
+  ResolveDisputeGroupRequest,
   ResolveDisputeRequest,
   ResultAuditDto,
   ResultDto,
@@ -111,6 +113,24 @@ export async function updateResult(
 
 export async function getResultAudit(raceId: number, resultId: number): Promise<ResultAuditDto[]> {
   const { data } = await apiClient.get<ResultAuditDto[]>(`/races/${raceId}/results/${resultId}/audit`)
+  return data
+}
+
+// Dorsales en disputa (DorsalDuplicado) — Admin-only, list / resolve.
+export async function getResultDisputes(raceId: number): Promise<DisputeGroupDto[]> {
+  const { data } = await apiClient.get<DisputeGroupDto[]>(`/races/${raceId}/results/disputes`)
+  return data
+}
+
+export async function resolveResultDispute(
+  raceId: number,
+  disputeGroupId: number,
+  request: ResolveDisputeGroupRequest,
+): Promise<ResultDto[]> {
+  const { data } = await apiClient.post<ResultDto[]>(
+    `/races/${raceId}/results/disputes/${disputeGroupId}/resolve`,
+    request,
+  )
   return data
 }
 
