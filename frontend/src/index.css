@@ -305,6 +305,33 @@ body {
 .nr-sidebar.expanded .nav-label { display: inline; }
 .nr-sidebar.expanded .sb-tooltip { display: none; }
 
+/* ── Menú de cuenta: siempre montado, transiciona vía .open ── */
+.user-menu-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+.user-menu-chevron {
+  transition: transform .15s ease;
+}
+.user-menu.open .user-menu-chevron {
+  transform: rotate(180deg);
+}
+.user-menu-dropdown {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity .15s ease, transform .15s ease, visibility 0s linear .15s;
+}
+.user-menu.open .user-menu-dropdown {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition: opacity .15s ease, transform .15s ease, visibility 0s;
+}
+
 /* Touch / coarse pointer: chrome targets ≥44×44 (ThemeSwitcher bar) */
 @media (pointer: coarse) {
   .nr-nav-btn {
@@ -323,8 +350,8 @@ body {
     height: auto !important;
   }
   .nr-account-btn {
-    width: 44px !important;
-    height: 44px !important;
+    min-height: 44px !important;
+    height: auto !important;
   }
   .nr-topbar {
     min-height: 56px !important;
@@ -494,5 +521,12 @@ a:focus:not(:focus-visible) {
 
   .nr-nav-btn {
     transition: none !important;
+  }
+
+  /* Sin este override, la caída del blanket kill (tarea 8) acortaría duraciones
+     pero no el retraso de visibility, dejando "Cerrar sesión" enfocable-pero-
+     invisible por 150ms. */
+  .user-menu-dropdown {
+    transition-delay: 0s !important;
   }
 }

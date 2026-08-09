@@ -331,8 +331,6 @@ export function AppLayout() {
             )
           })}
         </nav>
-
-        <UserAccountMenu />
       </aside>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -394,6 +392,7 @@ export function AppLayout() {
 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ThemeSwitcher />
+            <UserAccountMenu />
             <div style={{ height: 18, width: 1, background: 'var(--bd)', margin: '0 4px' }} />
             <button
               type="button"
