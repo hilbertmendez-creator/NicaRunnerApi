@@ -5,6 +5,7 @@ import { getControversiasOpenCount } from '../api/endpoints'
 import { useAuth } from '../auth/auth-context'
 import { CONTROVERSIAS_CHANGED_EVENT } from '../features/controversias/ControversiasPage'
 import { useActiveRace } from '../hooks/useActiveRace'
+import { NicaRunnerLogo } from '../routes/NicaRunnerLogo'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { TopbarRaceSelect } from './TopbarRaceSelect'
 import { UserAccountMenu } from './UserAccountMenu'
@@ -149,27 +150,14 @@ export function AppLayout() {
             width: 32,
             height: 32,
             borderRadius: 7,
-            background: 'var(--ac)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 14,
             flexShrink: 0,
-            color: '#fff',
           }}
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M2 13L6 3l3 6 2-3 3 7" />
-          </svg>
+          <NicaRunnerLogo className="h-6 w-6" style={{ color: 'var(--ac)' }} />
         </div>
 
         <nav
