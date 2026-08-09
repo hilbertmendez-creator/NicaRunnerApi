@@ -337,6 +337,18 @@ body {
   transition: opacity .15s ease, transform .15s ease, visibility 0s;
 }
 
+/* ── Resultados públicos: filtro por categoría, tabla con scroll acotado ── */
+.public-results-scroll {
+  max-height: 420px;
+  overflow: auto;
+}
+.public-results-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-card);
+}
+
 /* Touch / coarse pointer: chrome targets ≥44×44 (ThemeSwitcher bar) */
 @media (pointer: coarse) {
   .nr-nav-btn {
