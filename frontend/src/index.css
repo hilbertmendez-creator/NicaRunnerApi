@@ -58,6 +58,13 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ── Escalas no cromáticas / paleta de marca (independientes del tema) ── */
+:root {
+  /* task 3 — sidebar rail */
+  --sb-w-collapsed: 52px;
+  --sb-w-expanded:  210px;
+}
+
 /* ── THEME: DARK ── */
 [data-theme="dark"] {
   --bg-app:   #080E1A;
@@ -278,6 +285,26 @@ body {
   button:hover > .sb-tooltip { opacity: 1; }
 }
 
+/* ── Sidebar: rail colapsado/expandido (persistido) ── */
+.nr-sidebar { width: var(--sb-w-collapsed); transition: width .2s cubic-bezier(0.16, 1, 0.3, 1); }
+.nr-sidebar.expanded { width: var(--sb-w-expanded); }
+
+.nr-scrim { display: none; } /* desktop: inerte pase lo que pase */
+
+.nr-sidebar.expanded .nr-nav-wrap { width: 100% !important; margin: 0 !important; }
+.nr-sidebar.expanded .nr-nav-btn {
+  width: 100% !important;
+  justify-content: flex-start !important;
+  padding-inline: 10px !important;
+  gap: 10px;
+}
+
+/* Etiquetas y tooltip — decisión de producto #1: el tooltip sigue siendo la
+   affordance del rail colapsado; se apaga cuando ya hay etiqueta visible. */
+.nr-sidebar .nav-label { display: none; }
+.nr-sidebar.expanded .nav-label { display: inline; }
+.nr-sidebar.expanded .sb-tooltip { display: none; }
+
 /* Touch / coarse pointer: chrome targets ≥44×44 (ThemeSwitcher bar) */
 @media (pointer: coarse) {
   .nr-nav-btn {
@@ -375,21 +402,29 @@ body {
     padding-inline: 12px !important;
     gap: 10px;
   }
-  .nr-sidebar .sb-tooltip {
-    position: static !important;
-    opacity: 1 !important;
-    transform: none !important;
-    background: transparent !important;
-    color: inherit !important;
-    padding: 0 !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    pointer-events: none;
-  }
   .nr-sidebar nav {
     padding: 0 4px !important;
     align-items: stretch !important;
   }
+  .nr-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(0,0,0,.5);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .2s ease, visibility 0s linear .2s;
+  }
+  .nr-scrim.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity .2s ease, visibility 0s;
+  }
+  .nr-sb-toggle { display: none !important; } /* el drawer se cierra con scrim / Escape / navegar */
+  .nr-sidebar .nav-label { display: inline; } /* el drawer siempre va etiquetado */
   .nr-main {
     padding: 16px !important;
     padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
