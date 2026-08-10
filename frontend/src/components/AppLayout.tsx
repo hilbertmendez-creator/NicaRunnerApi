@@ -150,6 +150,9 @@ export function AppLayout() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-app)' }}>
+      <a href="#main-content" className="skip-link">
+        Saltar al contenido
+      </a>
       <div
         className={`nr-scrim ${mobileOpen ? 'visible' : ''}`}
         aria-hidden="true"
@@ -404,7 +407,7 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="nr-main" style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+        <main id="main-content" tabIndex={-1} className="nr-main" style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
           <Outlet />
         </main>
       </div>
