@@ -111,7 +111,9 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           className="mb-1 w-full"
         />
         {fieldErrors['Nombre'] && (
-          <p className="mb-3 text-sm text-critical-600">{fieldErrors['Nombre'].join(', ')}</p>
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {fieldErrors['Nombre'].join(', ')}
+          </p>
         )}
         {!fieldErrors['Nombre'] && <div className="mb-3" />}
 
@@ -125,7 +127,9 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           className="mb-1 w-full"
         />
         {fieldErrors['Descripcion'] && (
-          <p className="mb-3 text-sm text-critical-600">{fieldErrors['Descripcion'].join(', ')}</p>
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {fieldErrors['Descripcion'].join(', ')}
+          </p>
         )}
         {!fieldErrors['Descripcion'] && <div className="mb-3" />}
 
@@ -139,7 +143,9 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           className="mb-1 w-full"
         />
         {fieldErrors['FechaCarrera'] && (
-          <p className="mb-3 text-sm text-critical-600">{fieldErrors['FechaCarrera'].join(', ')}</p>
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {fieldErrors['FechaCarrera'].join(', ')}
+          </p>
         )}
         {!fieldErrors['FechaCarrera'] && <div className="mb-3" />}
 
@@ -171,7 +177,9 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
               </div>
             )}
             {fieldErrors['CategoryIds'] && (
-              <p className="mt-1 text-sm text-critical-600">{fieldErrors['CategoryIds'].join(', ')}</p>
+              <p className="mt-1 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+                {fieldErrors['CategoryIds'].join(', ')}
+              </p>
             )}
           </div>
         )}
@@ -194,7 +202,11 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           </>
         )}
 
-        {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
+        {error && (
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>

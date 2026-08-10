@@ -130,26 +130,31 @@ export function DataTable<T>({
 
       {/* Paginación */}
       {pageIndex !== undefined && pageCount !== undefined && onPageChange && pageCount > 1 && (
-        <div className="mt-4 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-md" style={{ borderColor: 'var(--bd-card, #e4e4e7)' }}>
+        <div
+          className="mt-4 flex items-center justify-between px-4 py-3 sm:px-6 rounded-b-md"
+          style={{ borderTop: '1px solid var(--bd-card, #e4e4e7)', background: 'var(--bg-card, #ffffff)' }}
+        >
           <div className="flex flex-1 justify-between sm:hidden">
             <button
               onClick={() => onPageChange(Math.max(1, pageIndex - 1))}
               disabled={pageIndex === 1}
-              className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="pagination-btn relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+              style={{ border: '1px solid var(--bd, #e4e4e7)', background: 'var(--bg-card, #ffffff)', color: 'var(--text-hi, #3f3f46)' }}
             >
               Anterior
             </button>
             <button
               onClick={() => onPageChange(Math.min(pageCount, pageIndex + 1))}
               disabled={pageIndex === pageCount}
-              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="pagination-btn relative ml-3 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+              style={{ border: '1px solid var(--bd, #e4e4e7)', background: 'var(--bg-card, #ffffff)', color: 'var(--text-hi, #3f3f46)' }}
             >
               Siguiente
             </button>
           </div>
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm" style={{ color: 'var(--text-th, #71717a)' }}>
                 Página <span className="font-medium">{pageIndex}</span> de <span className="font-medium">{pageCount}</span>
               </p>
             </div>
@@ -158,7 +163,8 @@ export function DataTable<T>({
                 <button
                   onClick={() => onPageChange(Math.max(1, pageIndex - 1))}
                   disabled={pageIndex === 1}
-                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                  className="pagination-btn relative inline-flex items-center rounded-l-md px-2 py-2 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                  style={{ boxShadow: 'inset 0 0 0 1px var(--bd, #e4e4e7)', color: 'var(--text-th, #71717a)' }}
                 >
                   <span className="sr-only">Anterior</span>
                   &larr;
@@ -171,24 +177,28 @@ export function DataTable<T>({
                       <button
                         key={p}
                         onClick={() => onPageChange(p)}
-                        className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                          p === pageIndex
-                            ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                            : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                        className={`pagination-btn relative inline-flex items-center px-4 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                          p === pageIndex ? 'z-10' : 'focus:z-20 focus:outline-offset-0'
                         }`}
+                        style={
+                          p === pageIndex
+                            ? { background: 'var(--ac, #2563EB)', color: '#fff', outlineColor: 'var(--ac, #2563EB)' }
+                            : { boxShadow: 'inset 0 0 0 1px var(--bd, #e4e4e7)', color: 'var(--text-hi, #18181b)' }
+                        }
                       >
                         {p}
                       </button>
                     )
                   }
-                  if (p === 2 && pageIndex > 3) return <span key={p} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span>
-                  if (p === pageCount - 1 && pageIndex < pageCount - 2) return <span key={p} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span>
+                  if (p === 2 && pageIndex > 3) return <span key={p} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold" style={{ boxShadow: 'inset 0 0 0 1px var(--bd, #e4e4e7)', color: 'var(--text-th, #71717a)' }}>...</span>
+                  if (p === pageCount - 1 && pageIndex < pageCount - 2) return <span key={p} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold" style={{ boxShadow: 'inset 0 0 0 1px var(--bd, #e4e4e7)', color: 'var(--text-th, #71717a)' }}>...</span>
                   return null;
                 })}
                 <button
                   onClick={() => onPageChange(Math.min(pageCount, pageIndex + 1))}
                   disabled={pageIndex === pageCount}
-                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                  className="pagination-btn relative inline-flex items-center rounded-r-md px-2 py-2 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                  style={{ boxShadow: 'inset 0 0 0 1px var(--bd, #e4e4e7)', color: 'var(--text-th, #71717a)' }}
                 >
                   <span className="sr-only">Siguiente</span>
                   &rarr;

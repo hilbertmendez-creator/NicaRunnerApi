@@ -72,14 +72,18 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
 
       <input ref={fileInputRef} type="file" accept=".xlsx" className="mb-3 w-full text-sm" />
 
-      {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
+      {error && (
+        <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+          {error}
+        </p>
+      )}
 
       {result && (
         <div className="mb-3 p-3 text-sm" style={{ border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)', color: 'var(--text-lo)' }}>
           <p>
             Total filas: <strong className="font-mono tabular-nums">{result.totalFilas}</strong> — Importados:{' '}
-            <strong className="font-mono tabular-nums text-official-600">{result.importados}</strong> — Errores:{' '}
-            <strong className="font-mono tabular-nums text-critical-600">{result.errores.length}</strong>
+            <strong className="font-mono tabular-nums" style={{ color: 'var(--ok-tx)' }}>{result.importados}</strong> — Errores:{' '}
+            <strong className="font-mono tabular-nums" style={{ color: 'var(--er-tx)' }}>{result.errores.length}</strong>
           </p>
           {result.errores.length > 0 && (
             <ul className="mt-2 max-h-40 list-disc overflow-y-auto pl-5" style={{ color: 'var(--text-lo)' }}>

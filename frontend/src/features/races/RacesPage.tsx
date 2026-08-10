@@ -111,7 +111,11 @@ export function RacesPage() {
         )}
       </div>
 
-      {error && <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
+      {error && (
+        <p className="text-sm" role="alert" style={{ color: 'var(--badge-er-text)' }}>
+          {error}
+        </p>
+      )}
 
       {loading && <LoadingText message="Cargando carreras..." />}
 

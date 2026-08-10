@@ -476,6 +476,30 @@ tbody tr:nth-child(n+9) { animation: none; }
   background: var(--bg-hover);
 }
 
+/* Controles de paginación de DataTable (@nicarunner/ui) */
+.pagination-btn:not(:disabled):hover {
+  background: var(--bg-hover);
+}
+
+/* Saltar al contenido: oculto hasta que recibe foco por teclado */
+.skip-link {
+  position: fixed;
+  top: -60px;
+  left: 12px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--radius-btn, 6px);
+  background: var(--ac);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top .15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+}
+
 .nr-account-logout:hover {
   background: var(--er-bg) !important;
 }
@@ -652,7 +676,7 @@ tbody tr:nth-child(n+9) { animation: none; }
     height: auto;
   }
   .nr-ui-btn-sm {
-    min-height: 40px;
+    min-height: 44px;
     height: auto;
   }
   .nr-ui-input {

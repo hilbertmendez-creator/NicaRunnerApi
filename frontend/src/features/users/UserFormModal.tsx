@@ -164,7 +164,7 @@ export function UserFormModal({ user, onClose, onSaved }: UserFormModalProps) {
         )}
 
         {error && (
-          <p className="mb-3 text-sm" style={{ color: 'var(--badge-er-text)' }}>
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--badge-er-text)' }}>
             {error}
           </p>
         )}

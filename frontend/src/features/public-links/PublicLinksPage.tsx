@@ -80,7 +80,11 @@ export function PublicLinksPage() {
         </section>
       )}
 
-      {error && <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
+      {error && (
+        <p className="text-sm" role="alert" style={{ color: 'var(--badge-er-text)' }}>
+          {error}
+        </p>
+      )}
 
       {loading && <p className="text-sm" style={textLo}>Cargando enlaces…</p>}
 

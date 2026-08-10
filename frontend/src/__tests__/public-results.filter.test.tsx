@@ -113,4 +113,45 @@ describe('PublicResultsPage per-category filter', () => {
     expect(within(section5k).getByText('Ana Alvarez')).toBeInTheDocument()
     expect(within(section5k).getByText('2 de 2 corredores')).toBeInTheDocument()
   })
+
+  it('runner rows are keyboard-operable: Enter navigates like a click; rows without shareKey stay out of tab order', async () => {
+    // Escenario: única superficie pública sin protección de "usuario admin" —
+    // debe ser usable con solo teclado, no únicamente con mouse/touch.
+    const user = userEvent.setup()
+    getPublicResults.mockResolvedValue({
+      raceName: 'Carrera Demo',
+      fechaCarrera: '2026-08-09T00:00:00Z',
+      categorias: [
+        {
+          nombreCategoria: '5K',
+          distancia: 5,
+          resultados: [
+            { runnerId: 1, nombre: 'Ana Alvarez', dorsal: '101', posicion: 1, tiempoLlegada: '2026-08-09T12:00:00Z', shareKey: 'ana-key' },
+            { runnerId: 2, nombre: 'Beto Blanco', dorsal: '102', posicion: 2, tiempoLlegada: '2026-08-09T12:05:00Z', shareKey: null },
+          ],
+        },
+      ],
+    } as PublicRaceResultsDto)
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/resultados/:token" element={<PublicResultsPage />} />
+        <Route path="/corredor/:shareKey" element={<div>Runner detail page</div>} />
+      </Routes>,
+      { initialPath: '/resultados/abc' },
+    )
+
+    const clickableRow = (await screen.findByText('Ana Alvarez')).closest('tr') as HTMLElement
+    expect(clickableRow).toHaveAttribute('role', 'button')
+    expect(clickableRow).toHaveAttribute('tabIndex', '0')
+
+    const nonClickableRow = screen.getByText('Beto Blanco').closest('tr') as HTMLElement
+    expect(nonClickableRow).not.toHaveAttribute('role')
+    expect(nonClickableRow).not.toHaveAttribute('tabIndex')
+
+    clickableRow.focus()
+    await user.keyboard('{Enter}')
+
+    expect(await screen.findByText('Runner detail page')).toBeInTheDocument()
+  })
 })

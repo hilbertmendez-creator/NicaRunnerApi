@@ -88,4 +88,21 @@ describe('AppLayout honesty smoke', () => {
       await screen.findByRole('button', { name: 'Controversias (3 abiertas)' }),
     ).toBeInTheDocument()
   })
+
+  it('skip link is the first focusable element and points to the main content landmark', async () => {
+    // Escenario: usuario de teclado puede saltar los 9 ítems del sidebar de un tabstop.
+    const { container } = renderAppShell(AppLayout, { initialPath: '/' })
+    await waitFor(() => expect(getAdminNotifications).toHaveBeenCalled())
+
+    const skipLink = screen.getByRole('link', { name: 'Saltar al contenido' })
+    expect(skipLink).toHaveAttribute('href', '#main-content')
+
+    const main = container.querySelector('#main-content')
+    expect(main).not.toBeNull()
+    expect(main?.tagName).toBe('MAIN')
+
+    // Es el primer elemento interactivo del árbol — antes que el toggle del sidebar.
+    const focusables = container.querySelectorAll('a, button')
+    expect(focusables[0]).toBe(skipLink)
+  })
 })
