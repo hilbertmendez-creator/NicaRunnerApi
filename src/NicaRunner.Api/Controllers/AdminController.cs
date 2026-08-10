@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Admin;
 using NicaRunner.Application.Notifications;
 using NicaRunner.Application.Notifications.Dtos;
+using NicaRunner.Application.Races;
+using NicaRunner.Application.Races.Dtos;
 
 namespace NicaRunner.Api.Controllers;
 
@@ -23,6 +25,7 @@ public class AdminController(
     IRefreshTokenCleanupService refreshTokenCleanup,
     IPublicTokenCleanupService publicTokenCleanup,
     INotificationService notificationService,
+    IStaleRaceSweepService staleRaceSweep,
     IConfiguration configuration,
     ILogger<AdminController> logger) : ControllerBase
 {
@@ -61,6 +64,40 @@ public class AdminController(
         logger.LogInformation(
             "Admin notifications sweep: {Procesadas} procesadas, {Enviadas} enviadas, {Fallidas} fallidas.",
             result.Procesadas, result.Enviadas, result.Fallidas);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Guardia anti-zombie: detecta carreras EnCurso sin actividad de captura hace 12
+    /// horas o más y notifica por email a todos los Administradores.
+    /// </summary>
+    /// <remarks>
+    /// "Actividad" es el último `Result` capturado en la carrera (cualquier Estado,
+    /// incluido Anulado — un Deshacer también es un juez presente); si la carrera
+    /// todavía no tiene ningún `Result`, se usa `Race.RaceStartUtc` en su lugar.
+    ///
+    /// NUNCA cierra ni muta ninguna carrera — solo alerta. Un fallo del proveedor de
+    /// email no hace fallar el barrido (mismo criterio que POST /races/{id}/close): la
+    /// lista devuelta en el body es el registro que importa para el cron/diagnóstico.
+    ///
+    /// Ejemplo de respuesta 200:
+    /// ```json
+    /// { "staleRaces": [{ "raceId": 42, "nombre": "5K Managua", "lastActivityUtc": "2026-08-09T10:00:00Z" }] }
+    /// ```
+    /// </remarks>
+    /// <response code="200">Barrido corrido. `staleRaces` puede venir vacía.</response>
+    /// <response code="401">Falta o no coincide X-Admin-Secret.</response>
+    [HttpPost("races/stale-sweep")]
+    [ProducesResponseType(typeof(StaleRaceSweepResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<StaleRaceSweepResult>> StaleRaceSweep(CancellationToken ct)
+    {
+        if (!IsAuthorized("races/stale-sweep"))
+            return Unauthorized();
+
+        var result = await staleRaceSweep.RunAsync(ct);
+        logger.LogInformation(
+            "Admin stale-race sweep: {Count} carrera(s) sin actividad reciente.", result.StaleRaces.Count);
         return Ok(result);
     }
 

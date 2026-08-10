@@ -29,6 +29,9 @@ public class RaceRepository(NicaRunnerDbContext context) : IRaceRepository
     public Task<List<Race>> GetAllAsync(CancellationToken ct = default) =>
         context.Races.OrderByDescending(r => r.FechaCarrera).ToListAsync(ct);
 
+    public Task<List<Race>> GetByStatusAsync(RaceStatus status, CancellationToken ct = default) =>
+        context.Races.Where(r => r.Estado == status).ToListAsync(ct);
+
     public Task<bool> JoinCodeExistsAsync(string joinCode, CancellationToken ct = default) =>
         context.Races.AnyAsync(r => r.JoinCode == joinCode, ct);
 

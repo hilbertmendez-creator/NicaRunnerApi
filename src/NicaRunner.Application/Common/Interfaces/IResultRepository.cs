@@ -41,6 +41,19 @@ public interface IResultRepository
     /// </summary>
     Task<RaceCloseBlockerCounts> GetCloseBlockerCountsAsync(int raceId, CancellationToken ct = default);
 
+    /// <summary>
+    /// stale-race-sweep: última actividad de captura por carrera (MAX(CreatedAt),
+    /// agrupado por RaceId), en UNA sola consulta para todas las carreras candidatas a
+    /// la vez — mismo precedente que GetPlacingCountsAsync/GetCloseBlockerCountsAsync,
+    /// nunca materializa los Results uno por uno. Incluye resultados Anulado a
+    /// propósito: un Deshacer también es un juez tocando la carrera, no una señal de
+    /// abandono. Usa CreatedAt (no TiempoLlegada, que un juez puede editar a mano vía
+    /// PUT) porque lo que importa es cuándo alguien interactuó con la carrera por
+    /// última vez. Carreras sin ningún Result no aparecen en el diccionario devuelto —
+    /// el llamador cae al fallback de Race.RaceStartUtc.
+    /// </summary>
+    Task<Dictionary<int, DateTime>> GetLastCaptureAtByRaceIdsAsync(IReadOnlyCollection<int> raceIds, CancellationToken ct = default);
+
     Task AddAsync(Result result, CancellationToken ct = default);
 
     /// <summary>
