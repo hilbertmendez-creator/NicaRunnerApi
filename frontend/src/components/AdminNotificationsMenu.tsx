@@ -112,7 +112,7 @@ export function AdminNotificationsMenu() {
           position: 'absolute',
           right: 0,
           top: 'calc(100% + 8px)',
-          width: 320,
+          width: 'min(320px, calc(100vw - 24px))',
           maxHeight: 400,
           overflowY: 'auto',
           background: 'var(--bg-card)',
