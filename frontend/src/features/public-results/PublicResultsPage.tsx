@@ -61,10 +61,10 @@ function CategoryResultsTable({ cat, token }: { cat: PublicCategoryResultsDto; t
           <table className="w-full text-left text-sm">
             <thead>
               <tr style={{ color: 'var(--text-th)' }}>
-                <th className="py-1">Pos.</th>
-                <th className="py-1">Dorsal</th>
-                <th className="py-1">Nombre</th>
-                <th className="py-1">Tiempo</th>
+                <th scope="col" className="py-1">Pos.</th>
+                <th scope="col" className="py-1">Dorsal</th>
+                <th scope="col" className="py-1">Nombre</th>
+                <th scope="col" className="py-1">Tiempo</th>
               </tr>
             </thead>
             <tbody>

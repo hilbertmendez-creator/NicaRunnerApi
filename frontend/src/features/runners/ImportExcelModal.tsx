@@ -70,7 +70,13 @@ export function ImportExcelModal({ raceId, onClose, onImported }: ImportExcelMod
         </Button>
       </div>
 
-      <input ref={fileInputRef} type="file" accept=".xlsx" className="mb-3 w-full text-sm" />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx"
+        aria-label="Archivo Excel de corredores a importar"
+        className="mb-3 w-full text-sm"
+      />
 
       {error && (
         <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>

@@ -7,6 +7,7 @@ import { Button, DataTable, LoadingText, EmptyState, Select } from '@nicarunner/
 import type { Column } from '@nicarunner/ui'
 import { UserFormModal } from './UserFormModal'
 import { EntityAuditHistory } from '../../components/EntityAuditHistory'
+import { pageTitle } from '../../theme/styles'
 
 const ROLE_OPTIONS: UserRole[] = ['Administrador', 'Capturista', 'Lector']
 
@@ -82,6 +83,7 @@ export function UsersPage() {
             value={u.role}
             disabled={isSelf}
             onChange={(e) => handleRoleChange(u, e.target.value as UserRole)}
+            aria-label={`Rol de ${u.nombre}`}
           >
             {ROLE_OPTIONS.map((r) => (
               <option key={r} value={r}>
@@ -137,7 +139,8 @@ export function UsersPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold" style={pageTitle}>Usuarios</h1>
         <Button variant="primary" onClick={() => setShowCreate(true)}>
           Nuevo usuario
         </Button>

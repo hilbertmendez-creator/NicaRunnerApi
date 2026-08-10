@@ -97,6 +97,7 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
             value={selectedCategoryId ?? ''}
             onChange={(e) => setSelectedCategoryId(e.target.value ? Number(e.target.value) : null)}
             disabled={availableToAssign.length === 0}
+            aria-label="Categoría a asignar"
           >
             <option value="">Seleccioná una categoría del catálogo…</option>
             {availableToAssign.map((cat) => (

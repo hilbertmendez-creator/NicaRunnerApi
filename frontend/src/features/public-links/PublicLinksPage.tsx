@@ -107,10 +107,10 @@ export function PublicLinksPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr style={{ color: 'var(--text-th)' }}>
-                <th className="py-1">Enlace</th>
-                <th className="py-1">Expira</th>
-                <th className="py-1">Creado</th>
-                <th className="py-1"></th>
+                <th scope="col" className="py-1">Enlace</th>
+                <th scope="col" className="py-1">Expira</th>
+                <th scope="col" className="py-1">Creado</th>
+                <th scope="col" className="py-1"></th>
               </tr>
             </thead>
             <tbody>
