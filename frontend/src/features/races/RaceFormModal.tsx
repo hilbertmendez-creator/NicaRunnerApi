@@ -32,10 +32,10 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
   const [submitting, setSubmitting] = useState(false)
 
   // Effect-driven fetch: react.dev/learn/synchronizing-with-effects#fetching-data
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (race) return
     let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCatalogLoading(true)
     getCategoryCatalog()
       .then((data) => {
