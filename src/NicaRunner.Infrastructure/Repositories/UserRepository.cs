@@ -43,6 +43,12 @@ public class UserRepository(NicaRunnerDbContext context) : IUserRepository
     public Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.GoogleId == googleId, ct);
 
+    // race-close: usuarios activos con un rol dado, para notificar a todos los
+    // Administradores cuando un Capturista cierra una carrera. Filtra en SQL, no
+    // trae GetAllAsync() completo para descartar en memoria.
+    public Task<List<User>> GetByRoleAsync(UserRole role, CancellationToken ct = default) =>
+        context.Users.Where(u => u.Role == role && u.IsActive).OrderBy(u => u.Id).ToListAsync(ct);
+
     public Task<User?> GetByIdAsync(int id, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
 

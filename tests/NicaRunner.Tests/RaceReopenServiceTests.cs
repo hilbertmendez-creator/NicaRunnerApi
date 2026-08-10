@@ -5,6 +5,7 @@ using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Races;
 using NicaRunner.Application.Results;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Tests;

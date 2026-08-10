@@ -113,6 +113,23 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
         return counts ?? new PlacingCounts(0, 0, 0, 0);
     }
 
+    // race-close: los dos agregados que bloquean el cierre en UNA sola consulta
+    // (GroupBy(_ => 1), mismo precedente que GetPlacingCountsAsync). MissingRunner
+    // EXCLUYE Anulado a propósito: una captura anulada sin dorsal nunca va a recibir
+    // uno, así que contarla bloquearía el cierre para siempre.
+    public async Task<RaceCloseBlockerCounts> GetCloseBlockerCountsAsync(int raceId, CancellationToken ct = default)
+    {
+        var counts = await context.Results
+            .Where(r => r.RaceId == raceId)
+            .GroupBy(_ => 1)
+            .Select(g => new RaceCloseBlockerCounts(
+                g.Count(r => r.Estado == ResultEstado.Controversia),
+                g.Count(r => r.Estado != ResultEstado.Anulado && r.RunnerId == null)))
+            .FirstOrDefaultAsync(ct);
+
+        return counts == default ? new RaceCloseBlockerCounts(0, 0) : counts;
+    }
+
     public async Task AddAsync(Result result, CancellationToken ct = default) =>
         await context.Results.AddAsync(result, ct);
 
