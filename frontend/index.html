@@ -11,6 +11,14 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>NicaRunner — Backoffice</title>
+    <!-- preconnect: el navegador resuelve DNS/TLS de Google Fonts en paralelo con el
+         parseo del CSS, en vez de descubrir el @import solo después de bajar index.css. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
   </head>
   <body>
     <div id="root"></div>
