@@ -267,6 +267,10 @@ export async function createPublicToken(
   return data
 }
 
+export async function revokePublicToken(raceId: number, tokenId: number): Promise<void> {
+  await apiClient.delete(`/races/${raceId}/public-token/${tokenId}`)
+}
+
 export async function getPublicResults(token: string): Promise<PublicRaceResultsDto> {
   const { data } = await apiClient.get<PublicRaceResultsDto>(`/public/results/${token}`)
   return data
