@@ -130,6 +130,23 @@ public class ResultRepository(NicaRunnerDbContext context) : IResultRepository
         return counts == default ? new RaceCloseBlockerCounts(0, 0) : counts;
     }
 
+    // stale-race-sweep: MAX(CreatedAt) por RaceId en UNA sola consulta agregada, sin
+    // materializar Results — mismo precedente que GetPlacingCountsAsync/
+    // GetCloseBlockerCountsAsync. Sin Where por Estado a propósito: Anulado también
+    // cuenta como actividad humana reciente (design.md decisión 1).
+    public async Task<Dictionary<int, DateTime>> GetLastCaptureAtByRaceIdsAsync(
+        IReadOnlyCollection<int> raceIds, CancellationToken ct = default)
+    {
+        if (raceIds.Count == 0)
+            return new Dictionary<int, DateTime>();
+
+        return await context.Results
+            .Where(r => raceIds.Contains(r.RaceId))
+            .GroupBy(r => r.RaceId)
+            .Select(g => new { RaceId = g.Key, LastCaptureAt = g.Max(r => r.CreatedAt) })
+            .ToDictionaryAsync(x => x.RaceId, x => x.LastCaptureAt, ct);
+    }
+
     public async Task AddAsync(Result result, CancellationToken ct = default) =>
         await context.Results.AddAsync(result, ct);
 

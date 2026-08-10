@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Admin;
 using NicaRunner.Application.Notifications;
 using NicaRunner.Application.Notifications.Dtos;
+using NicaRunner.Application.Races;
+using NicaRunner.Application.Races.Dtos;
 
 namespace NicaRunner.Api.Controllers;
 
@@ -23,6 +25,7 @@ public class AdminController(
     IRefreshTokenCleanupService refreshTokenCleanup,
     IPublicTokenCleanupService publicTokenCleanup,
     INotificationService notificationService,
+    IStaleRaceSweepService staleRaceSweep,
     IConfiguration configuration,
     ILogger<AdminController> logger) : ControllerBase
 {
@@ -61,6 +64,19 @@ public class AdminController(
         logger.LogInformation(
             "Admin notifications sweep: {Procesadas} procesadas, {Enviadas} enviadas, {Fallidas} fallidas.",
             result.Procesadas, result.Enviadas, result.Fallidas);
+        return Ok(result);
+    }
+
+    // TODO(stale-race-sweep OpenAPI step): XML docs y ProducesResponseType pendientes.
+    [HttpPost("races/stale-sweep")]
+    public async Task<ActionResult<StaleRaceSweepResult>> StaleRaceSweep(CancellationToken ct)
+    {
+        if (!IsAuthorized("races/stale-sweep"))
+            return Unauthorized();
+
+        var result = await staleRaceSweep.RunAsync(ct);
+        logger.LogInformation(
+            "Admin stale-race sweep: {Count} carrera(s) sin actividad reciente.", result.StaleRaces.Count);
         return Ok(result);
     }
 

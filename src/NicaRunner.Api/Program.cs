@@ -207,6 +207,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAdminNotificationService, AdminNotificationService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IRaceService, RaceService>();
+builder.Services.AddScoped<IStaleRaceSweepService, StaleRaceSweepService>();
 builder.Services.AddScoped<IRaceCategoryService, RaceCategoryService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IRunnerService, RunnerService>();
