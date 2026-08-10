@@ -26,5 +26,16 @@ public class PublicTokensController(IPublicResultService publicResultService) : 
     public async Task<ActionResult<List<PublicTokenDto>>> GetAll(int raceId, CancellationToken ct) =>
         Ok(await publicResultService.GetAllByRaceAsync(raceId, ct));
 
+    /// <summary>
+    /// Revoca un enlace público: deja de servir resultados al instante, sin
+    /// esperar su fecha de vencimiento. Para cortar un enlace que se filtró.
+    /// </summary>
+    [HttpDelete("{tokenId:int}")]
+    public async Task<IActionResult> Revoke(int raceId, int tokenId, CancellationToken ct)
+    {
+        await publicResultService.RevokeTokenAsync(raceId, tokenId, ct);
+        return NoContent();
+    }
+
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

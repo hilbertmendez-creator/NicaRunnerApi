@@ -313,6 +313,9 @@ export interface PublicTokenDto {
   token: string
   fechaExpiracion: string
   createdAt: string
+  /** Revocado a mano por un administrador: el enlace ya no sirve resultados
+   *  aunque fechaExpiracion siga en el futuro. */
+  revocado: boolean
 }
 
 export interface CreatePublicTokenRequest {

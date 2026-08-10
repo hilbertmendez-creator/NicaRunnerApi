@@ -16,12 +16,16 @@ public class PublicResultTokenRepository(NicaRunnerDbContext context) : IPublicR
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync(ct);
 
+    public Task<PublicResultToken?> GetByIdAsync(int raceId, int tokenId, CancellationToken ct = default) =>
+        context.PublicResultTokens
+            .FirstOrDefaultAsync(t => t.Id == tokenId && t.RaceId == raceId, ct);
+
     public async Task AddAsync(PublicResultToken token, CancellationToken ct = default) =>
         await context.PublicResultTokens.AddAsync(token, ct);
 
     public async Task<int> DeleteExpiredAsync(DateTime now, CancellationToken ct = default) =>
         await context.PublicResultTokens
-            .Where(t => t.FechaExpiracion < now)
+            .Where(t => t.FechaExpiracion < now || t.IsExpired)
             .ExecuteDeleteAsync(ct);
 
     public Task SaveChangesAsync(CancellationToken ct = default) =>

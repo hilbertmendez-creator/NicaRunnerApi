@@ -6,6 +6,12 @@ public interface IPublicResultService
 {
     Task<PublicTokenDto> CreateTokenAsync(int raceId, CreatePublicTokenRequest request, int creatorId, CancellationToken ct = default);
     Task<List<PublicTokenDto>> GetAllByRaceAsync(int raceId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Mata un enlace público de carrera al instante, sin esperar su
+    /// vencimiento natural. Idempotente: revocar uno ya revocado no falla.
+    /// </summary>
+    Task RevokeTokenAsync(int raceId, int tokenId, CancellationToken ct = default);
     Task<PublicRaceResultsDto> GetResultsByTokenAsync(string token, CancellationToken ct = default);
     Task<PublicRunnerDetailDto> GetRunnerResultByTokenAsync(string token, int runnerId, CancellationToken ct = default);
 
