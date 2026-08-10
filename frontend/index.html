@@ -3,7 +3,12 @@
   <head>
     <script>
       (function(){
-        var t = localStorage.getItem('nicarunner-theme');
+        var t;
+        try {
+          t = localStorage.getItem('nicarunner-theme');
+        } catch (e) {
+          t = null;
+        }
         document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
       })();
     </script>

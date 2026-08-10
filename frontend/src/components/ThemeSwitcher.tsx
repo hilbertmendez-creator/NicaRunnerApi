@@ -23,8 +23,8 @@ export function ThemeSwitcher() {
           aria-pressed={theme === t}
           onClick={() => setTheme(t)}
           style={{
-            height: 28,
-            minWidth: 52,
+            height: 44,
+            minWidth: 64,
             padding: '0 10px',
             borderRadius: 4,
             fontSize: 12,

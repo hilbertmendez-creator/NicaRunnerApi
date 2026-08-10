@@ -14,8 +14,12 @@ const ThemeContext = createContext<ThemeCtx>({ theme: 'light', setTheme: () => {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored === 'dark' ? 'dark' : 'light'
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      return stored === 'dark' ? 'dark' : 'light'
+    } catch {
+      return 'light'
+    }
   })
 
   useEffect(() => {
@@ -24,7 +28,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = (t: Theme) => {
     setThemeState(t)
-    localStorage.setItem(STORAGE_KEY, t)
+    try {
+      localStorage.setItem(STORAGE_KEY, t)
+    } catch {
+      // storage unavailable/full — in-memory state remains source of truth
+    }
   }
 
   return (
