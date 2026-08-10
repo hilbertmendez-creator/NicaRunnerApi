@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Exceptions;
@@ -21,12 +22,13 @@ public class UserManagementServiceTests
     private readonly Mock<INotificationSender> _emailSender = new();
     private readonly IEmailTemplateRenderer _emailRenderer = new EmailTemplateRenderer();
     private readonly FakeAuditLogRepository _auditRepo = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     private UserManagementService BuildService()
     {
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
         return new(_users.Object, _passwordHasher.Object, [_emailSender.Object], _emailRenderer,
-            new AuditService(_auditRepo), new AliasAssigner(_users.Object));
+            new AuditService(_auditRepo), new AliasAssigner(_users.Object), _adminNotifications.Object);
     }
 
     [Fact]
@@ -72,6 +74,8 @@ public class UserManagementServiceTests
         // user-alias/user-management: alta genera y persiste el alias (sitio 1, §3.4).
         Assert.Equal("nuevo", created.Username); // "Nuevo" (1 token) -> el token completo
         Assert.Equal("nuevo", dto.Username);
+        _adminNotifications.Verify(a => a.NotifyAsync(
+            AdminNotificationType.UsuarioCreado, It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // user-alias: "Alias collision resolved with numeric suffix" — el primer candidato

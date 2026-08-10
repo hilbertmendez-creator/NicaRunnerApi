@@ -1,3 +1,4 @@
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
@@ -12,7 +13,8 @@ public class ResultService(
     IRaceRepository raceRepository,
     IRunnerRepository runnerRepository,
     IRaceDashboardNotifier raceDashboardNotifier,
-    IRaceCategoryRepository raceCategoryRepository) : IResultService
+    IRaceCategoryRepository raceCategoryRepository,
+    IAdminNotificationService adminNotificationService) : IResultService
 {
     public async Task<ResultDto> CreateAsync(int raceId, CreateResultRequest request, int capturistaId, string? idempotencyKey = null, CancellationToken ct = default)
     {
@@ -481,6 +483,11 @@ public class ResultService(
 
             if (existing.CategoryId is { } existingCategoryId)
                 await RecalculatePositionsAsync(raceId, existingCategoryId, ct);
+
+            await adminNotificationService.NotifyAsync(
+                AdminNotificationType.DorsalDuplicado,
+                $"Dorsal '{dorsal}' duplicado en la carrera #{raceId}.",
+                raceId, ct);
 
             await raceDashboardNotifier.NotifyDisputeOpenedAsync(raceId, ct);
             return true;

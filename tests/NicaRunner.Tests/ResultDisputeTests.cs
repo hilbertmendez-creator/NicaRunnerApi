@@ -1,4 +1,5 @@
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Results;
@@ -15,6 +16,7 @@ public class ResultDisputeTests
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceDashboardNotifier> _notifier = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     private const int JudgeB = 43;
 
@@ -27,7 +29,7 @@ public class ResultDisputeTests
     }
 
     private ResultService BuildService() =>
-        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object);
+        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object, _adminNotifications.Object);
 
     private static Race EnCurso() => new()
     {
@@ -75,6 +77,8 @@ public class ResultDisputeTests
         Assert.Equal(resultA.DisputeGroupId, resultB.DisputeGroupId);
         Assert.Equal(DisputeMotivo.DorsalDuplicado, resultB.DisputeMotivo);
         _notifier.Verify(n => n.NotifyDisputeOpenedAsync(1, It.IsAny<CancellationToken>()), Times.Once);
+        _adminNotifications.Verify(a => a.NotifyAsync(
+            AdminNotificationType.DorsalDuplicado, It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
@@ -11,7 +12,8 @@ public class RunnerService(
     IRunnerRepository runnerRepository,
     IRaceRepository raceRepository,
     IRaceCategoryRepository categoryRepository,
-    IExcelRunnerParser excelRunnerParser) : IRunnerService
+    IExcelRunnerParser excelRunnerParser,
+    IAdminNotificationService adminNotificationService) : IRunnerService
 {
     public async Task<RunnerDto> CreateAsync(int raceId, CreateRunnerRequest request, CancellationToken ct = default)
     {
@@ -207,6 +209,14 @@ public class RunnerService(
         {
             await runnerRepository.AddRangeAsync(toAdd, ct);
             await runnerRepository.SaveChangesAsync(ct);
+        }
+
+        if (errors.Count > 0)
+        {
+            await adminNotificationService.NotifyAsync(
+                AdminNotificationType.ImportacionConErrores,
+                $"Importación de corredores en carrera #{raceId}: {errors.Count} de {rows.Count} filas fallaron.",
+                raceId, ct);
         }
 
         return new ImportRunnersResultDto(rows.Count, toAdd.Count, errors);

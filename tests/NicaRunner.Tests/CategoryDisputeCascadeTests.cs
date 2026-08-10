@@ -1,4 +1,5 @@
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Results;
 using NicaRunner.Domain.Entities;
@@ -13,11 +14,12 @@ public class CategoryDisputeCascadeTests
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceDashboardNotifier> _notifier = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     private const int AdminId = 1;
 
     private ResultService BuildService() =>
-        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object);
+        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object, _adminNotifications.Object);
 
     [Fact]
     public async Task ResolvePendingCategoryDisputesAsync_ResuelveDisputaSinSalida_CuandoLaCategoriaYaEstaEnCurso()
