@@ -44,7 +44,7 @@ An integrated stack — authenticated back office + public opaque result/runner 
 **Constraints**
 
 - UI honesty is binding: navigation, badges, and KPIs must reflect real data (no orphan mock chrome, no false urgency).
-- Public race and runner links are opaque and permanent; do not invent fake share URLs or fabricate published standings.
+- Public links are opaque; do not invent fake share URLs or fabricate published standings. Race result links (`/resultados/:token`) expire on a set date and an administrator can revoke one at any time to cut off a leaked link — several may be live at once by design. Runner share links (`/corredor/:shareKey`) are permanent.
 - Do not invent testimonials, customer logos, race results, or deployment claims for marketing surfaces.
 
 **Open / undecided**
