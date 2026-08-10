@@ -676,7 +676,7 @@ tbody tr:nth-child(n+9) { animation: none; }
     height: auto;
   }
   .nr-ui-btn-sm {
-    min-height: 40px;
+    min-height: 44px;
     height: auto;
   }
   .nr-ui-input {
