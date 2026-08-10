@@ -30,6 +30,10 @@ export function usePolling<T>(
     setLoading(true)
 
     async function tick() {
+      // Pestaña en segundo plano: nada que refrescar en pantalla, no vale la
+      // pena el request. Se retoma solo (próximo tick) o al instante al
+      // volver a la pestaña, vía el listener de visibilitychange de abajo.
+      if (document.hidden) return
       try {
         const result = await fetcherRef.current()
         if (!cancelled) {
@@ -44,11 +48,17 @@ export function usePolling<T>(
     }
     tickRef.current = tick
 
+    function onVisibilityChange() {
+      if (!document.hidden) tick()
+    }
+
     tick()
     const id = setInterval(tick, intervalMs)
+    document.addEventListener('visibilitychange', onVisibilityChange)
     return () => {
       cancelled = true
       clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
