@@ -5,6 +5,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>1ea5183e-a4d0-48cf-9cff-148711bccc0e</UserSecretsId>
+    <!-- race-close: habilita el XML de doc comments para que Swashbuckle pueda leer
+         los <summary>/<remarks> de los endpoints documentados (RacesController Close/
+         Reopen). NoWarn 1591: el resto de los controllers no tiene doc comments todavía
+         y no es objetivo de esta PR agregárselos a todos. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

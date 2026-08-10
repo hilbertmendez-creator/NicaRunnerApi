@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { isAxiosError } from 'axios'
 import toast from 'react-hot-toast'
-import type { CategoryDto, RaceDto, RaceStatus } from '../../api/types'
+import type { CategoryDto, RaceDto } from '../../api/types'
 import { createRace, getCategoryCatalog, updateRace } from '../../api/endpoints'
-import { Modal, Button, Label, Input, Textarea, Select } from '@nicarunner/ui'
+import { Modal, Button, Label, Input, Textarea } from '@nicarunner/ui'
 
 interface RaceFormModalProps {
   race: RaceDto | null
@@ -15,15 +15,12 @@ function toDateInputValue(iso: string) {
   return iso.slice(0, 10)
 }
 
-const ESTADOS: RaceStatus[] = ['Planeada', 'EnCurso', 'Terminada']
-
 export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
   const [nombre, setNombre] = useState(race?.nombre ?? '')
   const [descripcion, setDescripcion] = useState(race?.descripcion ?? '')
   const [fechaCarrera, setFechaCarrera] = useState(
     race ? toDateInputValue(race.fechaCarrera) : '',
   )
-  const [estado, setEstado] = useState<RaceStatus>(race?.estado ?? 'Planeada')
   const [catalog, setCatalog] = useState<CategoryDto[]>([])
   const [catalogLoading, setCatalogLoading] = useState(!race)
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([])
@@ -69,7 +66,18 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
     try {
       const fechaIso = new Date(fechaCarrera).toISOString()
       if (race) {
-        await updateRace(race.id, { nombre, descripcion, fechaCarrera: fechaIso, estado })
+        // Correction B: Race.Estado es derivado (RaceStatusDeriver) — este formulario
+        // ya no ofrece ningún control para cambiarlo (ver POST /close, /reopen). Se
+        // reenvía el valor ACTUAL sin tocar: el backend acepta un Estado sin cambios
+        // como no-op, pero omitir la clave por completo haría que el binder la
+        // complete con el default del enum (Planeada) y el guard de UpdateAsync la
+        // rechazaría con 400 en cualquier carrera que no esté ya Planeada.
+        await updateRace(race.id, {
+          nombre,
+          descripcion,
+          fechaCarrera: fechaIso,
+          estado: race.estado,
+        })
         toast.success('Carrera actualizada correctamente')
       } else {
         await createRace({ nombre, descripcion, fechaCarrera: fechaIso, categoryIds: selectedCategoryIds })
@@ -182,24 +190,6 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
               </p>
             )}
           </div>
-        )}
-
-        {race && (
-          <>
-            <Label htmlFor="race-estado">Estado</Label>
-            <Select
-              id="race-estado"
-              value={estado}
-              onChange={(e) => setEstado(e.target.value as RaceStatus)}
-              className="mb-3 w-full"
-            >
-              {ESTADOS.map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}
-            </Select>
-          </>
         )}
 
         {error && (
