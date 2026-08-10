@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { deleteRace, getRaceAudit, getRaces } from '../../api/endpoints'
+import { apiErrorMessage } from '../../api/client'
 import type { RaceDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { StatusBadge } from '../../components/StatusBadge'
@@ -47,8 +48,8 @@ export function RacesPage() {
       await deleteRace(race.id)
       toast.success('Carrera eliminada correctamente')
       reload()
-    } catch (err: any) {
-      const msg = err.response?.data?.detail ?? 'No se pudo eliminar la carrera.'
+    } catch (err) {
+      const msg = apiErrorMessage(err, 'No se pudo eliminar la carrera.')
       setError(msg)
       toast.error(msg)
     }
@@ -111,7 +112,11 @@ export function RacesPage() {
         )}
       </div>
 
-      {error && <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
+      {error && (
+        <p className="text-sm" role="alert" style={{ color: 'var(--badge-er-text)' }}>
+          {error}
+        </p>
+      )}
 
       {loading && <LoadingText message="Cargando carreras..." />}
 

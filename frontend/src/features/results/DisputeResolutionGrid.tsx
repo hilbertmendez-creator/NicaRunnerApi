@@ -185,14 +185,14 @@ export function DisputeResolutionGrid({
                 borderBottom: '1px solid var(--bd)',
               }}
             >
-              <th className="h-8 px-3 font-medium">Dorsal</th>
-              <th className="h-8 px-3 font-medium">Corredor</th>
-              <th className="h-8 px-3 font-medium">Chip RFID</th>
-              <th className="h-8 px-3 font-medium">Capturista (juez)</th>
-              <th className="h-8 px-3 font-medium">Cámara</th>
-              <th className="h-8 px-3 font-medium">Diferencia</th>
-              <th className="h-8 px-3 font-medium">Estado</th>
-              <th className="h-8 px-3 font-medium"></th>
+              <th scope="col" className="h-8 px-3 font-medium">Dorsal</th>
+              <th scope="col" className="h-8 px-3 font-medium">Corredor</th>
+              <th scope="col" className="h-8 px-3 font-medium">Chip RFID</th>
+              <th scope="col" className="h-8 px-3 font-medium">Capturista (juez)</th>
+              <th scope="col" className="h-8 px-3 font-medium">Cámara</th>
+              <th scope="col" className="h-8 px-3 font-medium">Diferencia</th>
+              <th scope="col" className="h-8 px-3 font-medium">Estado</th>
+              <th scope="col" className="h-8 px-3 font-medium"></th>
             </tr>
           </thead>
           <tbody>

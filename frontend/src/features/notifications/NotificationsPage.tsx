@@ -52,7 +52,11 @@ export function NotificationsPage() {
           </Button>
         )}
 
-        {error && <p className="mt-3 text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
+        {error && (
+          <p className="mt-3 text-sm" role="alert" style={{ color: 'var(--badge-er-text)' }}>
+            {error}
+          </p>
+        )}
 
         {summary && summary.notificacionesCreadas > 0 && (
           <p className="mt-3 text-sm" style={textLo}>

@@ -1,0 +1,65 @@
+name: Frontend CI
+
+# A propósito SIN filtro de paths, al revés que api-ci.yml. Un check marcado como
+# requerido en branch protection que no corre nunca reporta, y GitHub deja el PR
+# bloqueado en "Expected — Waiting for status to be reported" para siempre. Con
+# `paths: frontend/**` este job se saltearía en un PR que solo toca backend y
+# pasaría exactamente eso. Correrlo siempre cuesta ~1 min y lo vuelve seguro de
+# marcar como requerido.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Un push nuevo al mismo PR cancela la corrida anterior — mismo patrón que
+# docs-vercel.yml.
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # El nombre NO puede ser "build-and-test": ese ya lo usa api-ci.yml y la lista
+  # de "Status checks required" de branch protection se arma por nombre de check.
+  # Dos jobs homónimos serían indistinguibles ahí.
+  frontend-build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # El repo no fija versión (no hay .nvmrc ni engines), así que se pinea
+          # acá. 22 es LTS y es contra la que se desarrolla hoy.
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # `npm run build` encadena build:ui -> tsc -b -> vite build. El tsc -b es la
+      # parte que importa: es el typecheck real, y sin él un error de tipos llega
+      # a main igual porque vite transpila sin chequear.
+      - name: Build
+        run: npm run build
+
+      # Después del build: los tests importan @nicarunner/ui, que build:ui deja
+      # compilado en packages/ui/dist.
+      - name: Test
+        run: npm test
+
+      # Va último a propósito: un error de tipos o un test roto importan más que
+      # un lint, y conviene verlos primero cuando el job falla. Entró recién
+      # ahora porque hasta este commit el repo arrastraba 17 errores
+      # preexistentes — gatearlo antes habría dejado el CI rojo de entrada.
+      - name: Lint
+        run: npm run lint

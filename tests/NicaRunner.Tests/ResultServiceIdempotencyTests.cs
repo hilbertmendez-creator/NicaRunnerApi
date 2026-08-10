@@ -1,4 +1,5 @@
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Results;
@@ -15,6 +16,7 @@ public class ResultServiceIdempotencyTests
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceDashboardNotifier> _dashboardNotifier = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     public ResultServiceIdempotencyTests()
     {
@@ -25,7 +27,7 @@ public class ResultServiceIdempotencyTests
     }
 
     private ResultService BuildService() =>
-        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object, _raceCategories.Object);
+        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object, _raceCategories.Object, _adminNotifications.Object);
 
     private void RaceExists(int raceId = 1, RaceStatus estado = RaceStatus.EnCurso)
     {

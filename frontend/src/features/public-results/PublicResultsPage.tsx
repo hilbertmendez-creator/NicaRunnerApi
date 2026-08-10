@@ -61,10 +61,10 @@ function CategoryResultsTable({ cat, token }: { cat: PublicCategoryResultsDto; t
           <table className="w-full text-left text-sm">
             <thead>
               <tr style={{ color: 'var(--text-th)' }}>
-                <th className="py-1">Pos.</th>
-                <th className="py-1">Dorsal</th>
-                <th className="py-1">Nombre</th>
-                <th className="py-1">Tiempo</th>
+                <th scope="col" className="py-1">Pos.</th>
+                <th scope="col" className="py-1">Dorsal</th>
+                <th scope="col" className="py-1">Nombre</th>
+                <th scope="col" className="py-1">Tiempo</th>
               </tr>
             </thead>
             <tbody>
@@ -77,14 +77,23 @@ function CategoryResultsTable({ cat, token }: { cat: PublicCategoryResultsDto; t
                 // propia fila no entiende por qué no pasa nada.
                 const clickable = res.shareKey !== null
                 const explicacionSinEnlace = 'El enlace individual de este corredor todavía no está disponible.'
+                const goToRunner = () => navigate(`/corredor/${res.shareKey}`, { state: { fromToken: token } })
                 return (
                   <tr
                     key={res.runnerId}
-                    onClick={
+                    onClick={clickable ? goToRunner : undefined}
+                    onKeyDown={
                       clickable
-                        ? () => navigate(`/corredor/${res.shareKey}`, { state: { fromToken: token } })
+                        ? (e) => {
+                            if (e.key !== 'Enter' && e.key !== ' ') return
+                            e.preventDefault()
+                            goToRunner()
+                          }
                         : undefined
                     }
+                    role={clickable ? 'button' : undefined}
+                    tabIndex={clickable ? 0 : undefined}
+                    aria-label={clickable ? `Ver detalle de ${res.nombre}` : undefined}
                     title={clickable ? undefined : explicacionSinEnlace}
                     style={{
                       borderTop: '1px solid var(--bd-row)',

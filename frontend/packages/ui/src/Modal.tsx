@@ -23,7 +23,31 @@ export function Modal({ onClose, children, maxWidth = 'md', labelledBy }: ModalP
     focusable?.focus()
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      // Focus trap: Tab desde el último control (o Shift+Tab desde el primero)
+      // vuelve a dar la vuelta dentro del modal en vez de escapar hacia el
+      // fondo de la página. Se consulta en cada Tab, no una vez al montar,
+      // porque el set de controles enfocables puede cambiar (campos condicionales).
+      const focusables = cardRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusables || focusables.length === 0) return
+
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => {

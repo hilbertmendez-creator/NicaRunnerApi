@@ -93,6 +93,11 @@ export function ActiveRaceProvider({ children }: { children: ReactNode }) {
   return <ActiveRaceContext.Provider value={value}>{children}</ActiveRaceContext.Provider>
 }
 
+// Provider y hook conviven a propósito — mismo criterio que useTheme.tsx.
+// Partirlo obligaría a retocar los vi.mock de 5 tests que apuntan a esta ruta,
+// y esos mocks no se chequean por tipos: uno mal apuntado deja de mockear en
+// silencio y el test sigue pasando. El costo de dejarlo así es solo de DX.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useActiveRace(): ActiveRaceContextValue {
   const ctx = useContext(ActiveRaceContext)
   if (!ctx) throw new Error('useActiveRace debe usarse dentro de ActiveRaceProvider')

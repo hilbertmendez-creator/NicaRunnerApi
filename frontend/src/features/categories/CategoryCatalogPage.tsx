@@ -5,6 +5,7 @@ import { Button, DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import { CategoryCatalogFormModal } from './CategoryCatalogFormModal'
 import { EntityAuditHistory } from '../../components/EntityAuditHistory'
+import { pageTitle } from '../../theme/styles'
 
 export function CategoryCatalogPage() {
   const [categories, setCategories] = useState<CategoryDto[]>([])
@@ -66,7 +67,8 @@ export function CategoryCatalogPage() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold" style={pageTitle}>Categorías</h1>
         <Button variant="primary" onClick={() => setShowCreate(true)}>
           Nueva categoría
         </Button>

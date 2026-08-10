@@ -6,6 +6,7 @@ import { useAuth } from '../auth/auth-context'
 import { CONTROVERSIAS_CHANGED_EVENT } from '../features/controversias/ControversiasPage'
 import { useActiveRace } from '../hooks/useActiveRace'
 import { NicaRunnerLogo } from '../routes/NicaRunnerLogo'
+import { AdminNotificationsMenu } from './AdminNotificationsMenu'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { TopbarRaceSelect } from './TopbarRaceSelect'
 import { UserAccountMenu } from './UserAccountMenu'
@@ -83,14 +84,19 @@ const PAGE_TITLES: Record<string, string> = {
 }
 
 const SIDEBAR_KEY = 'nicarunner-sidebar-expanded'
+// Tailwind 'xl' breakpoint: a partir de acá el rail colapsado deja de ganar espacio
+// útil, así que arranca desplegado salvo que el usuario ya haya elegido lo contrario.
+const LARGE_SCREEN_BREAKPOINT = 1280
 
 export function AppLayout() {
   const { user } = useAuth()
   const { raceId } = useActiveRace()
-  // boundary validation: any stored value other than the literal 'true' is false
   const [expanded, setExpanded] = useState(() => {
     try {
-      return localStorage.getItem(SIDEBAR_KEY) === 'true'
+      const stored = localStorage.getItem(SIDEBAR_KEY)
+      if (stored === 'true') return true
+      if (stored === 'false') return false
+      return window.innerWidth >= LARGE_SCREEN_BREAKPOINT
     } catch {
       return false
     }
@@ -114,6 +120,12 @@ export function AppLayout() {
   }, [raceId])
 
   useEffect(() => {
+    // Suscripción a un sistema externo (evento de window) más el fetch inicial
+    // del contador — el caso que los docs de React sí consideran trabajo de
+    // efecto. El setState sincrónico está dentro de refreshOpenCount, en la
+    // rama sin carrera activa, donde el valor ya es 0 y React corta el
+    // re-render igual.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshOpenCount()
     window.addEventListener(CONTROVERSIAS_CHANGED_EVENT, refreshOpenCount)
     return () => window.removeEventListener(CONTROVERSIAS_CHANGED_EVENT, refreshOpenCount)
@@ -144,6 +156,9 @@ export function AppLayout() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-app)' }}>
+      <a href="#main-content" className="skip-link">
+        Saltar al contenido
+      </a>
       <div
         className={`nr-scrim ${mobileOpen ? 'visible' : ''}`}
         aria-hidden="true"
@@ -394,33 +409,11 @@ export function AppLayout() {
             <ThemeSwitcher />
             <UserAccountMenu />
             <div style={{ height: 18, width: 1, background: 'var(--bd)', margin: '0 4px' }} />
-            <button
-              type="button"
-              className="nr-icon-btn"
-              aria-label="Notificaciones"
-              onClick={() => navigate('/notificaciones')}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                color: 'var(--tx-md)',
-                position: 'relative',
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                <path d="M7.5 2a1 1 0 00-1 1V3.5A4 4 0 004.5 7c0 2 0 3-1 4h8c-1-1-1-2-1-4a4 4 0 00-2-3.5V3a1 1 0 00-1-1zM6 11a1.5 1.5 0 003 0" />
-              </svg>
-            </button>
+            <AdminNotificationsMenu />
           </div>
         </header>
 
-        <main className="nr-main" style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+        <main id="main-content" tabIndex={-1} className="nr-main" style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
           <Outlet />
         </main>
       </div>

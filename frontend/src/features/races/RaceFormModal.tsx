@@ -29,10 +29,10 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
   const [submitting, setSubmitting] = useState(false)
 
   // Effect-driven fetch: react.dev/learn/synchronizing-with-effects#fetching-data
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (race) return
     let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCatalogLoading(true)
     getCategoryCatalog()
       .then((data) => {
@@ -108,17 +108,20 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           {race ? 'Editar carrera' : 'Nueva carrera'}
         </h2>
 
-        <Label htmlFor="race-nombre">Nombre</Label>
+        <Label htmlFor="race-nombre" required>Nombre</Label>
         <Input
           id="race-nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
           maxLength={150}
+          placeholder="Ej: Maratón de León 2026"
           className="mb-1 w-full"
         />
         {fieldErrors['Nombre'] && (
-          <p className="mb-3 text-sm text-critical-600">{fieldErrors['Nombre'].join(', ')}</p>
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {fieldErrors['Nombre'].join(', ')}
+          </p>
         )}
         {!fieldErrors['Nombre'] && <div className="mb-3" />}
 
@@ -128,14 +131,17 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           value={descripcion ?? ''}
           onChange={(e) => setDescripcion(e.target.value)}
           rows={2}
+          placeholder="Detalles adicionales sobre la carrera (opcional)"
           className="mb-1 w-full"
         />
         {fieldErrors['Descripcion'] && (
-          <p className="mb-3 text-sm text-critical-600">{fieldErrors['Descripcion'].join(', ')}</p>
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {fieldErrors['Descripcion'].join(', ')}
+          </p>
         )}
         {!fieldErrors['Descripcion'] && <div className="mb-3" />}
 
-        <Label htmlFor="race-fecha">Fecha de la carrera</Label>
+        <Label htmlFor="race-fecha" required>Fecha de la carrera</Label>
         <Input
           id="race-fecha"
           type="date"
@@ -145,7 +151,9 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           className="mb-1 w-full"
         />
         {fieldErrors['FechaCarrera'] && (
-          <p className="mb-3 text-sm text-critical-600">{fieldErrors['FechaCarrera'].join(', ')}</p>
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {fieldErrors['FechaCarrera'].join(', ')}
+          </p>
         )}
         {!fieldErrors['FechaCarrera'] && <div className="mb-3" />}
 
@@ -153,10 +161,10 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           <div className="mb-3">
             <Label>Categorías participantes</Label>
             {catalogLoading ? (
-              <div className="flex animate-pulse flex-col gap-2 pt-2" data-testid="category-catalog-skeleton">
-                <div className="h-4 w-3/4 rounded bg-gray-200"></div>
-                <div className="h-4 w-1/2 rounded bg-gray-200"></div>
-                <div className="h-4 w-2/3 rounded bg-gray-200"></div>
+              <div className="flex flex-col gap-2 pt-2" data-testid="category-catalog-skeleton">
+                <div className="skeleton h-4 w-3/4"></div>
+                <div className="skeleton h-4 w-1/2"></div>
+                <div className="skeleton h-4 w-2/3"></div>
               </div>
             ) : catalog.length === 0 ? (
               <p className="pt-2 text-sm" style={{ color: 'var(--text-lo)' }} data-testid="category-catalog-empty">
@@ -177,12 +185,18 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
               </div>
             )}
             {fieldErrors['CategoryIds'] && (
-              <p className="mt-1 text-sm text-critical-600">{fieldErrors['CategoryIds'].join(', ')}</p>
+              <p className="mt-1 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+                {fieldErrors['CategoryIds'].join(', ')}
+              </p>
             )}
           </div>
         )}
 
-        {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
+        {error && (
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>

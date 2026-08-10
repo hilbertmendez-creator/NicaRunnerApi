@@ -292,4 +292,82 @@ public class PublicResultServiceTests
         await Assert.ThrowsAsync<NotFoundException>(
             () => BuildService().GetRunnerResultByTokenAsync("abc123", runnerId: 999));
     }
+
+    [Fact]
+    public async Task RevokeTokenAsync_TokenVigente_MarcaIsExpiredYGuarda()
+    {
+        var token = ValidToken();
+        _tokens.Setup(t => t.GetByIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(token);
+
+        await BuildService().RevokeTokenAsync(raceId: 1, tokenId: 1);
+
+        Assert.True(token.IsExpired);
+        _tokens.Verify(t => t.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RevokeTokenAsync_TokenInexistente_LanzaNotFoundException()
+    {
+        _tokens.Setup(t => t.GetByIdAsync(1, 999, It.IsAny<CancellationToken>())).ReturnsAsync((PublicResultToken?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => BuildService().RevokeTokenAsync(raceId: 1, tokenId: 999));
+
+        _tokens.Verify(t => t.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // El raceId de la ruta no es decorativo: pedir un tokenId que existe pero
+    // pertenece a otra carrera tiene que dar 404, no revocar el enlace ajeno.
+    [Fact]
+    public async Task RevokeTokenAsync_TokenDeOtraCarrera_LanzaNotFoundException()
+    {
+        _tokens.Setup(t => t.GetByIdAsync(2, 1, It.IsAny<CancellationToken>())).ReturnsAsync((PublicResultToken?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => BuildService().RevokeTokenAsync(raceId: 2, tokenId: 1));
+
+        _tokens.Verify(t => t.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RevokeTokenAsync_TokenYaRevocado_NoFalla()
+    {
+        var token = ValidToken();
+        token.IsExpired = true;
+        _tokens.Setup(t => t.GetByIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(token);
+
+        await BuildService().RevokeTokenAsync(raceId: 1, tokenId: 1);
+
+        Assert.True(token.IsExpired);
+    }
+
+    // Regresión del punto de todo esto: hasta ahora IsExpired se leía pero nadie
+    // lo escribía, así que este camino nunca se ejercitaba en producción. Un
+    // enlace revocado tiene que morir aunque su FechaExpiracion siga en el futuro.
+    [Fact]
+    public async Task GetResultsByTokenAsync_TokenRevocadoConFechaFutura_LanzaNotFoundException()
+    {
+        var revocado = ValidToken();
+        revocado.IsExpired = true;
+        _tokens.Setup(t => t.GetByTokenAsync("abc123", It.IsAny<CancellationToken>())).ReturnsAsync(revocado);
+
+        await Assert.ThrowsAsync<NotFoundException>(
+            () => BuildService().GetResultsByTokenAsync("abc123"));
+
+        _races.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAllByRaceAsync_TokenRevocado_ExponeRevocadoEnTrue()
+    {
+        var revocado = ValidToken();
+        revocado.IsExpired = true;
+        _races.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Race { Id = 1, Nombre = "Carrera Test", AdminId = 1 });
+        _tokens.Setup(t => t.GetAllByRaceAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync([revocado]);
+
+        var dto = Assert.Single(await BuildService().GetAllByRaceAsync(1));
+
+        Assert.True(dto.Revocado);
+    }
 }

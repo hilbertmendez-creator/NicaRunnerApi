@@ -1,5 +1,6 @@
 import { apiClient } from './client'
 import type {
+  AdminNotificationsPageDto,
   AssignCategoryRequest,
   AuditLogDto,
   AuthResponse,
@@ -266,6 +267,10 @@ export async function createPublicToken(
   return data
 }
 
+export async function revokePublicToken(raceId: number, tokenId: number): Promise<void> {
+  await apiClient.delete(`/races/${raceId}/public-token/${tokenId}`)
+}
+
 export async function getPublicResults(token: string): Promise<PublicRaceResultsDto> {
   const { data } = await apiClient.get<PublicRaceResultsDto>(`/public/results/${token}`)
   return data
@@ -332,4 +337,18 @@ export async function getRaceAudit(raceId: number): Promise<AuditLogDto[]> {
 export async function getCategoryAudit(categoryId: number): Promise<AuditLogDto[]> {
   const { data } = await apiClient.get<AuditLogDto[]>(`/categories/${categoryId}/audit`)
   return data
+}
+
+// Feed de notificaciones del admin (campana del topbar) — Admin-only.
+export async function getAdminNotifications(limit = 20): Promise<AdminNotificationsPageDto> {
+  const { data } = await apiClient.get<AdminNotificationsPageDto>(`/admin-notifications?limit=${limit}`)
+  return data
+}
+
+export async function markAdminNotificationRead(id: number): Promise<void> {
+  await apiClient.post(`/admin-notifications/${id}/read`)
+}
+
+export async function markAllAdminNotificationsRead(): Promise<void> {
+  await apiClient.post('/admin-notifications/read-all')
 }

@@ -34,7 +34,7 @@ vi.mock('../hooks/useActiveRace', () => ({
 }))
 
 vi.mock('../hooks/useRaceDashboardHub', () => ({
-  useRaceDashboardHub: () => {},
+  useRaceDashboardHub: () => ({ connected: false }),
 }))
 
 describe('Dashboard + peer chrome honesty smoke', () => {
@@ -44,7 +44,12 @@ describe('Dashboard + peer chrome honesty smoke', () => {
     getResults.mockReset()
     getPublicTokens.mockReset()
     getStandings.mockResolvedValue([])
-    getResults.mockResolvedValue([])
+    // getResults devuelve PaginatedList<ResultDto>, no un array pelado.
+    // ResultsPage hace setResults(res.items): con un [] acá, res.items era
+    // undefined y DataTable explotaba con un TypeError que vitest contaba como
+    // unhandled error — los tests seguían "pasando" pero el proceso salía con
+    // código 1, lo que dejaba imposible poner el frontend en CI.
+    getResults.mockResolvedValue({ items: [], totalCount: 0 })
     getPublicTokens.mockResolvedValue([])
     getDashboard.mockResolvedValue({
       raceId: 11,
@@ -55,21 +60,25 @@ describe('Dashboard + peer chrome honesty smoke', () => {
       totalPendientes: 5,
       categorias: [],
       ultimosResultados: [],
+      tiempoEnCursoSegundos: null,
+      ritmoPromedioSegundosPorKm: null,
     })
   })
 
-  it('aspirational KPIs show — / Próximamente; live KPIs bind API; no page RaceSelector', async () => {
-    // Escenarios: aspirational visible, honest empty, live bind, no duplicate race chrome
+  it('KPIs without backing data show an honest — with a reason, not Próximamente; live counts bind API', async () => {
+    // Escenarios: honest empty per-KPI reason, live bind, no duplicate race chrome
     renderWithProviders(<DashboardPage />, { auth: makeAuth() })
 
     await waitFor(() => expect(getDashboard).toHaveBeenCalledWith(11))
 
     expect(screen.getByText('Tiempo en curso')).toBeInTheDocument()
     expect(screen.getByText('Ritmo promedio')).toBeInTheDocument()
-    expect(screen.getByText('Cámara ok')).toBeInTheDocument()
     expect(screen.getByText('Último dorsal')).toBeInTheDocument()
-    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(4)
-    expect(screen.getAllByText('Próximamente').length).toBeGreaterThanOrEqual(4)
+    expect(screen.queryByText('Cámara ok')).toBeNull()
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(3)
+    expect(screen.getByText('Carrera no iniciada')).toBeInTheDocument()
+    expect(screen.getByText('Sin tiempos registrados')).toBeInTheDocument()
+    expect(screen.getByText('Sin capturas todavía')).toBeInTheDocument()
 
     expect(screen.getByText('Chip llegadas')).toBeInTheDocument()
     expect(screen.getAllByText('17').length).toBeGreaterThanOrEqual(1)
@@ -80,6 +89,41 @@ describe('Dashboard + peer chrome honesty smoke', () => {
     // Sin RaceSelector de página (chrome solo en topbar cuando hay AppLayout).
     expect(screen.queryByLabelText('Carrera activa')).toBeNull()
     expect(document.body.textContent).not.toMatch(/MOCK_ROWS|CONNECTION_CYCLE/)
+  })
+
+  it('KPIs render live values once tiempo en curso, ritmo promedio and último dorsal have data', async () => {
+    // Escenario: la carrera arrancó y tiene capturas — los 3 KPIs antes aspiracionales muestran datos reales.
+    getDashboard.mockResolvedValue({
+      raceId: 11,
+      raceName: 'Demo Race',
+      estado: 'EnCurso',
+      totalInscritos: 42,
+      totalConTiempo: 17,
+      totalPendientes: 5,
+      categorias: [],
+      ultimosResultados: [
+        {
+          resultId: 1,
+          dorsal: '101',
+          nombre: 'Ana Pérez',
+          tiempoLlegada: '2026-01-01T08:30:00Z',
+          posicion: 1,
+          nombreCategoria: 'Libre',
+          capturistaId: 1,
+        },
+      ],
+      tiempoEnCursoSegundos: 1830,
+      ritmoPromedioSegundosPorKm: 330,
+    })
+
+    renderWithProviders(<DashboardPage />, { auth: makeAuth() })
+
+    await waitFor(() => expect(getDashboard).toHaveBeenCalledWith(11))
+
+    expect(screen.getByText('30:30')).toBeInTheDocument()
+    expect(screen.getByText('5:30/km')).toBeInTheDocument()
+    // "101" aparece tanto en el KPI "Último dorsal" como en la fila de la tabla de capturas.
+    expect(screen.getAllByText('101').length).toBeGreaterThanOrEqual(2)
   })
 
   it('peer screens keep race chrome out of page body', async () => {

@@ -3,7 +3,7 @@ export type ConnectionState = 'online' | 'syncing' | 'offline'
 const CONFIG: Record<ConnectionState, { label: string; dot: string; pulse?: boolean }> = {
   online: { label: 'En línea', dot: 'var(--badge-ok-text)' },
   syncing: { label: 'Sincronizando…', dot: 'var(--accent)', pulse: true },
-  offline: { label: 'Sin conexión · datos en caché', dot: 'var(--conflict-bd)' },
+  offline: { label: 'Sin conexión · datos en caché', dot: 'var(--conflict-text)' },
 }
 
 interface ConnectionStatusBadgeProps {

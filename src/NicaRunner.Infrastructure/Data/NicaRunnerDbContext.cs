@@ -33,6 +33,7 @@ public class NicaRunnerDbContext : DbContext
     public DbSet<RaceJudge> RaceJudges => Set<RaceJudge>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<TimingDispute> TimingDisputes => Set<TimingDispute>();
+    public DbSet<AdminNotification> AdminNotifications => Set<AdminNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -343,6 +344,15 @@ public class NicaRunnerDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(d => d.ResolvedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Feed de eventos administrativos para la campana del topbar (backoffice). Append-only.
+        // Distinto de NotificationLog (avisos a corredores). Mismo estilo simple que AuditLog.
+        modelBuilder.Entity<AdminNotification>(e =>
+        {
+            e.Property(n => n.Mensaje).HasMaxLength(500).IsRequired();
+            e.HasIndex(n => n.CreatedAt).IsDescending().HasDatabaseName("IX_AdminNotification_Created");
+            e.HasIndex(n => n.ReadAt).HasDatabaseName("IX_AdminNotification_ReadAt");
         });
 
         // Reconciliación del modelo EF con el estado real de Postgres: las migraciones

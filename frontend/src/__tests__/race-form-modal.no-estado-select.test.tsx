@@ -40,9 +40,12 @@ describe('RaceFormModal — Correction B: Race.Estado es derivado, ya no se edit
   it('editando una carrera existente no muestra ningún control de Estado', () => {
     renderWithProviders(<RaceFormModal race={race()} onClose={vi.fn()} onSaved={vi.fn()} />)
 
-    expect(screen.getByLabelText('Nombre')).toBeInTheDocument()
-    expect(screen.getByLabelText('Descripción')).toBeInTheDocument()
-    expect(screen.getByLabelText('Fecha de la carrera')).toBeInTheDocument()
+    // Matchers laxos a propósito: Label marca los campos requeridos con un " *"
+    // decorativo dentro del propio <label>, así que el nombre accesible es
+    // "Nombre *". Lo que importa acá es que el campo exista, no cómo se decora.
+    expect(screen.getByLabelText(/^Nombre/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Descripción/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Fecha de la carrera/)).toBeInTheDocument()
 
     expect(screen.queryByText('Estado')).toBeNull()
     expect(screen.queryByLabelText('Estado')).toBeNull()
@@ -55,8 +58,8 @@ describe('RaceFormModal — Correction B: Race.Estado es derivado, ya no se edit
     updateRace.mockResolvedValue(editedRace)
     renderWithProviders(<RaceFormModal race={editedRace} onClose={vi.fn()} onSaved={vi.fn()} />)
 
-    await user.clear(screen.getByLabelText('Nombre'))
-    await user.type(screen.getByLabelText('Nombre'), '5K Managua Centro')
+    await user.clear(screen.getByLabelText(/^Nombre/))
+    await user.type(screen.getByLabelText(/^Nombre/), '5K Managua Centro')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
     await waitFor(() => expect(updateRace).toHaveBeenCalledTimes(1))

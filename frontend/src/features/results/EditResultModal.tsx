@@ -48,7 +48,7 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
           Editar resultado #{result.id}
         </h2>
 
-        <Label htmlFor="result-dorsal">Dorsal</Label>
+        <Label htmlFor="result-dorsal" required>Dorsal</Label>
         <Input
           id="result-dorsal"
           value={dorsal}
@@ -58,7 +58,7 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
           className="mb-3 w-full"
         />
 
-        <Label htmlFor="result-tiempo">Tiempo de llegada</Label>
+        <Label htmlFor="result-tiempo" required>Tiempo de llegada</Label>
         <Input
           id="result-tiempo"
           type="datetime-local"
@@ -69,7 +69,7 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
           className="mb-3 w-full"
         />
 
-        <Label htmlFor="result-razon">Razón del cambio</Label>
+        <Label htmlFor="result-razon" required>Razón del cambio</Label>
         <Textarea
           id="result-razon"
           value={razon}
@@ -82,7 +82,11 @@ export function EditResultModal({ raceId, result, onClose, onSaved }: EditResult
           placeholder="Ej: corrección por error de dorsal en captura"
         />
 
-        {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
+        {error && (
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>

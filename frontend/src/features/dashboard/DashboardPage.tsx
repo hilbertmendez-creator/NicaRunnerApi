@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
 import { PositionBadge } from '../../components/PositionBadge'
@@ -10,8 +10,13 @@ import { DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import { KpiBar } from './KpiBar'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
+import { cardTitle, pageTitle } from '../../theme/styles'
+import { formatElapsed } from '../public-results/formatElapsed'
 
 const POLL_INTERVAL_MS = 5000
+// El hub SignalR ya empuja los cambios en tiempo real; con el hub sano este
+// polling es solo una red de seguridad y no necesita correr cada 5s.
+const IDLE_POLL_INTERVAL_MS = 20000
 
 type PillRole = 'blue' | 'ok' | 'warn' | 'error'
 
@@ -54,8 +59,6 @@ const cardStyle: CSSProperties = {
   borderRadius: 'var(--r-card)',
   padding: 14,
 }
-const cardTitleStyle: CSSProperties = { color: 'var(--tx-hi)' }
-
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('es-NI', { hour12: false })
 }
@@ -69,20 +72,41 @@ function connectionState(loading: boolean, hasData: boolean, error: unknown): Co
 export function DashboardPage() {
   const { raceId } = useActiveRace()
 
+  // Refs porque useRaceDashboardHub necesita el callback antes de que
+  // dashboard/standings existan (usePolling se declara después, ya que su
+  // intervalo depende de hubConnected) — se actualizan en cada render, se
+  // invocan solo async cuando el hub avisa "resultsChanged".
+  const dashboardRefetchRef = useRef<() => void>(() => {})
+  const standingsRefetchRef = useRef<() => void>(() => {})
+
+  const { connected: hubConnected } = useRaceDashboardHub(raceId, () => {
+    dashboardRefetchRef.current()
+    standingsRefetchRef.current()
+  })
+
+  const pollIntervalMs = hubConnected ? IDLE_POLL_INTERVAL_MS : POLL_INTERVAL_MS
+
   const dashboard = usePolling(
     () => (raceId ? getDashboard(raceId) : Promise.resolve(null)),
-    POLL_INTERVAL_MS,
-    [raceId],
+    pollIntervalMs,
+    [raceId, pollIntervalMs],
   )
   const standings = usePolling(
     () => (raceId ? getStandings(raceId) : Promise.resolve([])),
-    POLL_INTERVAL_MS,
-    [raceId],
+    pollIntervalMs,
+    [raceId, pollIntervalMs],
   )
 
-  useRaceDashboardHub(raceId, () => {
-    dashboard.refetch()
-    standings.refetch()
+  // Mismo patrón de "latest ref" que usan usePolling y useRaceDashboardHub:
+  // se asigna en un efecto, no durante el render. Un render descartado por el
+  // renderer concurrente no debe dejar el ref apuntando a un callback que nunca
+  // se commiteó. El hub solo invoca estos refs de forma asíncrona, así que la
+  // ventana entre render y commit no es alcanzable — y aunque lo fuera, el
+  // refetch de usePolling es () => tickRef.current(), que siempre delega en el
+  // tick vigente.
+  useEffect(() => {
+    dashboardRefetchRef.current = dashboard.refetch
+    standingsRefetchRef.current = standings.refetch
   })
 
   const ultimosResultadosColumns: Column<RecentResultDto>[] = [
@@ -111,7 +135,7 @@ export function DashboardPage() {
     <div className="flex flex-col gap-5">
       {/* Race chrome vive solo en TopbarRaceSelect (ActiveRaceProvider). */}
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>
+        <h1 className="text-lg font-semibold" style={pageTitle}>
           {dashboard.data?.raceName ?? 'Dashboard en vivo'}
         </h1>
         {dashboard.data && <StatusBadge status={dashboard.data.estado} />}
@@ -134,15 +158,18 @@ export function DashboardPage() {
             items={[
               {
                 label: 'Tiempo en curso',
-                value: '—',
-                trend: 'Próximamente',
-                kind: 'aspirational',
+                value: formatElapsed(dashboard.data.tiempoEnCursoSegundos) ?? '—',
+                trend: dashboard.data.tiempoEnCursoSegundos === null ? 'Carrera no iniciada' : undefined,
+                kind: 'live',
               },
               {
                 label: 'Ritmo promedio',
-                value: '—',
-                trend: 'Próximamente',
-                kind: 'aspirational',
+                value:
+                  dashboard.data.ritmoPromedioSegundosPorKm === null
+                    ? '—'
+                    : `${formatElapsed(dashboard.data.ritmoPromedioSegundosPorKm)}/km`,
+                trend: dashboard.data.ritmoPromedioSegundosPorKm === null ? 'Sin tiempos registrados' : undefined,
+                kind: 'live',
               },
               {
                 label: 'Chip llegadas',
@@ -159,16 +186,10 @@ export function DashboardPage() {
                 kind: 'live',
               },
               {
-                label: 'Cámara ok',
-                value: '—',
-                trend: 'Próximamente',
-                kind: 'aspirational',
-              },
-              {
                 label: 'Último dorsal',
-                value: '—',
-                trend: 'Próximamente',
-                kind: 'aspirational',
+                value: dashboard.data.ultimosResultados[0]?.dorsal ?? '—',
+                trend: dashboard.data.ultimosResultados[0] ? undefined : 'Sin capturas todavía',
+                kind: 'live',
               },
             ]}
           />
@@ -200,7 +221,7 @@ export function DashboardPage() {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
             <section className="flex flex-col gap-2" style={cardStyle}>
-              <h2 className="text-sm font-semibold" style={cardTitleStyle}>Últimos resultados capturados</h2>
+              <h2 className="text-sm font-semibold" style={cardTitle}>Últimos resultados capturados</h2>
               <DataTable
                 columns={ultimosResultadosColumns}
                 data={dashboard.data.ultimosResultados}
@@ -211,7 +232,7 @@ export function DashboardPage() {
             </section>
 
             <section className="flex flex-col gap-2" style={cardStyle}>
-              <h2 className="text-sm font-semibold" style={cardTitleStyle}>Progreso por categoría</h2>
+              <h2 className="text-sm font-semibold" style={cardTitle}>Progreso por categoría</h2>
               <DataTable
                 columns={categoriasColumns}
                 data={dashboard.data.categorias}
@@ -227,7 +248,7 @@ export function DashboardPage() {
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {standings.data.map((cat) => (
             <div key={cat.categoryId} className="flex flex-col gap-2" style={cardStyle}>
-              <h3 className="text-sm font-semibold" style={cardTitleStyle}>
+              <h3 className="text-sm font-semibold" style={cardTitle}>
                 {cat.nombreCategoria} ({cat.distancia} km)
               </h3>
               <DataTable

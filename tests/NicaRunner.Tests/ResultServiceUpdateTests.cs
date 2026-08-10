@@ -1,4 +1,5 @@
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Results;
@@ -15,6 +16,7 @@ public class ResultServiceUpdateTests
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceDashboardNotifier> _dashboardNotifier = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     public ResultServiceUpdateTests()
     {
@@ -25,7 +27,7 @@ public class ResultServiceUpdateTests
     }
 
     private ResultService BuildService() =>
-        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object, _raceCategories.Object);
+        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _dashboardNotifier.Object, _raceCategories.Object, _adminNotifications.Object);
 
     // La mayoría de los tests de este archivo ejercitan el camino feliz de asignación
     // de dorsal (no las disputas de F2/F3, que tienen su propio archivo,

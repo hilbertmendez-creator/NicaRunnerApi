@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { createPublicToken, getPublicTokens } from '../../api/endpoints'
+import { createPublicToken, getPublicTokens, revokePublicToken } from '../../api/endpoints'
+import { apiErrorMessage } from '../../api/client'
 import type { PublicTokenDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { useActiveRace } from '../../hooks/useActiveRace'
@@ -8,6 +9,16 @@ import { pageTitle, card, textLo, tableWrap } from '../../theme/styles'
 
 function publicUrl(token: string) {
   return `${window.location.origin}/resultados/${token}`
+}
+
+type LinkState = 'vigente' | 'vencido' | 'revocado'
+
+// Tres estados, no dos. Un enlace revocado puede tener fecha futura, así que la
+// fecha sola no alcanza para saber si sirve — y la revocación gana por encima
+// de todo (es la lectura que hace ResolveValidTokenAsync en el backend).
+function linkState(token: PublicTokenDto): LinkState {
+  if (token.revocado) return 'revocado'
+  return new Date(token.fechaExpiracion) < new Date() ? 'vencido' : 'vigente'
 }
 
 export function PublicLinksPage() {
@@ -20,6 +31,7 @@ export function PublicLinksPage() {
   const [diasExpiracion, setDiasExpiracion] = useState(30)
   const [creating, setCreating] = useState(false)
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [revokingId, setRevokingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   function reload() {
@@ -41,8 +53,8 @@ export function PublicLinksPage() {
     try {
       await createPublicToken(raceId, { diasExpiracion })
       reload()
-    } catch (err: any) {
-      setError(err.response?.data?.detail ?? 'No se pudo generar el enlace público.')
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo generar el enlace público.'))
     } finally {
       setCreating(false)
     }
@@ -52,6 +64,27 @@ export function PublicLinksPage() {
     await navigator.clipboard.writeText(publicUrl(token.token))
     setCopiedId(token.id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  async function handleRevoke(token: PublicTokenDto) {
+    if (!raceId) return
+    // Es irreversible y afecta a quien ya tenga el enlace: se confirma.
+    const ok = window.confirm(
+      'Revocar este enlace lo deja fuera de servicio de inmediato. ' +
+        'Quien lo tenga guardado va a dejar de ver los resultados. ¿Continuar?',
+    )
+    if (!ok) return
+
+    setError(null)
+    setRevokingId(token.id)
+    try {
+      await revokePublicToken(raceId, token.id)
+      reload()
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo revocar el enlace público.'))
+    } finally {
+      setRevokingId(null)
+    }
   }
 
   return (
@@ -80,7 +113,11 @@ export function PublicLinksPage() {
         </section>
       )}
 
-      {error && <p className="text-sm" style={{ color: 'var(--badge-er-text)' }}>{error}</p>}
+      {error && (
+        <p className="text-sm" role="alert" style={{ color: 'var(--badge-er-text)' }}>
+          {error}
+        </p>
+      )}
 
       {loading && <p className="text-sm" style={textLo}>Cargando enlaces…</p>}
 
@@ -103,28 +140,47 @@ export function PublicLinksPage() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr style={{ color: 'var(--text-th)' }}>
-                <th className="py-1">Enlace</th>
-                <th className="py-1">Expira</th>
-                <th className="py-1">Creado</th>
-                <th className="py-1"></th>
+                <th scope="col" className="py-1">Enlace</th>
+                <th scope="col" className="py-1">Expira</th>
+                <th scope="col" className="py-1">Creado</th>
+                <th scope="col" className="py-1"></th>
               </tr>
             </thead>
             <tbody>
               {tokens.map((token) => {
-                const expired = new Date(token.fechaExpiracion) < new Date()
+                const estado = linkState(token)
+                const activo = estado === 'vigente'
                 return (
                   <tr key={token.id} style={{ borderTop: '1px solid var(--bd-row)' }}>
                     <td className="py-2 font-mono text-xs" style={{ color: 'var(--text-lo)' }}>{publicUrl(token.token)}</td>
                     <td className="py-2">
-                      <span style={{ color: expired ? 'var(--badge-er-text)' : 'var(--text-lo)' }}>
+                      <span style={{ color: activo ? 'var(--text-lo)' : 'var(--badge-er-text)' }}>
                         {new Date(token.fechaExpiracion).toLocaleDateString('es-NI')}
+                        {estado === 'vencido' && ' (vencido)'}
+                        {estado === 'revocado' && ' (revocado)'}
                       </span>
                     </td>
                     <td className="py-2" style={{ color: 'var(--text-lo)' }}>{new Date(token.createdAt).toLocaleDateString('es-NI')}</td>
                     <td className="py-2">
-                      <Button size="sm" onClick={() => handleCopy(token)}>
-                        {copiedId === token.id ? 'Copiado' : 'Copiar'}
-                      </Button>
+                      {/* Copiar y revocar solo tienen sentido mientras el enlace
+                          sirva: sobre uno muerto serían chrome que miente. */}
+                      {activo && (
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => handleCopy(token)}>
+                            {copiedId === token.id ? 'Copiado' : 'Copiar'}
+                          </Button>
+                          {canCreate && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleRevoke(token)}
+                              disabled={revokingId === token.id}
+                            >
+                              {revokingId === token.id ? 'Revocando…' : 'Revocar'}
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )

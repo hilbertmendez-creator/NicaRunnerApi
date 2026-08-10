@@ -5,4 +5,5 @@ public record PublicTokenDto(
     int RaceId,
     string Token,
     DateTime FechaExpiracion,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool Revocado);

@@ -9,6 +9,24 @@ export const apiClient = axios.create({
   withCredentials: true,
 })
 
+/**
+ * Saca el `detail` de un ProblemDetails de la API, con fallback.
+ *
+ * Los catch de los componentes anotaban `err: any` para poder escribir
+ * `err.response?.data?.detail` — un `any` explícito que apaga el chequeo de
+ * tipos en toda la expresión. Acá el error entra como `unknown` y se estrecha:
+ * `isAxiosError` descarta lo que no sea un error de red, y el `typeof` evita
+ * devolver un objeto o un número como si fuera texto de UI (mismo chequeo que
+ * ya hacía LoginPage).
+ */
+export function apiErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError(err)) {
+    const detail = (err.response?.data as { detail?: unknown } | undefined)?.detail
+    if (typeof detail === 'string' && detail.trim()) return detail.trim()
+  }
+  return fallback
+}
+
 const CSRF_RESPONSE_HEADER = 'x-csrf-token'
 const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete'])
 

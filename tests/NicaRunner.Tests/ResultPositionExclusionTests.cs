@@ -1,4 +1,5 @@
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Results;
@@ -15,6 +16,7 @@ public class ResultPositionExclusionTests
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceDashboardNotifier> _notifier = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     public ResultPositionExclusionTests()
     {
@@ -25,7 +27,7 @@ public class ResultPositionExclusionTests
     }
 
     private ResultService BuildService() =>
-        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object);
+        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object, _adminNotifications.Object);
 
     private static Result Valid(int id, DateTime tiempo) =>
         new() { Id = id, RaceId = 1, CategoryId = 5, Dorsal = $"{id}", TiempoLlegada = tiempo, Estado = ResultEstado.Valido };
