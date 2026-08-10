@@ -26,6 +26,10 @@ export function useRaceDashboardHub(raceId: number | null, onResultsChanged: () 
 
   useEffect(() => {
     if (!raceId) {
+      // Sin carrera activa no hay conexión que sostener. connected ya arranca
+      // en false, así que React corta el re-render; el setState existe para el
+      // caso de cambiar de una carrera a ninguna.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setConnected(false)
       return
     }

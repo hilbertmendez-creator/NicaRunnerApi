@@ -120,6 +120,12 @@ export function AppLayout() {
   }, [raceId])
 
   useEffect(() => {
+    // Suscripción a un sistema externo (evento de window) más el fetch inicial
+    // del contador — el caso que los docs de React sí consideran trabajo de
+    // efecto. El setState sincrónico está dentro de refreshOpenCount, en la
+    // rama sin carrera activa, donde el valor ya es 0 y React corta el
+    // re-render igual.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshOpenCount()
     window.addEventListener(CONTROVERSIAS_CHANGED_EVENT, refreshOpenCount)
     return () => window.removeEventListener(CONTROVERSIAS_CHANGED_EVENT, refreshOpenCount)

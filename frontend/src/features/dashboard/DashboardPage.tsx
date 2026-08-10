@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
 import { PositionBadge } from '../../components/PositionBadge'
@@ -97,8 +97,17 @@ export function DashboardPage() {
     [raceId, pollIntervalMs],
   )
 
-  dashboardRefetchRef.current = dashboard.refetch
-  standingsRefetchRef.current = standings.refetch
+  // Mismo patrón de "latest ref" que usan usePolling y useRaceDashboardHub:
+  // se asigna en un efecto, no durante el render. Un render descartado por el
+  // renderer concurrente no debe dejar el ref apuntando a un callback que nunca
+  // se commiteó. El hub solo invoca estos refs de forma asíncrona, así que la
+  // ventana entre render y commit no es alcanzable — y aunque lo fuera, el
+  // refetch de usePolling es () => tickRef.current(), que siempre delega en el
+  // tick vigente.
+  useEffect(() => {
+    dashboardRefetchRef.current = dashboard.refetch
+    standingsRefetchRef.current = standings.refetch
+  })
 
   const ultimosResultadosColumns: Column<RecentResultDto>[] = [
     { header: 'Dorsal', render: (r) => r.dorsal, className: MONO },
