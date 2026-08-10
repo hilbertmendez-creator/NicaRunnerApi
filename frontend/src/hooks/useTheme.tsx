@@ -34,4 +34,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// Provider y hook conviven a propósito: es el patrón estándar de contexto en
+// React y mantiene junto lo que se lee junto. Partirlo (como auth-context.ts)
+// obligaría a retocar los vi.mock de varios tests, que no se chequean por tipos
+// — un mock apuntando a la ruta vieja deja de mockear en silencio.
+// El costo de dejarlo así es solo de DX: editar este archivo en dev dispara un
+// full reload en vez de un hot update.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = () => useContext(ThemeContext)
