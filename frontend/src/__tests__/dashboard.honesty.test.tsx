@@ -44,7 +44,12 @@ describe('Dashboard + peer chrome honesty smoke', () => {
     getResults.mockReset()
     getPublicTokens.mockReset()
     getStandings.mockResolvedValue([])
-    getResults.mockResolvedValue([])
+    // getResults devuelve PaginatedList<ResultDto>, no un array pelado.
+    // ResultsPage hace setResults(res.items): con un [] acá, res.items era
+    // undefined y DataTable explotaba con un TypeError que vitest contaba como
+    // unhandled error — los tests seguían "pasando" pero el proceso salía con
+    // código 1, lo que dejaba imposible poner el frontend en CI.
+    getResults.mockResolvedValue({ items: [], totalCount: 0 })
     getPublicTokens.mockResolvedValue([])
     getDashboard.mockResolvedValue({
       raceId: 11,
