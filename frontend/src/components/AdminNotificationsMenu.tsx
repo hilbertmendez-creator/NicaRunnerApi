@@ -136,6 +136,7 @@ export function AdminNotificationsMenu() {
           {unreadCount > 0 && (
             <button
               type="button"
+              role="menuitem"
               onClick={handleMarkAllRead}
               style={{ border: 'none', background: 'transparent', color: 'var(--ac, #1d4ed8)', fontSize: 12, cursor: 'pointer', padding: 0 }}
             >
@@ -165,8 +166,24 @@ export function AdminNotificationsMenu() {
               cursor: 'pointer',
             }}
           >
-            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--tx-lo)' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 11,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '.4px',
+                color: 'var(--tx-lo)',
+              }}
+            >
               {TYPE_LABEL[item.type]}
+              {!item.leida && (
+                <span style={{ color: 'var(--ac, #1d4ed8)', textTransform: 'none', letterSpacing: 0 }}>
+                  · Sin leer
+                </span>
+              )}
             </div>
             <div style={{ fontSize: 13, color: 'var(--tx-hi)', marginTop: 2 }}>{item.mensaje}</div>
             <div style={{ fontSize: 11, color: 'var(--tx-lo)', marginTop: 2 }}>

@@ -119,13 +119,14 @@ export function DisputeGroupCard({ group, busy, onResolve }: DisputeGroupCardPro
 
       <div className="flex flex-wrap items-end gap-3">
         <div style={{ flex: '1 1 240px' }}>
-          <Label htmlFor={`razon-${group.disputeGroupId}`}>Razón</Label>
+          <Label htmlFor={`razon-${group.disputeGroupId}`} required>Razón</Label>
           <Input
             id={`razon-${group.disputeGroupId}`}
             value={razon}
             disabled={busy}
             onChange={(e) => setRazon(e.target.value)}
-            placeholder="Motivo de la resolución (obligatorio)"
+            required
+            placeholder="Motivo de la resolución"
             style={{ width: '100%' }}
           />
         </div>

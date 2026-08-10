@@ -104,7 +104,7 @@ describe('ResultDisputesPage API smoke', () => {
     const anularButtons = screen.getAllByRole('button', { name: 'Anular' })
     await user.click(anularButtons[anularButtons.length - 1])
 
-    await user.type(screen.getByLabelText('Razón'), 'Confirmado por planilla del capturista')
+    await user.type(screen.getByLabelText('Razón', { exact: false }), 'Confirmado por planilla del capturista')
     await user.click(screen.getByRole('button', { name: 'Resolver disputa' }))
 
     await waitFor(() =>
@@ -123,7 +123,7 @@ describe('ResultDisputesPage API smoke', () => {
     renderWithProviders(<ResultDisputesPage />, { auth: makeAuth() })
 
     await screen.findByText('Ana Corredora')
-    await user.type(screen.getByLabelText('Razón'), 'Intento fallido')
+    await user.type(screen.getByLabelText('Razón', { exact: false }), 'Intento fallido')
     await user.click(screen.getByRole('button', { name: 'Resolver disputa' }))
 
     expect(

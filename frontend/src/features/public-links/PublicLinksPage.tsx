@@ -122,6 +122,7 @@ export function PublicLinksPage() {
                     <td className="py-2">
                       <span style={{ color: expired ? 'var(--badge-er-text)' : 'var(--text-lo)' }}>
                         {new Date(token.fechaExpiracion).toLocaleDateString('es-NI')}
+                        {expired && ' (vencido)'}
                       </span>
                     </td>
                     <td className="py-2" style={{ color: 'var(--text-lo)' }}>{new Date(token.createdAt).toLocaleDateString('es-NI')}</td>
