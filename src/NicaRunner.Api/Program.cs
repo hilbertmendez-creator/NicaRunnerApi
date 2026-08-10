@@ -362,6 +362,42 @@ if (!app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
     await DatabaseMigrator.MigrateWithAdvisoryLockAsync(db);
 }
+else
+{
+    // En desarrollo NO se auto-migra a propósito (ver arriba), pero hasta ahora
+    // tampoco se avisaba: el servidor arrancaba contento contra un esquema viejo
+    // y la falla recién aparecía como un 500 en el navegador, lejos de la causa.
+    //
+    // Pasa sobre todo al volver de una rama: si corriste `dotnet ef database
+    // update` parado en una rama que todavía no tenía la migración de un
+    // compañero, la base queda atrás y no hay nada que te lo diga.
+    //
+    // Solo advierte, nunca frena el arranque: un checkout nuevo sin migrar tiene
+    // TODAS las migraciones pendientes y aun así tenés que poder levantar el
+    // server para correr `dotnet ef database update` contra él.
+    using var scope = app.Services.CreateScope();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<NicaRunnerDbContext>();
+        var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
+        if (pending.Count > 0)
+        {
+            app.Logger.LogWarning(
+                "La base tiene {Count} migración(es) pendiente(s): {Pending}. " +
+                "Corré `dotnet ef database update --project src/NicaRunner.Infrastructure " +
+                "--startup-project src/NicaRunner.Api` desde main actualizado. " +
+                "Hasta entonces los endpoints que toquen esas tablas van a responder 500.",
+                pending.Count,
+                string.Join(", ", pending));
+        }
+    }
+    catch (Exception ex)
+    {
+        // Base apagada o inalcanzable: es un chequeo de conveniencia, no puede
+        // ser el motivo por el que no arranca el server.
+        app.Logger.LogWarning(ex, "No se pudieron consultar las migraciones pendientes.");
+    }
+}
 
 // Seed idempotente de administradores de backoffice — corre en ambos entornos:
 // en prod para poblar la BD real (una sola vez), en dev para poder probar el
