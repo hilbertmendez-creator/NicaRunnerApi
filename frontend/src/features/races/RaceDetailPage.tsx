@@ -6,6 +6,7 @@ import { StatusBadge } from '../../components/StatusBadge'
 import { CategoriesTab } from '../categories/CategoriesTab'
 import { RunnersTab } from '../runners/RunnersTab'
 import { Tabs } from '@nicarunner/ui'
+import { pageTitle } from '../../theme/styles'
 
 type Tab = 'categorias' | 'corredores'
 
@@ -57,7 +58,7 @@ export function RaceDetailPage() {
       </div>
 
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>{race?.nombre ?? 'Cargando...'}</h1>
+        <h1 className="text-lg font-semibold" style={pageTitle}>{race?.nombre ?? 'Cargando...'}</h1>
         {race && <StatusBadge status={race.estado} />}
       </div>
 
@@ -70,7 +71,12 @@ export function RaceDetailPage() {
         }}
       />
 
-      <section style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)', padding: 16 }}>
+      <section
+        id={`tabpanel-${tab}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--bd-card)', borderRadius: 'var(--radius-card)', padding: 16 }}
+      >
         {tab === 'categorias' ? <CategoriesTab raceId={id} /> : <RunnersTab raceId={id} />}
       </section>
     </div>

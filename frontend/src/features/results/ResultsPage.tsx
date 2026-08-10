@@ -8,6 +8,7 @@ import type { Column } from '@nicarunner/ui'
 import { PositionBadge } from '../../components/PositionBadge'
 import { EditResultModal } from './EditResultModal'
 import { AuditHistory } from './AuditHistory'
+import { pageTitle } from '../../theme/styles'
 
 export function ResultsPage() {
   const { user } = useAuth()
@@ -99,7 +100,7 @@ export function ResultsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>Resultados</h1>
+        <h1 className="text-lg font-semibold" style={pageTitle}>Resultados</h1>
       </div>
 
       {loading && <LoadingText message="Cargando resultados..." />}

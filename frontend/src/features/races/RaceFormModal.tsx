@@ -153,10 +153,10 @@ export function RaceFormModal({ race, onClose, onSaved }: RaceFormModalProps) {
           <div className="mb-3">
             <Label>Categorías participantes</Label>
             {catalogLoading ? (
-              <div className="flex animate-pulse flex-col gap-2 pt-2" data-testid="category-catalog-skeleton">
-                <div className="h-4 w-3/4 rounded bg-gray-200"></div>
-                <div className="h-4 w-1/2 rounded bg-gray-200"></div>
-                <div className="h-4 w-2/3 rounded bg-gray-200"></div>
+              <div className="flex flex-col gap-2 pt-2" data-testid="category-catalog-skeleton">
+                <div className="skeleton h-4 w-3/4"></div>
+                <div className="skeleton h-4 w-1/2"></div>
+                <div className="skeleton h-4 w-2/3"></div>
               </div>
             ) : catalog.length === 0 ? (
               <p className="pt-2 text-sm" style={{ color: 'var(--text-lo)' }} data-testid="category-catalog-empty">

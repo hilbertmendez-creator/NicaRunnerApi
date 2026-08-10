@@ -34,7 +34,7 @@ vi.mock('../hooks/useActiveRace', () => ({
 }))
 
 vi.mock('../hooks/useRaceDashboardHub', () => ({
-  useRaceDashboardHub: () => {},
+  useRaceDashboardHub: () => ({ connected: false }),
 }))
 
 describe('Dashboard + peer chrome honesty smoke', () => {

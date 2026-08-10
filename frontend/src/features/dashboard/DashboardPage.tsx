@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useRef, type CSSProperties } from 'react'
 import { StatusBadge } from '../../components/StatusBadge'
 import { ConnectionStatusBadge, type ConnectionState } from '../../components/ConnectionStatusBadge'
 import { PositionBadge } from '../../components/PositionBadge'
@@ -10,10 +10,13 @@ import { DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import { KpiBar } from './KpiBar'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
-import { cardTitle } from '../../theme/styles'
+import { cardTitle, pageTitle } from '../../theme/styles'
 import { formatElapsed } from '../public-results/formatElapsed'
 
 const POLL_INTERVAL_MS = 5000
+// El hub SignalR ya empuja los cambios en tiempo real; con el hub sano este
+// polling es solo una red de seguridad y no necesita correr cada 5s.
+const IDLE_POLL_INTERVAL_MS = 20000
 
 type PillRole = 'blue' | 'ok' | 'warn' | 'error'
 
@@ -69,21 +72,33 @@ function connectionState(loading: boolean, hasData: boolean, error: unknown): Co
 export function DashboardPage() {
   const { raceId } = useActiveRace()
 
+  // Refs porque useRaceDashboardHub necesita el callback antes de que
+  // dashboard/standings existan (usePolling se declara después, ya que su
+  // intervalo depende de hubConnected) — se actualizan en cada render, se
+  // invocan solo async cuando el hub avisa "resultsChanged".
+  const dashboardRefetchRef = useRef<() => void>(() => {})
+  const standingsRefetchRef = useRef<() => void>(() => {})
+
+  const { connected: hubConnected } = useRaceDashboardHub(raceId, () => {
+    dashboardRefetchRef.current()
+    standingsRefetchRef.current()
+  })
+
+  const pollIntervalMs = hubConnected ? IDLE_POLL_INTERVAL_MS : POLL_INTERVAL_MS
+
   const dashboard = usePolling(
     () => (raceId ? getDashboard(raceId) : Promise.resolve(null)),
-    POLL_INTERVAL_MS,
-    [raceId],
+    pollIntervalMs,
+    [raceId, pollIntervalMs],
   )
   const standings = usePolling(
     () => (raceId ? getStandings(raceId) : Promise.resolve([])),
-    POLL_INTERVAL_MS,
-    [raceId],
+    pollIntervalMs,
+    [raceId, pollIntervalMs],
   )
 
-  useRaceDashboardHub(raceId, () => {
-    dashboard.refetch()
-    standings.refetch()
-  })
+  dashboardRefetchRef.current = dashboard.refetch
+  standingsRefetchRef.current = standings.refetch
 
   const ultimosResultadosColumns: Column<RecentResultDto>[] = [
     { header: 'Dorsal', render: (r) => r.dorsal, className: MONO },
@@ -111,7 +126,7 @@ export function DashboardPage() {
     <div className="flex flex-col gap-5">
       {/* Race chrome vive solo en TopbarRaceSelect (ActiveRaceProvider). */}
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>
+        <h1 className="text-lg font-semibold" style={pageTitle}>
           {dashboard.data?.raceName ?? 'Dashboard en vivo'}
         </h1>
         {dashboard.data && <StatusBadge status={dashboard.data.estado} />}
