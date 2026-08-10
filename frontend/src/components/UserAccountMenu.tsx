@@ -100,6 +100,7 @@ export function UserAccountMenu() {
           right: 0,
           top: 'calc(100% + 8px)',
           minWidth: 200,
+          maxWidth: 'calc(100vw - 24px)',
           background: 'var(--bg-card)',
           border: '1px solid var(--bd)',
           borderRadius: 'var(--radius-card, 7px)',
