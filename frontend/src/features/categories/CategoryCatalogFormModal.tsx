@@ -151,7 +151,11 @@ export function CategoryCatalogFormModal({ category, onClose, onSaved }: Categor
           </div>
         </div>
 
-        {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
+        {error && (
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>

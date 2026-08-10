@@ -209,7 +209,11 @@ export function RunnerFormModal({ raceId, runner, categories, onClose, onSaved }
           className="mb-3 w-full"
         />
 
-        {error && <p className="mb-3 text-sm text-critical-600">{error}</p>}
+        {error && (
+          <p className="mb-3 text-sm" role="alert" style={{ color: 'var(--er-tx)' }}>
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={onClose}>

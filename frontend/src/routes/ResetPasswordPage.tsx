@@ -97,7 +97,7 @@ export function ResetPasswordPage() {
         />
 
         {error && (
-          <p className="mb-4 text-sm" style={{ color: 'var(--badge-er-text)' }}>
+          <p className="mb-4 text-sm" role="alert" style={{ color: 'var(--badge-er-text)' }}>
             {error}
           </p>
         )}
