@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-10T03:20:00Z",
+  "title": "Design System: NicaRunner Back-Office",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#2563EB",
+        "tonalRamp": ["#0A1128", "#142452", "#1E3A7A", "#2563EB", "#4F7FF0", "#7FA3F5", "#ADC6FA", "#DCE7FD"]
+      },
+      "success": {
+        "role": "semantic-success",
+        "displayName": "Official Green",
+        "canonical": "#15803D",
+        "tonalRamp": ["#062011", "#0C3A1F", "#0F5C2C", "#15803D", "#2FA85C", "#68C989", "#A4E2BB", "#DCF7E6"]
+      },
+      "warning": {
+        "role": "semantic-warning",
+        "displayName": "Pending Amber",
+        "canonical": "#92400E",
+        "tonalRamp": ["#2A1204", "#4A2008", "#6E300C", "#92400E", "#C2621E", "#E08C3E", "#F0B87A", "#FBE3C4"]
+      },
+      "critical": {
+        "role": "semantic-critical",
+        "displayName": "Dispute Red",
+        "canonical": "#DC2626",
+        "tonalRamp": ["#340A0A", "#5C1414", "#8C1F1F", "#DC2626", "#E8595A", "#F18B8C", "#F8BEBE", "#FDE4E4"]
+      },
+      "night-console-bg": {
+        "role": "neutral-inverse",
+        "displayName": "Night Console",
+        "canonical": "#1C2333",
+        "tonalRamp": ["#0A0D14", "#12151F", "#171C29", "#1C2333", "#2A3245", "#3D4760", "#5A6580", "#8A93A8"]
+      }
+    },
+    "typographyMeta": {
+      "body": { "displayName": "Body / Inter", "purpose": "Prosa, formularios, celdas de tabla — cualquier texto de lectura." },
+      "label": { "displayName": "Label / Inter Uppercase", "purpose": "Encabezados de columna, etiquetas de KPI, eyebrows." },
+      "data": { "displayName": "Data / IBM Plex Mono", "purpose": "Dorsales, tiempos, ritmos, conteos — cualquier cifra que se compara en columna." }
+    },
+    "shadows": [
+      { "name": "ambient", "value": "0 1px 2px rgba(0,0,0,.05)", "purpose": "Cards en hover, KPI bar. Casi imperceptible." },
+      { "name": "overlay", "value": "0 1px 3px rgba(0,0,0,.07), 0 2px 8px rgba(0,0,0,.04)", "purpose": "Modales y dropdowns — la única sombra realmente visible del sistema." }
+    ],
+    "motion": [
+      { "name": "duration-micro", "value": "100ms", "purpose": "Micro-transiciones de estado (hover de fila, toggle)." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Entradas de ítems de lista/nav." },
+      { "name": "duration-normal", "value": "250ms", "purpose": "Entradas de card/badge/modal." },
+      { "name": "duration-slow", "value": "350ms", "purpose": "Entradas de pantalla completa (login)." },
+      { "name": "ease-out", "value": "cubic-bezier(0.25, 0.46, 0.45, 0.94)", "purpose": "Easing estándar de salida." },
+      { "name": "ease-spring", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Ease-out agresivo sin overshoot pese al nombre — verificado matemáticamente en la auditoría, no rebota. Usado en casi todas las animaciones de entrada." },
+      { "name": "ease-in-out", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Transiciones de salida (dismissing)." }
+    ],
+    "breakpoints": [
+      { "name": "sidebar-drawer", "value": "640px" },
+      { "name": "sidebar-expanded-default", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de una pantalla o formulario.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Guardar</button>",
+      "css": ".ds-btn { height: 32px; padding: 0 12px; font-size: 13px; font-weight: 500; font-family: Inter, system-ui, sans-serif; border-radius: 6px; cursor: pointer; transition: opacity 0.15s ease; } .ds-btn:disabled { opacity: 0.6; cursor: not-allowed; } .ds-btn-primary { background: #2563EB; color: #fff; border: 1px solid #2563EB; } .ds-btn-primary:hover { background: #1D4ED8; } .ds-btn-primary:focus-visible { outline: 2px solid #2563EB; outline-offset: 1px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción por defecto — cancelar, opciones no destructivas.",
+      "html": "<button class=\"ds-btn ds-btn-secondary\">Cancelar</button>",
+      "css": ".ds-btn-secondary { background: #FFFFFF; color: #0F172A; border: 1px solid #E2E8F0; } .ds-btn-secondary:hover { background: #F8FAFC; } .ds-btn-secondary:focus-visible { outline: 2px solid #2563EB; outline-offset: 1px; }"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-destructive",
+      "description": "Eliminar/anular — usa el par semántico crítico suave, nunca rojo sólido.",
+      "html": "<button class=\"ds-btn ds-btn-destructive\">Eliminar</button>",
+      "css": ".ds-btn-destructive { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; } .ds-btn-destructive:hover { background: #FEE2E2; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-status",
+      "description": "Estado de carrera/resultado — pill con par fondo+texto+borde completo, nunca solo color.",
+      "html": "<span class=\"ds-badge ds-badge-ok\"><span class=\"ds-badge-dot\"></span>En curso</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 500; font-family: Inter, system-ui, sans-serif; } .ds-badge-ok { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; } .ds-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: ds-pulse 2s ease-in-out infinite; } @keyframes ds-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.68); } }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Superficie de contenido plana — sin sombra en reposo.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Últimos resultados</div><div class=\"ds-card-body\">Contenido de la tabla o formulario.</div></div>",
+      "css": ".ds-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 7px; padding: 16px; } .ds-card-title { font-size: 14px; font-weight: 600; color: #0F172A; margin-bottom: 8px; } .ds-card-body { font-size: 14px; color: #475569; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de formulario — el asterisco de requerido es aria-hidden porque el required nativo del input ya lo anuncia.",
+      "html": "<label class=\"ds-label\">Nombre<span class=\"ds-required\" aria-hidden=\"true\"> *</span></label><input class=\"ds-input\" type=\"text\" required placeholder=\"Ej: Ana Pérez\" />",
+      "css": ".ds-label { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 500; color: #475569; font-family: Inter, system-ui, sans-serif; } .ds-required { color: #DC2626; } .ds-input { width: 100%; height: 32px; padding: 0 12px; font-size: 14px; background: #F8FAFC; color: #0F172A; border: 1px solid #E2E8F0; border-radius: 6px; box-sizing: border-box; } .ds-input:focus-visible { outline: none; border-color: #2563EB; box-shadow: 0 0 0 1px #2563EB; }"
+    },
+    {
+      "name": "Sidebar Nav Item (Night Console)",
+      "kind": "nav",
+      "refersTo": "sidebar-nav-item",
+      "description": "Ítem del rail — el fondo oscuro es fijo, no depende del tema activo del resto de la app.",
+      "html": "<button class=\"ds-nav-item ds-nav-item-active\"><svg class=\"ds-nav-icon\" width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"><rect x=\"1\" y=\"1\" width=\"6\" height=\"6\" rx=\"1.5\"/><rect x=\"9\" y=\"1\" width=\"6\" height=\"6\" rx=\"1.5\"/></svg><span class=\"ds-nav-label\">Dashboard</span></button>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 36px; padding-inline: 10px; background: transparent; color: #94A3B8; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-family: Inter, system-ui, sans-serif; } .ds-nav-item:hover { background: rgba(255,255,255,.07); } .ds-nav-item-active { background: rgba(59,130,246,.12); color: #3B82F6; } .ds-nav-label { text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Race-Day Control Room",
+    "overview": "Este es el nombre que el propio código ya se da a sí mismo (index.css, sección ANIMATION SYSTEM — Race-Day Control Room): una consola operativa que un organizador, juez de tiempos o capturista abre en plena carrera para tomar decisiones rápidas con datos en vivo — no una app de consumo, no un panel de marketing. El tono es funcional y directo: los datos y el estado de la carrera son el protagonista, sin florituras que compitan por atención. Los componentes son densos y utilitarios — compactos, con relleno ajustado, priorizando caber más información en pantalla sobre el respiro visual generoso de una app de consumo. Las superficies son planas por defecto; la sombra aparece solo como respuesta a un cambio de estado (hover, menú desplegable, modal), nunca como decoración de reposo. La decisión más distintiva del sistema es el Night Console: el sidebar de navegación se queda oscuro (#1C2333) sin importar el tema elegido para el resto de la app.",
+    "keyCharacteristics": [
+      "Denso y funcional — prioriza datos por sobre espacio en blanco.",
+      "Plano por defecto — la sombra es una señal de estado, no un adorno.",
+      "Bicolor consistente por rol: cada estado semántico tiene su propio par texto+fondo, nunca solo color.",
+      "El rail de navegación (Night Console) es una isla de identidad fija, independiente del tema claro/oscuro del resto de la app.",
+      "Tipografía monoespaciada reservada exclusivamente para datos que se comparan en columna."
+    ],
+    "rules": [
+      { "name": "The Night Console Rule", "body": "El fondo del sidebar nunca sea alias del tema activo. Es oscuro en tema claro y en tema oscuro — es la identidad fija de la consola, no una superficie más.", "section": "colors" },
+      { "name": "The Paired Semantic Rule", "body": "Ningún estado se comunica solo con el color de texto o solo con el de fondo — siempre viaja el par completo, y todo estado binario lleva también texto explícito.", "section": "colors" },
+      { "name": "The Mono-For-Data-Only Rule", "body": "IBM Plex Mono aparece únicamente donde hay cifras que se comparan verticalmente. Si el texto se lee en prosa, es Inter — sin excepción.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "Ninguna superficie estática lleva sombra. Si algo tiene shadow en reposo, es una desviación del sistema, no un precedente a seguir.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar los tokens CSS o los estilos compartidos de theme/styles.ts para cualquier color/superficie — nunca un hex literal ni una clase de paleta fija de Tailwind para algo que deba reaccionar al tema.",
+      "Do duplicar el par completo fondo+texto+borde de un token semántico — nunca solo uno de los tres.",
+      "Do anunciar cada mensaje de error con role=\"alert\", cada campo requerido con required nativo + asterisco visual, y cada estado binario con texto además de color.",
+      "Do reservar IBM Plex Mono para datos tabulares/comparables; todo lo demás es Inter.",
+      "Do mantener el sidebar oscuro sin importar el tema.",
+      "Do revisar pointer:coarse al agregar un control interactivo nuevo — mínimo táctil de 44px."
+    ],
+    "donts": [
+      "Don't usar clases de paleta fija de Tailwind (bg-white, text-gray-700, bg-blue-600) en ningún componente que se muestre en ambos temas.",
+      "Don't agregar sombra a una superficie en reposo.",
+      "Don't dejar un control clicable como div/span/tr onClick sin role, tabIndex y manejo de teclado.",
+      "Don't dejar CSS sin usar 'por las dudas' — verificar con grep antes de asumir que una clase está en uso."
+    ]
+  }
+}
