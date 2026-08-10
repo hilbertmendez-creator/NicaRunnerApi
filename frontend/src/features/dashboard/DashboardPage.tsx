@@ -10,7 +10,7 @@ import { DataTable, LoadingText, EmptyState } from '@nicarunner/ui'
 import { KpiBar } from './KpiBar'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
-import { cardTitle } from '../../theme/styles'
+import { cardTitle, pageTitle } from '../../theme/styles'
 import { formatElapsed } from '../public-results/formatElapsed'
 
 const POLL_INTERVAL_MS = 5000
@@ -111,7 +111,7 @@ export function DashboardPage() {
     <div className="flex flex-col gap-5">
       {/* Race chrome vive solo en TopbarRaceSelect (ActiveRaceProvider). */}
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold" style={{ color: 'var(--text-hi)' }}>
+        <h1 className="text-lg font-semibold" style={pageTitle}>
           {dashboard.data?.raceName ?? 'Dashboard en vivo'}
         </h1>
         {dashboard.data && <StatusBadge status={dashboard.data.estado} />}
