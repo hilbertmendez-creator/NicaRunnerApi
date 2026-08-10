@@ -11,6 +11,7 @@ import { KpiBar } from './KpiBar'
 import type { Column } from '@nicarunner/ui'
 import type { CategoryProgressDto, RecentResultDto, RunnerStandingDto } from '../../api/types'
 import { cardTitle } from '../../theme/styles'
+import { formatElapsed } from '../public-results/formatElapsed'
 
 const POLL_INTERVAL_MS = 5000
 
@@ -133,15 +134,18 @@ export function DashboardPage() {
             items={[
               {
                 label: 'Tiempo en curso',
-                value: '—',
-                trend: 'Próximamente',
-                kind: 'aspirational',
+                value: formatElapsed(dashboard.data.tiempoEnCursoSegundos) ?? '—',
+                trend: dashboard.data.tiempoEnCursoSegundos === null ? 'Carrera no iniciada' : undefined,
+                kind: 'live',
               },
               {
                 label: 'Ritmo promedio',
-                value: '—',
-                trend: 'Próximamente',
-                kind: 'aspirational',
+                value:
+                  dashboard.data.ritmoPromedioSegundosPorKm === null
+                    ? '—'
+                    : `${formatElapsed(dashboard.data.ritmoPromedioSegundosPorKm)}/km`,
+                trend: dashboard.data.ritmoPromedioSegundosPorKm === null ? 'Sin tiempos registrados' : undefined,
+                kind: 'live',
               },
               {
                 label: 'Chip llegadas',
@@ -158,16 +162,10 @@ export function DashboardPage() {
                 kind: 'live',
               },
               {
-                label: 'Cámara ok',
-                value: '—',
-                trend: 'Próximamente',
-                kind: 'aspirational',
-              },
-              {
                 label: 'Último dorsal',
-                value: '—',
-                trend: 'Próximamente',
-                kind: 'aspirational',
+                value: dashboard.data.ultimosResultados[0]?.dorsal ?? '—',
+                trend: dashboard.data.ultimosResultados[0] ? undefined : 'Sin capturas todavía',
+                kind: 'live',
               },
             ]}
           />

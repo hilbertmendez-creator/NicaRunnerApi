@@ -1,6 +1,7 @@
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Dashboard.Dtos;
+using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Dashboard;
 
@@ -44,6 +45,12 @@ public class DashboardService(
                 r.CapturistaId))
             .ToList();
 
+        var tiempoEnCursoSegundos = race.Estado == RaceStatus.EnCurso && race.RaceStartUtc is { } startUtc
+            ? (int)(DateTime.UtcNow - startUtc).TotalSeconds
+            : (int?)null;
+
+        var ritmoPromedioSegundosPorKm = CalcularRitmoPromedioSegundosPorKm(race, results, categoriesById);
+
         return new RaceDashboardDto(
             race.Id,
             race.Nombre,
@@ -52,7 +59,29 @@ public class DashboardService(
             results.Count,
             runners.Count - results.Count,
             categorias,
-            ultimosResultados);
+            ultimosResultados,
+            tiempoEnCursoSegundos,
+            ritmoPromedioSegundosPorKm);
+    }
+
+    private static int? CalcularRitmoPromedioSegundosPorKm(
+        Race race,
+        List<Result> results,
+        Dictionary<int, Category> categoriesById)
+    {
+        if (race.RaceStartUtc is not { } startUtc)
+            return null;
+
+        var ritmos = results
+            .Where(r => r.Estado == ResultEstado.Valido && r.CategoryId is not null)
+            .Select(r => categoriesById.TryGetValue(r.CategoryId!.Value, out var category) && category.Distancia > 0
+                ? (double?)(r.TiempoLlegada - startUtc).TotalSeconds / (double)category.Distancia
+                : null)
+            .Where(ritmo => ritmo is not null)
+            .Select(ritmo => ritmo!.Value)
+            .ToList();
+
+        return ritmos.Count == 0 ? null : (int)ritmos.Average();
     }
 
     public async Task<List<CategoryStandingsDto>> GetStandingsAsync(int raceId, CancellationToken ct = default)

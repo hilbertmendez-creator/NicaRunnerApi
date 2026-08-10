@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Runners;
@@ -14,9 +15,10 @@ public class RunnerServiceTests
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
     private readonly Mock<IExcelRunnerParser> _excelParser = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     private RunnerService BuildService() =>
-        new(_runners.Object, _races.Object, _raceCategories.Object, _excelParser.Object);
+        new(_runners.Object, _races.Object, _raceCategories.Object, _excelParser.Object, _adminNotifications.Object);
 
     private static Race RaceOn(DateTime fechaCarrera, int id = 1) =>
         new() { Id = id, Nombre = "Carrera", JoinCode = "ABC123", FechaCarrera = fechaCarrera };
@@ -178,6 +180,8 @@ public class RunnerServiceTests
         Assert.Single(added!);
         Assert.Equal("101", added![0].Dorsal);
         _runners.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _adminNotifications.Verify(a => a.NotifyAsync(
+            AdminNotificationType.ImportacionConErrores, It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -278,6 +282,8 @@ public class RunnerServiceTests
         Assert.All(added, r => Assert.NotNull(r.PublicShareKey));
         Assert.All(added, r => Assert.Matches(new Regex("^[A-Za-z0-9_-]{22}$"), r.PublicShareKey));
         Assert.Equal(added.Count, added.Select(r => r.PublicShareKey).Distinct().Count());
+        _adminNotifications.Verify(a => a.NotifyAsync(
+            AdminNotificationType.ImportacionConErrores, It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // Archivo con extensión .xlsx pero contenido corrupto/no-Excel: ClosedXML

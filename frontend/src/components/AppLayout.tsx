@@ -6,6 +6,7 @@ import { useAuth } from '../auth/auth-context'
 import { CONTROVERSIAS_CHANGED_EVENT } from '../features/controversias/ControversiasPage'
 import { useActiveRace } from '../hooks/useActiveRace'
 import { NicaRunnerLogo } from '../routes/NicaRunnerLogo'
+import { AdminNotificationsMenu } from './AdminNotificationsMenu'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { TopbarRaceSelect } from './TopbarRaceSelect'
 import { UserAccountMenu } from './UserAccountMenu'
@@ -399,29 +400,7 @@ export function AppLayout() {
             <ThemeSwitcher />
             <UserAccountMenu />
             <div style={{ height: 18, width: 1, background: 'var(--bd)', margin: '0 4px' }} />
-            <button
-              type="button"
-              className="nr-icon-btn"
-              aria-label="Notificaciones"
-              onClick={() => navigate('/notificaciones')}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                color: 'var(--tx-md)',
-                position: 'relative',
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                <path d="M7.5 2a1 1 0 00-1 1V3.5A4 4 0 004.5 7c0 2 0 3-1 4h8c-1-1-1-2-1-4a4 4 0 00-2-3.5V3a1 1 0 00-1-1zM6 11a1.5 1.5 0 003 0" />
-              </svg>
-            </button>
+            <AdminNotificationsMenu />
           </div>
         </header>
 

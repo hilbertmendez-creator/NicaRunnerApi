@@ -1,4 +1,5 @@
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Results;
@@ -15,6 +16,7 @@ public class DisputeResolutionTests
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IRaceDashboardNotifier> _notifier = new();
     private readonly Mock<IRaceCategoryRepository> _raceCategories = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     private const int AdminId = 1;
 
@@ -30,7 +32,7 @@ public class DisputeResolutionTests
     }
 
     private ResultService BuildService() =>
-        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object);
+        new(_results.Object, _audits.Object, _races.Object, _runners.Object, _notifier.Object, _raceCategories.Object, _adminNotifications.Object);
 
     private (Result a, Result b) DorsalDuplicateGroup()
     {

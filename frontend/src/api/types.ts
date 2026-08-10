@@ -118,6 +118,8 @@ export interface RaceDashboardDto {
   totalPendientes: number
   categorias: CategoryProgressDto[]
   ultimosResultados: RecentResultDto[]
+  tiempoEnCursoSegundos: number | null
+  ritmoPromedioSegundosPorKm: number | null
 }
 
 export interface RunnerStandingDto {
@@ -421,4 +423,22 @@ export interface ResolveDisputeGroupRequest {
   asignaciones: DisputeAssignment[]
   anular: number[]
   razon: string
+}
+
+// Feed de eventos administrativos (campana del topbar) — distinto de
+// NotificationDto (avisos a corredores por email/WhatsApp).
+export type AdminNotificationType = 'DorsalDuplicado' | 'UsuarioCreado' | 'ImportacionConErrores'
+
+export interface AdminNotificationDto {
+  id: number
+  type: AdminNotificationType
+  mensaje: string
+  raceId: number | null
+  createdAt: string
+  leida: boolean
+}
+
+export interface AdminNotificationsPageDto {
+  items: AdminNotificationDto[]
+  unreadCount: number
 }

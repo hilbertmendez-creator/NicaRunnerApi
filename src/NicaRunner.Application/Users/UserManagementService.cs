@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Common;
 using NicaRunner.Application.Common.Dtos;
@@ -17,7 +18,8 @@ public class UserManagementService(
     IEnumerable<INotificationSender> notificationSenders,
     IEmailTemplateRenderer emailTemplateRenderer,
     IAuditService auditService,
-    AliasAssigner aliasAssigner) : IUserManagementService
+    AliasAssigner aliasAssigner,
+    IAdminNotificationService adminNotificationService) : IUserManagementService
 {
     private const string TempPasswordAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -47,6 +49,11 @@ public class UserManagementService(
         // Asigna alias + agrega + persiste con reintento ante colisión TOCTOU
         // (único camino interactivo de creación — design.md §2.2/§3.4).
         await aliasAssigner.AddWithUniqueAliasAsync(user, ct);
+
+        await adminNotificationService.NotifyAsync(
+            AdminNotificationType.UsuarioCreado,
+            $"Se creó el usuario {user.Nombre} ({user.Role}).",
+            raceId: null, ct);
 
         var emailSender = notificationSenders.FirstOrDefault(s => s.Channel == NotificationChannel.Email);
         if (emailSender is not null)
