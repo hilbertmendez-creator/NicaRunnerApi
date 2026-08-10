@@ -3,6 +3,8 @@ using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Common.Interfaces;
 
+public readonly record struct RaceCloseBlockerCounts(int Disputed, int MissingRunner);
+
 public interface IResultRepository
 {
     Task<Result?> GetByIdAsync(int raceId, int resultId, CancellationToken ct = default);
@@ -29,6 +31,15 @@ public interface IResultRepository
     /// materializa los resultados de la carrera completa.
     /// </summary>
     Task<PlacingCounts> GetPlacingCountsAsync(int raceId, int categoryId, DateTime tiempoLlegada, int resultId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Cierre de carrera: los dos agregados que bloquean el cierre, en UNA sola
+    /// consulta agregada (GroupBy(_ => 1), mismo precedente que
+    /// GetPlacingCountsAsync). MissingRunner EXCLUYE explícitamente Anulado —
+    /// una captura anulada sin dorsal nunca va a recibir uno, así que contarla
+    /// bloquearía el cierre para siempre.
+    /// </summary>
+    Task<RaceCloseBlockerCounts> GetCloseBlockerCountsAsync(int raceId, CancellationToken ct = default);
 
     Task AddAsync(Result result, CancellationToken ct = default);
 

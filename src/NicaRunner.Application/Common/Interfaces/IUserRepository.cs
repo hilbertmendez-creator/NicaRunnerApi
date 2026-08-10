@@ -7,6 +7,10 @@ public interface IUserRepository
 {
     Task<User?> GetByEmailAsync(string email, CancellationToken ct = default);
 
+    /// <summary>race-close: usuarios activos con un rol dado, para notificar a
+    /// todos los Administradores cuando un Capturista cierra una carrera.</summary>
+    Task<List<User>> GetByRoleAsync(UserRole role, CancellationToken ct = default);
+
     // user-auth: "Unified Identifier Login" (design.md §3.1) — una sola query, nunca
     // secuencial, comparando ambos lados en minúsculas (Email vía LOWER() en SQL,
     // Username ya se guarda normalizado por AliasGenerator/UserManagementService).
