@@ -476,6 +476,11 @@ tbody tr:nth-child(n+9) { animation: none; }
   background: var(--bg-hover);
 }
 
+/* Controles de paginación de DataTable (@nicarunner/ui) */
+.pagination-btn:not(:disabled):hover {
+  background: var(--bg-hover);
+}
+
 .nr-account-logout:hover {
   background: var(--er-bg) !important;
 }
