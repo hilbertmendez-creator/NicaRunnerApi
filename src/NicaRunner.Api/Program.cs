@@ -94,6 +94,14 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "JWT token from POST /api/auth/login"
     });
+
+    // race-close: XML doc comments (<summary>/<remarks>) de RacesController.Close/Reopen
+    // pasan al swagger.json. El archivo puede no existir en un build sin
+    // GenerateDocumentationFile (p. ej. `dotnet run` sobre binarios viejos) — no debe
+    // tumbar el arranque.
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml");
+    if (File.Exists(xmlPath))
+        options.IncludeXmlComments(xmlPath);
 });
 var signalRBuilder = builder.Services.AddSignalR();
 var redisConn = builder.Configuration.GetConnectionString("Redis");
