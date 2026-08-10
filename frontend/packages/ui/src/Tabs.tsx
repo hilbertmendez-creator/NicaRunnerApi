@@ -42,7 +42,7 @@ export function Tabs({ tabs, activeTab, onChange, className = '' }: TabsProps) {
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(tab.id)}
             onKeyDown={(event) => handleKeyDown(event, index)}
-            className="-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ac,#1d4ed8)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-app,#fff)]"
+            className="nr-ui-tab-btn -mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ac,#1d4ed8)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--bg-app,#fff)]"
             style={{
               borderBottomColor: isActive ? 'var(--ac, #1d4ed8)' : 'transparent',
               color: isActive ? 'var(--ac, #1d4ed8)' : 'var(--text-lo, #71717a)',

@@ -652,6 +652,12 @@ tbody tr:nth-child(n+9) { animation: none; }
     width: 44px !important;
     height: 44px !important;
   }
+  .nr-sb-toggle {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
   .nr-theme-btn {
     min-width: 44px !important;
     min-height: 44px !important;
@@ -673,6 +679,9 @@ tbody tr:nth-child(n+9) { animation: none; }
   .nr-ui-btn-md {
     min-height: 44px;
     height: auto;
+  }
+  .nr-ui-tab-btn {
+    min-height: 44px;
   }
   .nr-ui-btn-sm {
     min-height: 44px;
