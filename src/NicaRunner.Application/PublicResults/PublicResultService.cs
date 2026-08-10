@@ -40,6 +40,18 @@ public class PublicResultService(
         return tokens.Select(ToDto).ToList();
     }
 
+    public async Task RevokeTokenAsync(int raceId, int tokenId, CancellationToken ct = default)
+    {
+        var token = await tokenRepository.GetByIdAsync(raceId, tokenId, ct)
+            ?? throw new NotFoundException($"No existe el enlace público con id {tokenId} en la carrera {raceId}.");
+
+        // Idempotente a propósito: si ya estaba revocado se vuelve a guardar sin
+        // ruido. El operador que hace doble click quiere el enlace muerto, no un
+        // error — y el resultado es el mismo.
+        token.IsExpired = true;
+        await tokenRepository.SaveChangesAsync(ct);
+    }
+
     public async Task<PublicRaceResultsDto> GetResultsByTokenAsync(string token, CancellationToken ct = default)
     {
         var (race, _) = await ResolveValidTokenAsync(token, ct);
@@ -181,5 +193,6 @@ public class PublicResultService(
         token.RaceId,
         token.Token,
         token.FechaExpiracion,
-        token.CreatedAt);
+        token.CreatedAt,
+        token.IsExpired);
 }
