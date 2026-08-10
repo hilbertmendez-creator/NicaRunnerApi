@@ -1,11 +1,17 @@
 # Branch protection en `main`
 
-Hoy `main` está desprotegida: cualquier `git push origin main` (o un merge de
-PR sin CI verde) llega directo a producción vía el auto-deploy de Render. Esto
-necesita protegerse antes de seguir agregando features.
+`main` está protegida. Sin protección, cualquier `git push origin main` (o un
+merge de PR sin CI verde) llegaría directo a producción vía el auto-deploy de
+Render.
 
-Yo no puedo activar esto vía API en esta sesión — tenés que hacerlo desde la
-UI de GitHub.
+Este documento describe la configuración objetivo y cómo llegar a ella. La
+protección se administra desde la UI de GitHub (`Settings` → `Branches`), no por
+API.
+
+> El estado real de la regla —qué checks están marcados como requeridos, si
+> "Require approvals" está activo— solo se ve en esa pantalla. Si editás la
+> regla, actualizá también este documento: es la única forma de que no vuelva a
+> quedar describiendo una configuración que ya no existe.
 
 ## ⚠️ Si sos el único maintainer (caso actual)
 
@@ -50,6 +56,7 @@ Activar exactamente estas opciones (marcadas con `[x]`):
     [x] Require branches to be up to date before merging
     Status checks required:
         - build-and-test           (job de .github/workflows/api-ci.yml)
+        - frontend-build-and-test  (job de .github/workflows/frontend-ci.yml)
 
 [x] Require conversation resolution before merging
 
@@ -94,6 +101,24 @@ Cada nuevo workflow que querés que sea bloqueante (ej. el futuro
 `contract-validation`, lint del frontend, etc.) hay que agregarlo a mano a la
 lista de "Status checks required" en la misma página. GitHub no los toma
 automáticamente.
+
+Tres reglas que se aprendieron a los golpes:
+
+**1. Un check requerido no puede tener filtros de `paths` / `paths-ignore`.**
+Si el filtro descarta el PR, el workflow no corre, el check nunca reporta y
+GitHub deja el PR esperando un status que no va a llegar — sin timeout, hasta
+que alguien lo destrabe a mano. `api-ci.yml` tenía `paths-ignore: frontend/**`
+y por eso se lo sacamos: cualquier PR con el diff entero bajo `frontend/**`
+habría quedado colgado. Si un workflow necesita filtros de path, no lo marques
+como requerido.
+
+**2. El check tiene que haber corrido al menos una vez** para aparecer en el
+buscador de la pantalla (lista los checks vistos en los últimos ~7 días). O sea:
+primero mergeá el workflow, después marcalo como requerido.
+
+**3. Dos jobs no pueden compartir nombre.** La lista de required checks se arma
+por nombre de check, no por workflow. Por eso el job del frontend se llama
+`frontend-build-and-test` y no `build-and-test`.
 
 ## Cuando entre una segunda persona al repo
 
