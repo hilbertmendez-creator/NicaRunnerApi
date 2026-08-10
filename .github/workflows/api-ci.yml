@@ -1,13 +1,15 @@
 name: API CI
 
+# Sin filtros de paths, a propósito. build-and-test es candidato a check requerido
+# en la protección de main, y un check requerido que se saltea nunca reporta:
+# GitHub deja el PR esperando un status que no va a llegar, sin timeout. Con
+# `paths-ignore: frontend/**` eso pasaba en cualquier PR cuyo diff estuviera
+# entero bajo frontend/**. Correrlo siempre cuesta ~1 min. Mismo criterio que
+# frontend-ci.yml — si vas a filtrar por paths, no lo marques como requerido.
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'frontend/**'
   pull_request:
-    paths-ignore:
-      - 'frontend/**'
 
 jobs:
   build-and-test:
