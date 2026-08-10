@@ -1,6 +1,11 @@
 # Development database
 
-Local development runs against **Postgres 16**, the same engine as production on Render.
+Local development runs against **Postgres 16**, the same engine as production.
+
+Production splits across two providers: the API runs on **Render**, and the Postgres database
+lives on **[Neon](https://neon.tech)**. So "production database" means Neon — Render's dashboard
+holds the API's environment variables (including the Neon connection string), not the data.
+See `docs/render-setup.md`.
 
 ## Start
 
@@ -15,6 +20,21 @@ runs the auto-migrate-on-boot call when `!app.Environment.IsDevelopment()` — p
 (Render) has no easy pre-deploy shell, so it migrates on boot; local development is
 expected to run `dotnet ef database update` manually first. Skipping this step fails with
 errors like `relation "Users" does not exist`.
+
+Since it does not auto-migrate, the API **warns at startup** when migrations are pending,
+listing them by name:
+
+```
+warn: La base tiene 1 migración(es) pendiente(s): 20260809164843_AddAdminNotifications. ...
+```
+
+It only warns — it never blocks startup, because a fresh checkout has every migration pending
+and you still need the server to boot in order to migrate against it.
+
+> **Run `dotnet ef database update` from an up-to-date `main`, not from a feature branch.**
+> Running it while checked out on a branch that predates a teammate's migration applies only the
+> migrations that exist on that branch. Switching back to `main` then leaves the database silently
+> behind, and the only symptom is a 500 on whatever endpoint touches the missing table.
 
 ## Reset to an empty database
 

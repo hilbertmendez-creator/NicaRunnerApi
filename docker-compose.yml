@@ -1,4 +1,4 @@
-# Postgres de desarrollo. Misma familia de versión que Render (16) a propósito:
+# Postgres de desarrollo. Misma familia de versión que Neon (16) a propósito:
 # el punto entero de este archivo es que lo que falla en producción falle acá primero.
 services:
   postgres:

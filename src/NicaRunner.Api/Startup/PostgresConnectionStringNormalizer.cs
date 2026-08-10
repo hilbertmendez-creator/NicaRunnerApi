@@ -1,14 +1,18 @@
 namespace NicaRunner.Api.Startup;
 
 /// <summary>
-/// Render expone la connection string de su Postgres administrado en formato
-/// URI (postgres://usuario:password@host:puerto/db), pero Npgsql solo
+/// Neon —donde vive la Postgres de producción— expone la connection string en
+/// formato URI (postgres://usuario:password@host:puerto/db), pero Npgsql solo
 /// entiende el formato keyword=value (Host=...;Username=...;...). Sin esto,
 /// NpgsqlConnectionStringBuilder lanza ArgumentException apenas arranca el
 /// contenedor ("Format of the initialization string does not conform to
-/// specification starting at index 0") — verificado en el primer deploy real
-/// a Render. Si la cadena ya viene en formato keyword=value (como en dev
-/// contra un Postgres local), se devuelve sin tocar.
+/// specification starting at index 0") — verificado en el primer deploy real.
+/// Si la cadena ya viene en formato keyword=value (como en dev contra un
+/// Postgres local), se devuelve sin tocar.
+///
+/// Antes esta clase normalizaba la URI del Postgres administrado de Render;
+/// tras migrar la base a Neon el formato de entrada es el mismo, así que la
+/// lógica no cambió — solo cambió de quién viene la cadena.
 /// </summary>
 public static class PostgresConnectionStringNormalizer
 {
