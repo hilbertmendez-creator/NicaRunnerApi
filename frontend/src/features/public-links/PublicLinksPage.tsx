@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPublicToken, getPublicTokens, revokePublicToken } from '../../api/endpoints'
+import { apiErrorMessage } from '../../api/client'
 import type { PublicTokenDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { useActiveRace } from '../../hooks/useActiveRace'
@@ -52,8 +53,8 @@ export function PublicLinksPage() {
     try {
       await createPublicToken(raceId, { diasExpiracion })
       reload()
-    } catch (err: any) {
-      setError(err.response?.data?.detail ?? 'No se pudo generar el enlace público.')
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo generar el enlace público.'))
     } finally {
       setCreating(false)
     }
@@ -79,8 +80,8 @@ export function PublicLinksPage() {
     try {
       await revokePublicToken(raceId, token.id)
       reload()
-    } catch (err: any) {
-      setError(err.response?.data?.detail ?? 'No se pudo revocar el enlace público.')
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo revocar el enlace público.'))
     } finally {
       setRevokingId(null)
     }

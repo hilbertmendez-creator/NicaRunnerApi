@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { assignCategory, getCategories, getCategoryCatalog, unassignCategory } from '../../api/endpoints'
+import { apiErrorMessage } from '../../api/client'
 import type { CategoryDto, RaceCategoryDto } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
 import { Button, DataTable, LoadingText, EmptyState, Select } from '@nicarunner/ui'
@@ -42,8 +43,8 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
       await assignCategory(raceId, { categoryId: selectedCategoryId })
       setSelectedCategoryId(null)
       reload()
-    } catch (err: any) {
-      setError(err.response?.data?.detail ?? 'No se pudo agregar la categoría.')
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo agregar la categoría.'))
     } finally {
       setAssigning(false)
     }
@@ -55,8 +56,8 @@ export function CategoriesTab({ raceId }: { raceId: number }) {
     try {
       await unassignCategory(raceId, category.categoryId)
       reload()
-    } catch (err: any) {
-      setError(err.response?.data?.detail ?? 'No se pudo quitar la categoría.')
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo quitar la categoría.'))
     }
   }
 
