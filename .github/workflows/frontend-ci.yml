@@ -56,3 +56,10 @@ jobs:
       # compilado en packages/ui/dist.
       - name: Test
         run: npm test
+
+      # Va último a propósito: un error de tipos o un test roto importan más que
+      # un lint, y conviene verlos primero cuando el job falla. Entró recién
+      # ahora porque hasta este commit el repo arrastraba 17 errores
+      # preexistentes — gatearlo antes habría dejado el CI rojo de entrada.
+      - name: Lint
+        run: npm run lint
