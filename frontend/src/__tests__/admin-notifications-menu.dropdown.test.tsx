@@ -108,4 +108,37 @@ describe('AdminNotificationsMenu', () => {
     expect(markAllAdminNotificationsRead).toHaveBeenCalledOnce()
     await waitFor(() => expect(getAdminNotifications).toHaveBeenCalledTimes(2))
   })
+
+  it('labels the race lifecycle events instead of showing a raw enum name', async () => {
+    getAdminNotifications.mockResolvedValue({
+      items: [
+        {
+          id: 10,
+          type: 'CarreraCerradaPorJuez' as const,
+          mensaje: 'El juez Ana cerró la carrera "5K Managua".',
+          raceId: 7,
+          createdAt: '2026-01-01T09:00:00Z',
+          leida: false,
+        },
+        {
+          id: 11,
+          type: 'CarrerasSinActividad' as const,
+          mensaje: '2 carreras siguen EnCurso sin capturas recientes: "5K Managua", "10K León".',
+          raceId: null,
+          createdAt: '2026-01-01T08:30:00Z',
+          leida: false,
+        },
+      ],
+      unreadCount: 2,
+    })
+    const user = userEvent.setup()
+
+    renderWithProviders(<AdminNotificationsMenu />)
+
+    await user.click(await screen.findByRole('button', { name: 'Notificaciones (2 sin leer)' }))
+
+    expect(screen.getByText('Carrera cerrada por un juez')).toBeInTheDocument()
+    expect(screen.getByText('Carreras sin actividad')).toBeInTheDocument()
+    expect(screen.getByText('El juez Ana cerró la carrera "5K Managua".')).toBeInTheDocument()
+  })
 })

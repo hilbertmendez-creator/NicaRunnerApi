@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Categories.Dtos;
@@ -20,6 +21,7 @@ public class RaceService(
     IResultRepository resultRepository,
     IUserRepository userRepository,
     IEnumerable<INotificationSender> notificationSenders,
+    IAdminNotificationService adminNotificationService,
     ILogger<RaceService> logger) : IRaceService
 {
     // Sin I, O, 0, 1 para evitar confusiones visuales al teclear el código en el móvil.
@@ -203,7 +205,12 @@ public class RaceService(
         await raceCategoryService.CloseAsync(raceId, request, actorUserId, ct);
 
         if (actor.Role == UserRole.Capturista)
+        {
+            // Dos canales INDEPENDIENTES a propósito: la campana del backoffice no puede
+            // quedar escondida detrás de un proveedor de email ausente o caído.
+            await RecordAdminNotificationBestEffortAsync(race, actor, ct);
             await NotifyAdminsBestEffortAsync(race, actor, ct);
+        }
 
         return ToDto(race);
     }
@@ -228,6 +235,27 @@ public class RaceService(
         await raceCategoryService.ReopenAsync(raceId, request, actorUserId, ct);
 
         return ToDto(race);
+    }
+
+    // Feed de la campana del backoffice (decisión 2: email + bitácora + notificación).
+    // Best-effort igual que el email: la fila de bitácora ya persistida es el registro
+    // durable del cierre. Se llama post-commit, así que el SaveChanges de acá no arrastra
+    // nada de la cascada.
+    private async Task RecordAdminNotificationBestEffortAsync(Race race, User closedBy, CancellationToken ct)
+    {
+        try
+        {
+            await adminNotificationService.NotifyAsync(
+                AdminNotificationType.CarreraCerradaPorJuez,
+                $"El juez {closedBy.Nombre} cerró la carrera \"{race.Nombre}\".",
+                race.Id,
+                ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex, "Error registrando en la bandeja el cierre de la carrera {RaceId}.", race.Id);
+        }
     }
 
     // Best-effort a propósito: ninguna excepción ni NotificationSendResult fallido de

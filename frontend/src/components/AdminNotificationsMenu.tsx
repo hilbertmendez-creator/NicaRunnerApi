@@ -5,10 +5,14 @@ import type { AdminNotificationDto, AdminNotificationType } from '../api/types'
 
 const POLL_INTERVAL_MS = 20000
 
+// Record completo a propósito: si el backend agrega un AdminNotificationType, TypeScript
+// rompe acá hasta que la campana sepa cómo nombrarlo. Nunca una etiqueta vacía en la UI.
 const TYPE_LABEL: Record<AdminNotificationType, string> = {
   DorsalDuplicado: 'Dorsal duplicado',
   UsuarioCreado: 'Usuario creado',
   ImportacionConErrores: 'Importación con errores',
+  CarreraCerradaPorJuez: 'Carrera cerrada por un juez',
+  CarrerasSinActividad: 'Carreras sin actividad',
 }
 
 /** Campana del topbar: feed de eventos administrativos, reusa el patrón de UserAccountMenu (.user-menu/.open). */

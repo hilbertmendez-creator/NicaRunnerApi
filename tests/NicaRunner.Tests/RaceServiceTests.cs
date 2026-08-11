@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common.Exceptions;
@@ -37,6 +38,7 @@ public class RaceServiceTests
             _results.Object,
             _users.Object,
             [],
+            Mock.Of<IAdminNotificationService>(),
             NullLogger<RaceService>.Instance);
     }
 

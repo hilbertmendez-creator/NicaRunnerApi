@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Races.Dtos;
 using NicaRunner.Domain.Entities;
@@ -13,6 +14,7 @@ public class StaleRaceSweepService(
     IResultRepository resultRepository,
     IUserRepository userRepository,
     IEnumerable<INotificationSender> notificationSenders,
+    IAdminNotificationService adminNotificationService,
     ILogger<StaleRaceSweepService> logger) : IStaleRaceSweepService
 {
     // Decisión 2: valor fijo, no configurable por appsettings.
@@ -49,9 +51,39 @@ public class StaleRaceSweepService(
         }
 
         if (staleRaces.Count > 0)
+        {
+            // Dos canales INDEPENDIENTES: la campana no depende de que haya un sender de
+            // email configurado ni de que existan destinatarios Administrador.
+            await RecordAdminNotificationBestEffortAsync(staleRaces, ct);
             await NotifyAdminsBestEffortAsync(staleRaces, ct);
+        }
 
         return new StaleRaceSweepResult(staleRaces);
+    }
+
+    // Un resumen POR BARRIDO, no una fila por carrera: el cron corre seguido y una carrera
+    // olvidada sigue estando olvidada en la corrida siguiente. RaceId solo cuando hay una
+    // sola candidata — con varias el aviso no apunta a ninguna en particular.
+    private async Task RecordAdminNotificationBestEffortAsync(List<StaleRaceDto> staleRaces, CancellationToken ct)
+    {
+        try
+        {
+            var nombres = string.Join(", ", staleRaces.Select(r => $"\"{r.Nombre}\""));
+            var mensaje = staleRaces.Count == 1
+                ? $"La carrera {nombres} sigue EnCurso sin capturas recientes. Revisá si ya terminó."
+                : $"{staleRaces.Count} carreras siguen EnCurso sin capturas recientes: {nombres}.";
+
+            await adminNotificationService.NotifyAsync(
+                AdminNotificationType.CarrerasSinActividad,
+                mensaje,
+                staleRaces.Count == 1 ? staleRaces[0].RaceId : null,
+                ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex, "Error registrando en la bandeja el barrido de {Count} carrera(s) sin actividad.", staleRaces.Count);
+        }
     }
 
     // Best-effort a propósito, mismo criterio que RaceService.NotifyAdminsBestEffortAsync:

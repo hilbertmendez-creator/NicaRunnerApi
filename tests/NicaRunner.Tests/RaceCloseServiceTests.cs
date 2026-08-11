@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common.Exceptions;
@@ -22,6 +23,7 @@ public class RaceCloseServiceTests
     private readonly Mock<IUserRepository> _users = new();
     private readonly Mock<IAuditService> _audit = new();
     private readonly Mock<INotificationSender> _emailSender = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     private const int RaceId = 1;
     private const int CapturistaId = 10;
@@ -47,6 +49,7 @@ public class RaceCloseServiceTests
             _results.Object,
             _users.Object,
             [_emailSender.Object],
+            _adminNotifications.Object,
             NullLogger<RaceService>.Instance);
 
         return (service, categoryService);
@@ -321,6 +324,102 @@ public class RaceCloseServiceTests
             .Setup(s => s.SendAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Proveedor caído"));
+
+        var dto = await BuildService().CloseAsync(RaceId, CapturistaId);
+
+        Assert.Equal(RaceStatus.Terminada, dto.Estado);
+    }
+
+    [Fact]
+    public async Task CloseAsync_CierraUnCapturista_RegistraLaNotificacionEnLaBandejaDelAdmin()
+    {
+        var race = new Race { Id = RaceId, Nombre = "5K Managua", JoinCode = "X", Estado = RaceStatus.EnCurso, AdminId = 1 };
+        SetupRace(race, [MakeAssociation(5, "5K", RaceCategoryStatus.EnCurso)]);
+        SetupBlockers();
+        SetupUser(MakeUser(CapturistaId, UserRole.Capturista));
+        SetupAdmins(MakeUser(1001, UserRole.Administrador));
+
+        await BuildService().CloseAsync(RaceId, CapturistaId);
+
+        _adminNotifications.Verify(
+            n => n.NotifyAsync(
+                AdminNotificationType.CarreraCerradaPorJuez,
+                It.Is<string>(m => m.Contains("5K Managua") && m.Contains("Usuario 10")),
+                RaceId,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CloseAsync_CierraUnAdministrador_NoRegistraNotificacion()
+    {
+        // Un admin que cierra no necesita avisarse a sí mismo — mismo criterio que el email.
+        var race = new Race { Id = RaceId, Nombre = "5K", JoinCode = "X", Estado = RaceStatus.EnCurso, AdminId = 1 };
+        SetupRace(race, [MakeAssociation(5, "5K", RaceCategoryStatus.EnCurso)]);
+        SetupBlockers();
+        SetupUser(MakeUser(AdministradorId, UserRole.Administrador));
+
+        await BuildService().CloseAsync(RaceId, AdministradorId);
+
+        _adminNotifications.Verify(
+            n => n.NotifyAsync(It.IsAny<AdminNotificationType>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CloseAsync_CarreraYaTerminada_NoRegistraNotificacion()
+    {
+        // Cierre idempotente (design D4): no hay nada nuevo que cerrar, no hay nada que avisar.
+        var race = new Race { Id = RaceId, Nombre = "5K", JoinCode = "X", Estado = RaceStatus.Terminada, AdminId = 1 };
+        SetupRace(race, [MakeAssociation(5, "5K", RaceCategoryStatus.Terminada)]);
+        SetupBlockers();
+
+        await BuildService().CloseAsync(RaceId, CapturistaId);
+
+        _adminNotifications.Verify(
+            n => n.NotifyAsync(It.IsAny<AdminNotificationType>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CloseAsync_SinSenderDeEmail_IgualRegistraLaNotificacionEnLaBandeja()
+    {
+        // La campana es el registro que el admin SIEMPRE ve. No puede quedar escondida
+        // detrás de un proveedor de email ausente o caído: son dos canales independientes.
+        var race = new Race { Id = RaceId, Nombre = "5K", JoinCode = "X", Estado = RaceStatus.EnCurso, AdminId = 1 };
+        SetupRace(race, [MakeAssociation(5, "5K", RaceCategoryStatus.EnCurso)]);
+        SetupBlockers();
+        SetupUser(MakeUser(CapturistaId, UserRole.Capturista));
+        SetupAdmins(MakeUser(1001, UserRole.Administrador));
+
+        var categoryService = new RaceCategoryService(
+            _raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object);
+        var service = new RaceService(
+            _races.Object, _raceCategories.Object, _categories.Object, _audit.Object, categoryService,
+            _results.Object, _users.Object, [], _adminNotifications.Object, NullLogger<RaceService>.Instance);
+
+        await service.CloseAsync(RaceId, CapturistaId);
+
+        _adminNotifications.Verify(
+            n => n.NotifyAsync(
+                AdminNotificationType.CarreraCerradaPorJuez, It.IsAny<string>(), RaceId, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CloseAsync_LaBandejaLanzaExcepcion_NoRompeElCierre()
+    {
+        // Best-effort igual que el email: la fila de bitácora ya persistida es el registro
+        // durable del cierre — un fallo escribiendo la campana no puede tumbarlo.
+        var race = new Race { Id = RaceId, Nombre = "5K", JoinCode = "X", Estado = RaceStatus.EnCurso, AdminId = 1 };
+        SetupRace(race, [MakeAssociation(5, "5K", RaceCategoryStatus.EnCurso)]);
+        SetupBlockers();
+        SetupUser(MakeUser(CapturistaId, UserRole.Capturista));
+        SetupAdmins(MakeUser(1001, UserRole.Administrador));
+        _adminNotifications
+            .Setup(n => n.NotifyAsync(
+                It.IsAny<AdminNotificationType>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Base caída"));
 
         var dto = await BuildService().CloseAsync(RaceId, CapturistaId);
 

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Races;
 using NicaRunner.Domain.Entities;
@@ -12,6 +13,7 @@ public class StaleRaceSweepServiceTests
     private readonly Mock<IResultRepository> _results = new();
     private readonly Mock<IUserRepository> _users = new();
     private readonly Mock<INotificationSender> _emailSender = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifications = new();
 
     private static readonly DateTime Now = DateTime.UtcNow;
 
@@ -24,7 +26,8 @@ public class StaleRaceSweepServiceTests
             .ReturnsAsync(new NotificationSendResult(true, null));
 
         return new StaleRaceSweepService(
-            _races.Object, _results.Object, _users.Object, [_emailSender.Object], NullLogger<StaleRaceSweepService>.Instance);
+            _races.Object, _results.Object, _users.Object, [_emailSender.Object],
+            _adminNotifications.Object, NullLogger<StaleRaceSweepService>.Instance);
     }
 
     private static Race MakeRace(int id, string nombre, DateTime? raceStartUtc) => new()
@@ -181,5 +184,92 @@ public class StaleRaceSweepServiceTests
         _emailSender.Verify(s => s.SendAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task RunAsync_UnaSolaCarreraStale_RegistraLaNotificacionConSuRaceId()
+    {
+        SetupEnCursoRaces(MakeRace(7, "5K Managua", raceStartUtc: Now.AddDays(-1)));
+        SetupLastCaptureAt(new Dictionary<int, DateTime> { [7] = Now.AddHours(-13) });
+        SetupAdmins(MakeAdmin(1001, "admin1@test.com"));
+
+        await BuildService().RunAsync();
+
+        _adminNotifications.Verify(
+            n => n.NotifyAsync(
+                AdminNotificationType.CarrerasSinActividad,
+                It.Is<string>(m => m.Contains("5K Managua")),
+                7,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RunAsync_VariasCarrerasStale_RegistraUnaSolaNotificacionSinRaceId()
+    {
+        // Un resumen por barrido, no una fila por carrera: el cron corre seguido y la
+        // campana no puede convertirse en un chorro. Sin RaceId porque no apunta a una sola.
+        SetupEnCursoRaces(
+            MakeRace(1, "5K Managua", raceStartUtc: Now.AddDays(-1)),
+            MakeRace(2, "10K León", raceStartUtc: Now.AddDays(-1)));
+        SetupLastCaptureAt(new Dictionary<int, DateTime> { [1] = Now.AddHours(-13), [2] = Now.AddHours(-20) });
+        SetupAdmins(MakeAdmin(1001, "admin1@test.com"));
+
+        await BuildService().RunAsync();
+
+        _adminNotifications.Verify(
+            n => n.NotifyAsync(
+                AdminNotificationType.CarrerasSinActividad,
+                It.Is<string>(m => m.Contains("2") && m.Contains("5K Managua") && m.Contains("10K León")),
+                null,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RunAsync_SinCarrerasStale_NoRegistraNotificacion()
+    {
+        SetupEnCursoRaces(MakeRace(1, "5K", raceStartUtc: Now.AddHours(-2)));
+        SetupLastCaptureAt(new Dictionary<int, DateTime> { [1] = Now.AddHours(-2) });
+        SetupAdmins(MakeAdmin(1001, "admin1@test.com"));
+
+        await BuildService().RunAsync();
+
+        _adminNotifications.Verify(
+            n => n.NotifyAsync(It.IsAny<AdminNotificationType>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task RunAsync_SinAdministradores_IgualRegistraLaNotificacionEnLaBandeja()
+    {
+        // El email corta temprano si no hay destinatarios; la campana no depende de eso.
+        // La bandeja es del backoffice, no de una casilla de correo.
+        SetupEnCursoRaces(MakeRace(7, "5K Managua", raceStartUtc: Now.AddDays(-1)));
+        SetupLastCaptureAt(new Dictionary<int, DateTime> { [7] = Now.AddHours(-13) });
+        SetupAdmins();
+
+        await BuildService().RunAsync();
+
+        _adminNotifications.Verify(
+            n => n.NotifyAsync(
+                AdminNotificationType.CarrerasSinActividad, It.IsAny<string>(), 7, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task RunAsync_LaBandejaLanzaExcepcion_NoRompeElBarrido()
+    {
+        SetupEnCursoRaces(MakeRace(7, "5K Managua", raceStartUtc: Now.AddDays(-1)));
+        SetupLastCaptureAt(new Dictionary<int, DateTime> { [7] = Now.AddHours(-13) });
+        SetupAdmins(MakeAdmin(1001, "admin1@test.com"));
+        _adminNotifications
+            .Setup(n => n.NotifyAsync(
+                It.IsAny<AdminNotificationType>(), It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Base caída"));
+
+        var result = await BuildService().RunAsync();
+
+        Assert.Single(result.StaleRaces);
     }
 }
