@@ -430,7 +430,12 @@ export interface ResolveDisputeGroupRequest {
 
 // Feed de eventos administrativos (campana del topbar) — distinto de
 // NotificationDto (avisos a corredores por email/WhatsApp).
-export type AdminNotificationType = 'DorsalDuplicado' | 'UsuarioCreado' | 'ImportacionConErrores'
+export type AdminNotificationType =
+  | 'DorsalDuplicado'
+  | 'UsuarioCreado'
+  | 'ImportacionConErrores'
+  | 'CarreraCerradaPorJuez'
+  | 'CarrerasSinActividad'
 
 export interface AdminNotificationDto {
   id: number

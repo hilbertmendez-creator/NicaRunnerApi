@@ -1,10 +1,14 @@
 namespace NicaRunner.Domain.Entities;
 
+// Se persiste como int. Los valores nuevos van SIEMPRE al final: reordenar o insertar
+// en el medio reinterpreta las filas ya guardadas como un tipo distinto.
 public enum AdminNotificationType
 {
     DorsalDuplicado,
     UsuarioCreado,
-    ImportacionConErrores
+    ImportacionConErrores,
+    CarreraCerradaPorJuez,
+    CarrerasSinActividad
 }
 
 /// <summary>

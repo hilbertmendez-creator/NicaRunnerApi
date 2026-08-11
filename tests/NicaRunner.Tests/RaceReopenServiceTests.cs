@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using NicaRunner.Application.AdminNotifications;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Common.Interfaces;
@@ -41,6 +42,7 @@ public class RaceReopenServiceTests
             _results.Object,
             _users.Object,
             [_emailSender.Object],
+            Mock.Of<IAdminNotificationService>(),
             NullLogger<RaceService>.Instance);
 
         return (service, categoryService);
