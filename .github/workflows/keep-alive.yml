@@ -30,7 +30,7 @@ permissions:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
       - name: Validar variable RENDER_API_URL
         env:
@@ -49,6 +49,7 @@ jobs:
           # --fail: salida ≠ 0 si HTTP 4xx/5xx (Render contesta 503 mientras
           #         levanta el contenedor — preferimos verlo como fallo del
           #         ping y reintentar en el siguiente schedule, no enmascararlo).
-          # --max-time 90: el cold start puede tardar 30-60s; 90s da margen.
-          curl --fail --silent --show-error --max-time 90 "$URL/health"
+          # --max-time 120: el cold start puede tardar 30-60s; 120s da más
+          #                 margen ante cold starts largos o hiccups de Render.
+          curl --fail --silent --show-error --max-time 120 "$URL/health"
           echo ""  # newline final para el log
