@@ -1,26 +1,35 @@
 {
   "mcpServers": {
-    "graphify": {
-      "command": "bash",
-      "args": [
-        "scripts/graphify-mcp-serve.sh"
-      ]
-    },
     "codegraph": {
-      "type": "stdio",
-      "command": "codegraph",
       "args": [
         "serve",
         "--mcp"
-      ]
+      ],
+      "command": "codegraph",
+      "type": "stdio"
+    },
+    "context7": {
+      "args": [
+        "-y",
+        "--package=@upstash/context7-mcp@2.2.5",
+        "--",
+        "context7-mcp"
+      ],
+      "command": "npx"
+    },
+    "graphify": {
+      "args": [
+        "scripts/graphify-mcp-serve.sh"
+      ],
+      "command": "bash"
     },
     "neon": {
-      "command": "npx",
       "args": [
         "-y",
         "mcp-remote@latest",
         "https://mcp.neon.tech/mcp"
-      ]
+      ],
+      "command": "npx"
     }
   }
 }
