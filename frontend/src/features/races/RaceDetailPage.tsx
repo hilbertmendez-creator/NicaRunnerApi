@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { getRace } from '../../api/endpoints'
-import type { RaceDto } from '../../api/types'
+import { getCategories, getRace } from '../../api/endpoints'
+import type { RaceCategoryDto, RaceDto } from '../../api/types'
 import { StatusBadge } from '../../components/StatusBadge'
+import { useAuth } from '../../auth/auth-context'
 import { CategoriesTab } from '../categories/CategoriesTab'
 import { RunnersTab } from '../runners/RunnersTab'
-import { Tabs } from '@nicarunner/ui'
+import { RestartRaceDialog } from './RestartRaceDialog'
+import { Button, Tabs } from '@nicarunner/ui'
 import { pageTitle } from '../../theme/styles'
 
 type Tab = 'categorias' | 'corredores'
@@ -17,9 +20,27 @@ export function RaceDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const initialTab: Tab = searchParams.get('tab') === 'corredores' ? 'corredores' : 'categorias'
 
+  const { user } = useAuth()
+  // Reiniciar una salida borra ceros y anula llegadas: Admin y nadie más, igual que en la
+  // API. El botón no se muestra siquiera — no se ofrece lo que va a devolver 403.
+  const isAdmin = user?.role === 'Administrador'
+
   const [race, setRace] = useState<RaceDto | null>(null)
+  const [categories, setCategories] = useState<RaceCategoryDto[]>([])
   const [notFound, setNotFound] = useState(false)
   const [tab, setTab] = useState<Tab>(initialTab)
+  const [showRestart, setShowRestart] = useState(false)
+
+  const reload = useCallback(() => {
+    getRace(id)
+      .then(setRace)
+      .catch(() => setNotFound(true))
+    // Las categorías se piden acá y no dentro del tab porque el encabezado necesita saber
+    // si hay alguna arrancada para decidir si ofrece reiniciar la salida.
+    getCategories(id)
+      .then(setCategories)
+      .catch(() => setCategories([]))
+  }, [id])
 
   useEffect(() => {
     if (!Number.isInteger(id)) {
@@ -28,10 +49,12 @@ export function RaceDetailPage() {
       setNotFound(true)
       return
     }
-    getRace(id)
-      .then(setRace)
-      .catch(() => setNotFound(true))
-  }, [id])
+    reload()
+  }, [id, reload])
+
+  // Una categoría Planeada no tiene salida que reiniciar; una Terminada sí, porque la
+  // salida en falso a veces se descubre después de que alguien ya la cerró.
+  const arrancadas = categories.filter((cat) => cat.estado !== 'Planeada')
 
   if (notFound) {
     return (
@@ -60,7 +83,34 @@ export function RaceDetailPage() {
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-semibold" style={pageTitle}>{race?.nombre ?? 'Cargando...'}</h1>
         {race && <StatusBadge status={race.estado} />}
+        {isAdmin && arrancadas.length > 0 && (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="ml-auto"
+            onClick={() => setShowRestart(true)}
+          >
+            Reiniciar salida
+          </Button>
+        )}
       </div>
+
+      {showRestart && (
+        <RestartRaceDialog
+          raceId={id}
+          categories={arrancadas}
+          onClose={() => setShowRestart(false)}
+          onDone={(result) => {
+            setShowRestart(false)
+            toast.success(
+              result.llegadasAnuladas === 1
+                ? 'Salida reiniciada. Se anuló 1 llegada.'
+                : `Salida reiniciada. Se anularon ${result.llegadasAnuladas} llegadas.`,
+            )
+            reload()
+          }}
+        />
+      )}
 
       <Tabs
         tabs={tabItems}
