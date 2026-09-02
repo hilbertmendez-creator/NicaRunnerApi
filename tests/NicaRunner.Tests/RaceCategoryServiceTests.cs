@@ -1,4 +1,5 @@
 using Moq;
+using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Categories;
 using NicaRunner.Application.Categories.Dtos;
 using NicaRunner.Application.Common.Exceptions;
@@ -15,9 +16,19 @@ public class RaceCategoryServiceTests
     private readonly Mock<IRaceRepository> _races = new();
     private readonly Mock<IRunnerRepository> _runners = new();
     private readonly Mock<IResultService> _resultService = new();
+    private readonly Mock<IAuditService> _audit = new();
+
+    // Por defecto toda categoría tiene corredores inscritos: estos tests son sobre
+    // transiciones de estado, no sobre el gate de inscripción de StartAsync. Va en el
+    // constructor y no en BuildService() para que un test que quiera probar el gate pueda
+    // sobreescribirlo — en Moq gana el último Setup, y BuildService() corre después.
+    public RaceCategoryServiceTests() =>
+        _runners
+            .Setup(r => r.ExistsByCategoryInRaceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
     private RaceCategoryService BuildService() =>
-        new(_raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object);
+        new(_raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object, _audit.Object);
 
     private static Race SomeRace(int id = 1) => new() { Id = id, Nombre = "Carrera", JoinCode = "ABC123" };
 

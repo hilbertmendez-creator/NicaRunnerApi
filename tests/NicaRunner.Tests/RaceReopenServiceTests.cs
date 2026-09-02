@@ -30,8 +30,18 @@ public class RaceReopenServiceTests
     {
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
 
+        // Toda categoría tiene corredores por defecto: estos tests son sobre el ciclo de vida
+        // de la carrera, no sobre el gate de inscripción que StartAsync agregó.
+        _runners
+            .Setup(r => r.ExistsByCategoryInRaceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _runners
+            .Setup(r => r.GetAllByRaceAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Runner { Id = 1, RaceId = 1, Nombre = "Corredor", Dorsal = "1" }]);
+
         var categoryService = new RaceCategoryService(
-            _raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object);
+            _raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object,
+            _audit.Object);
 
         var service = new RaceService(
             _races.Object,
@@ -40,6 +50,7 @@ public class RaceReopenServiceTests
             _audit.Object,
             categoryService,
             _results.Object,
+            _runners.Object,
             _users.Object,
             [_emailSender.Object],
             Mock.Of<IAdminNotificationService>(),

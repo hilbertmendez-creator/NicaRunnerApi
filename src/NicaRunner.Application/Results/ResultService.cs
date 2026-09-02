@@ -41,13 +41,18 @@ public class ResultService(
         if (race.RaceStartUtc is null)
             throw new ValidationException("La carrera todavía no arrancó.");
 
-        // El servidor es la única fuente de verdad para el instante de llegada: lo toma de su
-        // propio reloj al recibir el request, en vez de confiar en el reloj del celular del
-        // juez (que puede estar desincronizado de forma distinta en cada dispositivo).
+        // Online, el servidor es la única fuente de verdad para el instante de llegada: lo
+        // toma de su propio reloj al recibir el request, en vez de confiar en el reloj del
+        // celular del juez (que puede estar desincronizado distinto en cada dispositivo).
+        // Offline es la excepción, y ResolveArrivalClock la valida y la etiqueta.
+        var (tiempoLlegada, tiempoOrigen, tiempoOffsetConfianzaMs) = ResolveArrivalClock(race, request);
+
         var result = new Result
         {
             RaceId = raceId,
-            TiempoLlegada = DateTime.UtcNow,
+            TiempoLlegada = tiempoLlegada,
+            TiempoOrigen = tiempoOrigen,
+            TiempoOffsetConfianzaMs = tiempoOffsetConfianzaMs,
             CapturistaId = capturistaId,
             IdempotencyKey = string.IsNullOrWhiteSpace(idempotencyKey) ? null : idempotencyKey
         };
@@ -136,6 +141,17 @@ public class ResultService(
         var oldDorsal = result.Dorsal;
 
         await RegisterAuditIfChangedAsync(result.Id, editorId, "TiempoLlegada", result.TiempoLlegada.ToString("O"), request.TiempoLlegada.ToString("O"), request.Razon, ct);
+
+        // Solo si el tiempo REALMENTE cambió. Este mismo endpoint es por donde el juez
+        // asigna un dorsal, y ahí reenvía el TiempoLlegada intacto: marcar CorreccionManual
+        // en ese caso etiquetaría como "editado a mano" a cada tiempo al que alguien le puso
+        // dorsal, que son casi todos.
+        if (result.TiempoLlegada != request.TiempoLlegada)
+        {
+            result.TiempoOrigen = TiempoLlegadaOrigen.CorreccionManual;
+            result.TiempoOffsetConfianzaMs = null;
+        }
+
         result.TiempoLlegada = request.TiempoLlegada;
         result.UpdatedAt = DateTime.UtcNow;
 
@@ -307,6 +323,55 @@ public class ResultService(
     /// mientras tanto, TryResolveDorsalAsync ya deja el nuevo motivo (típicamente
     /// DorsalDuplicado) y no hay nada más que hacer con esa fila en este pase.
     /// </summary>
+    public async Task<int> VoidForResetAsync(
+        int raceId, IReadOnlyCollection<int> categoryIds, bool incluirSinCategoria,
+        int actorUserId, string razon, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(razon))
+            throw new ValidationException("La razón es obligatoria para reiniciar una salida.");
+
+        var ids = categoryIds.ToHashSet();
+        var vivas = (await resultRepository.GetAllByRaceAsync(raceId, ct))
+            .Where(r => r.Estado != ResultEstado.Anulado)
+            .Where(r => r.CategoryId is { } cid ? ids.Contains(cid) : incluirSinCategoria)
+            .ToList();
+
+        if (vivas.Count == 0)
+            return 0;
+
+        foreach (var target in vivas)
+        {
+            await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Estado", target.Estado.ToString(), ResultEstado.Anulado.ToString(), razon, ct);
+            // Mismo motivo que VoidAsync: IX_Results_RaceId_RunnerId es único sin mirar
+            // Estado, así que un Anulado que retuviera su RunnerId dejaría al corredor
+            // ocupado para siempre — y después del reinicio ese mismo corredor va a
+            // volver a cruzar la meta y a necesitar su dorsal libre.
+            await RegisterAuditIfChangedAsync(target.Id, actorUserId, "Dorsal", target.Dorsal ?? "(sin asignar)", "(sin asignar)", razon, ct);
+
+            target.Estado = ResultEstado.Anulado;
+            target.Dorsal = null;
+            target.RunnerId = null;
+            target.Posicion = 0;
+            // Las disputas abiertas también mueren acá: DorsalPropuesto describe la
+            // intención de asignar un dorsal en una carrera que se está por correr de
+            // nuevo. Dejarla viva sería ofrecerle al Admin resolver una disputa sobre un
+            // tiempo que ya no existe.
+            target.DorsalPropuesto = null;
+            target.DisputeMotivo = null;
+            target.DisputeGroupId = null;
+            target.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await resultRepository.SaveChangesAsync(ct);
+
+        // No se recalculan posiciones por categoría: no queda ningún resultado vigente en
+        // las categorías reiniciadas, así que no hay orden que recomputar. El dashboard sí
+        // se avisa — el backoffice está mirando una lista que se acaba de vaciar.
+        await raceDashboardNotifier.NotifyResultsChangedAsync(raceId, ct);
+
+        return vivas.Count;
+    }
+
     public async Task<int> ResolvePendingCategoryDisputesAsync(
         int raceId, int categoryId, int actorUserId, string razon, CancellationToken ct = default)
     {
@@ -523,6 +588,43 @@ public class ResultService(
     // de desfase.
     private const int FutureToleranceMinutes = 5;
 
+    // Mismo horizonte que RaceCategoryService.MaxPastHours para el cero: una llegada que
+    // estuvo un día entero en la cola de un teléfono ya no es una carrera en curso, es un
+    // dato que alguien tiene que mirar a mano.
+    private const int MaxPastHours = 12;
+
+    /// <summary>
+    /// De dónde sale el instante de llegada. Espejo exacto de
+    /// RaceCategoryService.ResolveStartClock, y a propósito: el cero y la llegada son los
+    /// dos extremos del mismo tiempo oficial, y aceptar el reloj del cliente para uno con
+    /// reglas distintas que para el otro haría que la confiabilidad de un tiempo dependiera
+    /// de cuál de sus dos puntas se midió sin señal.
+    ///
+    /// Sin <c>TiempoLlegadaCliente</c> gana el reloj del servidor, que es el 99% de los
+    /// casos. Con él, se valida contra los mismos tres límites que el arranque —futuro,
+    /// antigüedad, y no antes del inicio de la carrera— y el origen queda marcado para
+    /// siempre en la fila.
+    /// </summary>
+    private static (DateTime Tiempo, TiempoLlegadaOrigen Origen, int? OffsetConfianzaMs) ResolveArrivalClock(
+        Race race, CreateResultRequest request)
+    {
+        if (request.TiempoLlegadaCliente is not { } tiempoCliente)
+            return (DateTime.UtcNow, TiempoLlegadaOrigen.Servidor, null);
+
+        if (tiempoCliente > DateTime.UtcNow.AddMinutes(FutureToleranceMinutes))
+            throw new ValidationException("El instante de llegada no puede ser más de 5 minutos en el futuro.");
+
+        if (tiempoCliente < DateTime.UtcNow.AddHours(-MaxPastHours))
+            throw new ValidationException("El instante de llegada no puede tener más de 12 horas de antigüedad.");
+
+        // La misma regla que ya protege la edición manual: nadie llega antes de largar.
+        ValidateTiempoLlegada(race, tiempoCliente);
+
+        return request.OffsetConfianzaMs is { } offset
+            ? (tiempoCliente, TiempoLlegadaOrigen.Cliente, offset)
+            : (tiempoCliente, TiempoLlegadaOrigen.ClienteSinCalibrar, null);
+    }
+
     private static void ValidateTiempoLlegada(Race race, DateTime tiempoLlegada)
     {
         if (race.RaceStartUtc is { } inicio && tiempoLlegada < inicio)
@@ -569,7 +671,9 @@ public class ResultService(
             result.DorsalPropuesto,
             result.DisputeGroupId,
             result.DisputeMotivo,
-            elapsedMillis);
+            elapsedMillis,
+            result.TiempoOrigen,
+            result.TiempoOffsetConfianzaMs);
     }
 
     private static ResultAuditDto ToAuditDto(ResultAudit audit) => new(

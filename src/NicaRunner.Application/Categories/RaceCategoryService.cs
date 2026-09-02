@@ -1,7 +1,9 @@
+using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Categories.Dtos;
 using NicaRunner.Application.Common.Exceptions;
 using NicaRunner.Application.Common.Interfaces;
 using NicaRunner.Application.Results;
+using NicaRunner.Domain.Constants;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Categories;
@@ -11,7 +13,8 @@ public class RaceCategoryService(
     ICategoryRepository categoryRepository,
     IRaceRepository raceRepository,
     IRunnerRepository runnerRepository,
-    IResultService resultService) : IRaceCategoryService
+    IResultService resultService,
+    IAuditService auditService) : IRaceCategoryService
 {
     public async Task<RaceCategoryDto> AssignAsync(int raceId, AssignCategoryRequest request, CancellationToken ct = default)
     {
@@ -70,6 +73,8 @@ public class RaceCategoryService(
             throw new ConflictException(
                 "Estas categorías ya no están Planeada: " +
                 string.Join(", ", yaArrancadas.Select(t => t.Category.NombreCategoria)) + ".");
+
+        await EnsureCategoriesHaveRunnersAsync(raceId, targets, ct);
 
         var (startUtc, origen, offsetConfianzaMs) = ResolveStartClock(request);
 
@@ -186,6 +191,94 @@ public class RaceCategoryService(
         return targets.Select(ToDto).ToList();
     }
 
+    public async Task<ResetStartResultDto> ResetStartAsync(
+        int raceId, ResetCategoryStartRequest request, int actorUserId, CancellationToken ct = default)
+    {
+        var race = await GetRaceOrThrowAsync(raceId, ct);
+        var targets = await ResolveTargetsOrThrowAsync(
+            raceId, new CategoryTransitionRequest(request.CategoryIds), ct);
+
+        var noEnCurso = targets.Where(t => t.Estado != RaceCategoryStatus.EnCurso).ToList();
+        if (noEnCurso.Count > 0)
+            throw new ConflictException(
+                "Solo se puede reiniciar la salida de una categoría EnCurso. Estas no lo están: " +
+                string.Join(", ", noEnCurso.Select(t => t.Category.NombreCategoria)) +
+                ". Una categoría Terminada se reabre; una Planeada nunca arrancó.");
+
+        return await ResetTargetsAsync(race, targets, request.Razon, incluirSinCategoria: false, actorUserId, ct);
+    }
+
+    public async Task<ResetStartResultDto> RestartRaceAsync(
+        int raceId, RestartRaceRequest request, int actorUserId, CancellationToken ct = default)
+    {
+        var race = await GetRaceOrThrowAsync(raceId, ct);
+
+        var all = await raceCategoryRepository.GetAssociationsByRaceAsync(raceId, ct);
+        var targets = all.Where(c => c.Estado != RaceCategoryStatus.Planeada).ToList();
+
+        if (targets.Count == 0)
+            throw new ConflictException(
+                "Esta carrera no tiene ninguna categoría arrancada: no hay salida que reiniciar.");
+
+        // A diferencia de ResetStartAsync, acá SÍ se alcanzan las categorías Terminada: una
+        // salida en falso se descubre a veces después de que alguien ya cerró la categoría,
+        // y "reiniciar la carrera" que dejara una categoría cerrada con su cero intacto
+        // habría mentido sobre lo que hizo.
+        return await ResetTargetsAsync(race, targets, request.Razon, incluirSinCategoria: true, actorUserId, ct);
+    }
+
+    /// <summary>
+    /// El reinicio en sí, compartido por las dos puertas. El orden importa: primero se
+    /// anulan las llegadas —que se leen contra el StartUtc que está por desaparecer— y
+    /// recién después se borra el cero. Al revés, las capturas quedarían un instante
+    /// colgando de una categoría sin cero.
+    /// </summary>
+    private async Task<ResetStartResultDto> ResetTargetsAsync(
+        Race race, List<RaceCategory> targets, string razon, bool incluirSinCategoria,
+        int actorUserId, CancellationToken ct)
+    {
+        var anuladas = await resultService.VoidForResetAsync(
+            race.Id, targets.Select(t => t.CategoryId).ToList(), incluirSinCategoria, actorUserId, razon, ct);
+
+        foreach (var target in targets)
+        {
+            target.Estado = RaceCategoryStatus.Planeada;
+            // El cero se borra ENTERO, atribución incluida: dejar StartedByUserId de un
+            // disparo que se dio por nulo señalaría a un juez por una salida que oficialmente
+            // no ocurrió. Quién reinició y por qué vive en los ResultAudit que dejó
+            // VoidForResetAsync, y en el AuditLog del controller.
+            target.StartUtc = null;
+            target.StartedByUserId = null;
+            target.StartOrigen = null;
+            target.StartOffsetConfianzaMs = null;
+            // La key de idempotencia también: si no, un reintento tardío de la salida que
+            // acabamos de anular entraría por TryGetIdempotentReplay y devolvería "listo,
+            // ya arrancó" sin arrancar nada.
+            target.StartIdempotencyKey = null;
+            target.ClosedUtc = null;
+            target.ClosedByUserId = null;
+        }
+
+        var estadoAnterior = race.Estado;
+        await SyncRaceStateAsync(race, ct);
+
+        // El reinicio es la única transición de categoría que BORRA evidencia (el cero, su
+        // juez, su origen), así que es la única que deja rastro en AuditLog además de en los
+        // ResultAudit de cada llegada anulada. Con cero llegadas registradas esos ResultAudit
+        // no existen, y sin esto el reinicio no habría dejado rastro en ningún lado.
+        auditService.TrackChanges(AuditEntityTypes.Race, race.Id, actorUserId, new[]
+        {
+            new FieldChange(
+                "SalidaReiniciada",
+                $"{estadoAnterior} · {targets.Count} categoría(s) arrancada(s)",
+                $"{race.Estado} · {anuladas} llegada(s) anulada(s) · {razon}")
+        });
+
+        await raceCategoryRepository.SaveChangesAsync(ct);
+
+        return new ResetStartResultDto(targets.Select(ToDto).ToList(), anuladas);
+    }
+
     public async Task<List<RaceCategoryDto>> ReopenAsync(
         int raceId, CategoryTransitionRequest request, int actorUserId, CancellationToken ct = default)
     {
@@ -256,6 +349,34 @@ public class RaceCategoryService(
                 $"Estas categorías no están asignadas a la carrera {raceId}: {string.Join(", ", faltantes)}.");
 
         return targets;
+    }
+
+    /// <summary>
+    /// Una categoría sin corredores inscritos no tiene a quién cronometrar: su cero sería
+    /// el origen de una lista de llegadas que nadie puede reclamar, y el juez recién lo
+    /// descubre al asignar el primer dorsal y encontrarse sin corredor. Se valida acá y no
+    /// en el cliente porque la app móvil no es la única puerta — el backoffice arranca por
+    /// este mismo servicio.
+    ///
+    /// Atómico como el resto de StartAsync: si UNA de las categorías del disparo está
+    /// vacía, no arranca ninguna. Dos categorías que salen con el mismo balazo comparten
+    /// el cero; dejar salir a la mitad rompería justamente eso.
+    /// </summary>
+    private async Task EnsureCategoriesHaveRunnersAsync(
+        int raceId, List<RaceCategory> targets, CancellationToken ct)
+    {
+        var vacias = new List<RaceCategory>();
+        foreach (var target in targets)
+        {
+            if (!await runnerRepository.ExistsByCategoryInRaceAsync(raceId, target.CategoryId, ct))
+                vacias.Add(target);
+        }
+
+        if (vacias.Count > 0)
+            throw new ConflictException(
+                "Estas categorías no tienen corredores inscritos: " +
+                string.Join(", ", vacias.Select(t => t.Category.NombreCategoria)) +
+                ". Cargá los corredores antes de dar la salida.");
     }
 
     /// <summary>

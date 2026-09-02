@@ -24,6 +24,9 @@ import type {
   PublicRunnerShareDto,
   PublicTokenDto,
   RaceCategoryDto,
+  ResetCategoryStartRequest,
+  ResetStartResultDto,
+  RestartRaceRequest,
   RaceDashboardDto,
   RaceDto,
   ResetPasswordRequest,
@@ -198,6 +201,34 @@ export async function assignCategory(
 
 export async function unassignCategory(raceId: number, categoryId: number): Promise<void> {
   await apiClient.delete(`/races/${raceId}/categories/${categoryId}`)
+}
+
+/**
+ * Salida en falso, alcance parcial: devuelve a Planeada solo las categorías indicadas y
+ * anula las llegadas medidas contra su cero. Admin-only. Las capturas sin dorsal NO se
+ * tocan — podrían pertenecer a otra categoría que sigue corriendo bien.
+ */
+export async function resetCategoryStart(
+  raceId: number,
+  request: ResetCategoryStartRequest,
+): Promise<ResetStartResultDto> {
+  const { data } = await apiClient.post<ResetStartResultDto>(
+    `/races/${raceId}/categories/reset-start`,
+    request,
+  )
+  return data
+}
+
+/**
+ * Salida en falso, carrera completa: alcanza a todas las categorías que salieron —también
+ * las ya cerradas— y a todas las llegadas vivas. La carrera vuelve a Planeada. Admin-only.
+ */
+export async function restartRace(
+  raceId: number,
+  request: RestartRaceRequest,
+): Promise<ResetStartResultDto> {
+  const { data } = await apiClient.post<ResetStartResultDto>(`/races/${raceId}/restart`, request)
+  return data
 }
 
 export async function getRunners(raceId: number): Promise<RunnerDto[]> {

@@ -62,6 +62,30 @@ public class RaceCategoriesController(IRaceCategoryService categoryService) : Co
         int raceId, int categoryId, CorrectCategoryStartRequest request, CancellationToken ct) =>
         Ok(await categoryService.CorrectStartAsync(raceId, categoryId, request, GetUserId(), ct));
 
+    /// <summary>Salida en falso: devuelve categorías EnCurso a Planeada y anula sus llegadas.</summary>
+    /// <remarks>
+    /// Admin-only, y no por simetría con `reopen` sino porque es la única transición de
+    /// categoría que DESTRUYE datos: borra el cero y anula toda captura medida contra él.
+    /// Por eso también exige `razon`, que `start` no pide.
+    ///
+    /// No confundir con las otras dos correcciones de arranque:
+    /// `correct-start` le pone hora a una categoría que nunca salió; `reopen` deshace un
+    /// cierre equivocado sin tocar el cero. Esto deshace la SALIDA misma.
+    /// </remarks>
+    /// <response code="200">Las categorías volvieron a Planeada; el body dice cuántas llegadas se anularon.</response>
+    /// <response code="403">El rol autenticado no es Administrador.</response>
+    /// <response code="404">Alguna categoría no está asignada a esta carrera.</response>
+    /// <response code="409">Alguna categoría no está EnCurso.</response>
+    [HttpPost("reset-start")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    [ProducesResponseType(typeof(ResetStartResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ResetStartResultDto>> ResetStart(
+        int raceId, ResetCategoryStartRequest request, CancellationToken ct) =>
+        Ok(await categoryService.ResetStartAsync(raceId, request, GetUserId(), ct));
+
     [HttpPost("close")]
     [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
     public async Task<ActionResult<List<RaceCategoryDto>>> Close(

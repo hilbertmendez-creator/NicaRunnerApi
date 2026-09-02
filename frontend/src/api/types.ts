@@ -223,6 +223,18 @@ export interface CreateCategoryRequest {
 export type UpdateCategoryRequest = CreateCategoryRequest
 
 // Categorías del catálogo seleccionadas para una carrera específica.
+export type RaceCategoryStatus = 'Planeada' | 'EnCurso' | 'Terminada'
+
+/** De dónde salió el cero de una categoría. SoT: Domain/Entities/StartClockOrigen.cs. */
+export type StartClockOrigen = 'Servidor' | 'Cliente' | 'ClienteSinCalibrar' | 'CorreccionAdmin'
+
+/**
+ * SoT: Application/Categories/Dtos/RaceCategoryDto.cs.
+ *
+ * Los campos de estado (estado, startUtc, quién la arrancó y con qué reloj) los manda la
+ * API desde PR 1a y este tipo no los declaraba: el backoffice no podía distinguir una
+ * categoría corriendo de una que nunca salió, aunque el dato viajaba en cada respuesta.
+ */
 export interface RaceCategoryDto {
   categoryId: number
   codigo: string
@@ -232,6 +244,36 @@ export interface RaceCategoryDto {
   edadMinima: number
   edadMaxima: number
   orden: number
+  estado: RaceCategoryStatus
+  startUtc?: string | null
+  startedByUserId?: number | null
+  startedByNombre?: string | null
+  closedUtc?: string | null
+  closedByUserId?: number | null
+  closedByNombre?: string | null
+  startOrigen?: StartClockOrigen | null
+  startOffsetConfianzaMs?: number | null
+}
+
+/** SoT: Application/Categories/Dtos/ResetCategoryStartRequest.cs. */
+export interface ResetCategoryStartRequest {
+  categoryIds: number[]
+  razon: string
+}
+
+/** SoT: Application/Categories/Dtos/RestartRaceRequest.cs. */
+export interface RestartRaceRequest {
+  razon: string
+}
+
+/**
+ * SoT: Application/Categories/Dtos/ResetStartResultDto.cs. `llegadasAnuladas` es la mitad
+ * destructiva de la operación y por eso viaja en la respuesta: quien reinicia tiene que
+ * poder decir cuántas llegadas se borraron sin ir a buscarlo a otra pantalla.
+ */
+export interface ResetStartResultDto {
+  categories: RaceCategoryDto[]
+  llegadasAnuladas: number
 }
 
 export interface AssignCategoryRequest {
