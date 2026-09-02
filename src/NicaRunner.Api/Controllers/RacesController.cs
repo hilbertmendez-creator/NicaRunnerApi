@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Auditing.Dtos;
+using NicaRunner.Application.Categories;
+using NicaRunner.Application.Categories.Dtos;
 using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Races;
 using NicaRunner.Application.Races.Dtos;
@@ -17,7 +19,10 @@ namespace NicaRunner.Api.Controllers;
 [Route("api/races")]
 [Route("api/v{version:apiVersion}/races")]
 [Authorize]
-public class RacesController(IRaceService raceService, IAuditService auditService) : ControllerBase
+public class RacesController(
+    IRaceService raceService,
+    IRaceCategoryService raceCategoryService,
+    IAuditService auditService) : ControllerBase
 {
     [HttpPost]
     [Authorize(Roles = nameof(UserRole.Administrador))]
@@ -134,6 +139,33 @@ public class RacesController(IRaceService raceService, IAuditService auditServic
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RaceDto>> Reopen(int raceId, CancellationToken ct) =>
         Ok(await raceService.ReopenAsync(raceId, GetUserId(), ct));
+
+    /// <summary>Salida en falso de la carrera completa: todo vuelve a Planeada.</summary>
+    /// <remarks>
+    /// Alcanza a TODAS las categorías que salieron —incluidas las ya Terminada, porque una
+    /// salida en falso se descubre a veces después de que alguien cerró— y anula todas las
+    /// llegadas vivas, también las que todavía no tienen dorsal: si no queda ninguna
+    /// categoría corriendo, no hay otra a la que pudieran pertenecer.
+    ///
+    /// `Race.Estado` y `RaceStartUtc` no se escriben: derivan de las categorías, igual que en
+    /// `close` y `reopen`. La carrera queda Planeada y lista para volver a largar.
+    ///
+    /// Para reiniciar solo la categoría que largó mal, sin tocar a las que corren bien, está
+    /// `POST /races/{raceId}/categories/reset-start`.
+    /// </remarks>
+    /// <response code="200">La carrera volvió a Planeada; el body dice cuántas llegadas se anularon.</response>
+    /// <response code="403">El rol autenticado no es Administrador.</response>
+    /// <response code="404">No existe una carrera con ese id.</response>
+    /// <response code="409">Ninguna categoría de la carrera arrancó: no hay salida que reiniciar.</response>
+    [HttpPost("{raceId:int}/restart")]
+    [Authorize(Roles = nameof(UserRole.Administrador))]
+    [ProducesResponseType(typeof(ResetStartResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ResetStartResultDto>> Restart(
+        int raceId, RestartRaceRequest request, CancellationToken ct) =>
+        Ok(await raceCategoryService.RestartRaceAsync(raceId, request, GetUserId(), ct));
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

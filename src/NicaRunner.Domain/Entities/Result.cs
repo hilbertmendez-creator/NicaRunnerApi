@@ -7,6 +7,22 @@ public class Result
     public int? RunnerId { get; set; }
     public string? Dorsal { get; set; } // null hasta que se asigna; copiado al momento de asignación
     public DateTime TiempoLlegada { get; set; }
+
+    /// <summary>
+    /// De dónde salió <see cref="TiempoLlegada"/>. Nullable solo por las filas anteriores a
+    /// la columna: una captura vieja no puede afirmar un origen que nadie registró, y
+    /// escribirle Servidor por defecto sería inventar evidencia. Filas nuevas lo llevan
+    /// siempre — ver ResultService.CreateAsync.
+    /// </summary>
+    public TiempoLlegadaOrigen? TiempoOrigen { get; set; }
+
+    /// <summary>
+    /// Medio RTT de la calibración con la que el dispositivo selló una llegada offline.
+    /// Null cuando el tiempo lo puso el servidor (no hay incertidumbre que declarar) o
+    /// cuando el dispositivo nunca calibró (TiempoOrigen=ClienteSinCalibrar lo dice).
+    /// Mismo rol que RaceCategory.StartOffsetConfianzaMs para el cero.
+    /// </summary>
+    public int? TiempoOffsetConfianzaMs { get; set; }
     public int Posicion { get; set; }
     public int? CategoryId { get; set; } // null hasta que el dorsal asignado resuelve la categoría
     public ResultEstado Estado { get; set; } = ResultEstado.Valido;

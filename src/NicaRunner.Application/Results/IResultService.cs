@@ -36,6 +36,24 @@ public interface IResultService
     Task<List<DisputeGroupDto>> GetOpenDisputesAsync(int raceId, CancellationToken ct = default);
 
     /// <summary>
+    /// Salida en falso: anula EN BLOQUE toda captura viva (Valido o Controversia) de las
+    /// categorías que se están reiniciando, porque sus tiempos se midieron contra un cero
+    /// que deja de existir. Devuelve cuántas se anularon.
+    ///
+    /// <paramref name="incluirSinCategoria"/> alcanza a las capturas que todavía no tienen
+    /// dorsal — no se puede saber a qué categoría pertenecen, así que solo se anulan cuando
+    /// se reinician TODAS las categorías vivas de la carrera y no queda ninguna otra a la
+    /// que pudieran pertenecer. Reiniciar una categoría sola nunca las toca.
+    ///
+    /// Distinto de <see cref="VoidAsync"/>: eso es un juez deshaciendo UN toque suyo y tiene
+    /// la regla de autoría de D5; esto es una corrección administrativa sobre un conjunto,
+    /// y el llamador (Admin-only, ver RaceCategoryService.ResetStartAsync) ya la autorizó.
+    /// </summary>
+    Task<int> VoidForResetAsync(
+        int raceId, IReadOnlyCollection<int> categoryIds, bool incluirSinCategoria,
+        int actorUserId, string razon, CancellationToken ct = default);
+
+    /// <summary>
     /// PR 2b: reintenta cada resultado en Controversia de `categoryId` cuyo motivo sea
     /// CategoriaSinSalida o CategoriaCerrada, ahora que la categoría volvió a EnCurso
     /// (por CorrectStartAsync o por ReopenAsync). Devuelve cuántos volvieron a Valido.

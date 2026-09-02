@@ -19,6 +19,7 @@ public class RaceService(
     IAuditService auditService,
     IRaceCategoryService raceCategoryService,
     IResultRepository resultRepository,
+    IRunnerRepository runnerRepository,
     IUserRepository userRepository,
     IEnumerable<INotificationSender> notificationSenders,
     IAdminNotificationService adminNotificationService,
@@ -121,6 +122,15 @@ public class RaceService(
 
         if (race.Estado != RaceStatus.Planeada)
             throw new ConflictException($"Solo se puede iniciar una carrera en estado Planeada (estado actual: {race.Estado}).");
+
+        // Sin corredores inscritos no hay a quién cronometrar. El mismo criterio que
+        // RaceCategoryService.StartAsync aplica a la puerta de carrera completa: la app
+        // móvil arranca por categoría, el backoffice por acá, y las dos tienen que
+        // rechazar lo mismo — si no, el bloqueo depende de por dónde entraste.
+        var corredores = await runnerRepository.GetAllByRaceAsync(raceId, ct);
+        if (corredores.Count == 0)
+            throw new ConflictException(
+                "Esta carrera no tiene corredores inscritos. Cargá los corredores antes de darle salida.");
 
         race.Estado = RaceStatus.EnCurso;
         race.RaceStartUtc = DateTime.UtcNow;

@@ -26,8 +26,18 @@ public class RaceServiceTests
 
     private RaceService BuildService()
     {
+        // Toda categoría tiene corredores por defecto: estos tests son sobre el ciclo de vida
+        // de la carrera, no sobre el gate de inscripción que StartAsync agregó.
+        _runners
+            .Setup(r => r.ExistsByCategoryInRaceAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _runners
+            .Setup(r => r.GetAllByRaceAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Runner { Id = 1, RaceId = 1, Nombre = "Corredor", Dorsal = "1" }]);
+
         var categoryService = new RaceCategoryService(
-            _raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object);
+            _raceCategories.Object, _categories.Object, _races.Object, _runners.Object, _resultService.Object,
+            new AuditService(_auditRepo));
 
         return new RaceService(
             _races.Object,
@@ -36,6 +46,7 @@ public class RaceServiceTests
             new AuditService(_auditRepo),
             categoryService,
             _results.Object,
+            _runners.Object,
             _users.Object,
             [],
             Mock.Of<IAdminNotificationService>(),

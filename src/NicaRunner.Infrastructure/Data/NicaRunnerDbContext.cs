@@ -405,6 +405,12 @@ public class NicaRunnerDbContext : DbContext
             .Property(rc => rc.StartOrigen)
             .HasConversion<string>()
             .HasMaxLength(30);
+        // Mismo tratamiento que StartOrigen: string en BD para que la columna se lea en
+        // psql sin traducir un entero, y con margen de sobra para un miembro futuro.
+        modelBuilder.Entity<Result>()
+            .Property(r => r.TiempoOrigen)
+            .HasConversion<string>()
+            .HasMaxLength(30);
         modelBuilder.Entity<RaceCategory>()
             .Property(rc => rc.StartIdempotencyKey)
             .HasMaxLength(64);

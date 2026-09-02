@@ -20,4 +20,11 @@ public record ResultDto(
     string? DorsalPropuesto,
     int? DisputeGroupId,
     DisputeMotivo? DisputeMotivo,
-    long? ElapsedMillis = null);
+    long? ElapsedMillis = null,
+    /// <summary>
+    /// De dónde salió TiempoLlegada. Null solo en capturas anteriores a la columna — ver
+    /// Result.TiempoOrigen. El backoffice lo usa para marcar los tiempos que no puso el
+    /// reloj del servidor, igual que ya marca los ceros con StartOrigen.
+    /// </summary>
+    TiempoLlegadaOrigen? TiempoOrigen = null,
+    int? TiempoOffsetConfianzaMs = null);
