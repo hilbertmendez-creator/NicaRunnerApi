@@ -86,6 +86,17 @@ public class UserManagementService(
                 throw new ForbiddenException("No se puede cambiar el rol de un usuario administrador semilla.");
         }
 
+        // backoffice-user-status-toggle: piso de administradores activos (design.md D5).
+        // Va después de los guards de identidad (self/semilla) y antes de mutar. Estado
+        // pre-mutación: el target todavía cuenta, así que n - 1 es el conteo post-operación.
+        if (user.Role == UserRole.Administrador && user.IsActive &&
+            (request.IsActive is false || (request.Role is { } newRole && newRole != UserRole.Administrador)))
+        {
+            var activeAdmins = await userRepository.CountActiveByRoleAsync(UserRole.Administrador, ct);
+            if (activeAdmins < 3)
+                throw new ForbiddenException("No se puede dejar el sistema con menos de dos administradores activos.");
+        }
+
         // Diff de valores viejos (aún en memoria, sin query extra) antes de mutar.
         var changes = new List<FieldChange>();
 

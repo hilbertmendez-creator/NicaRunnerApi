@@ -329,6 +329,81 @@ public class UserManagementServiceTests
             () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(UserRole.Lector, null)));
     }
 
+    // backoffice-user-status-toggle: floor guard (design.md D5) — dos admins activos, desactivar uno.
+    [Fact]
+    public async Task UpdateAsync_DosAdministradoresActivos_DesactivarUnoLanzaForbidden()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Role = UserRole.Administrador, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+        _users.Setup(u => u.CountActiveByRoleAsync(UserRole.Administrador, It.IsAny<CancellationToken>())).ReturnsAsync(2);
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(
+            () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(null, false)));
+
+        Assert.Equal("No se puede dejar el sistema con menos de dos administradores activos.", ex.Message);
+        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // Mismo piso, disparado por un cambio de Role en vez de IsActive.
+    [Fact]
+    public async Task UpdateAsync_DosAdministradoresActivos_CambiarRolLanzaForbidden()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Role = UserRole.Administrador, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+        _users.Setup(u => u.CountActiveByRoleAsync(UserRole.Administrador, It.IsAny<CancellationToken>())).ReturnsAsync(2);
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(
+            () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(UserRole.Lector, null)));
+
+        Assert.Equal("No se puede dejar el sistema con menos de dos administradores activos.", ex.Message);
+    }
+
+    // Triangulación: n = 3 en vez de n = 2 -> el piso no se dispara.
+    [Fact]
+    public async Task UpdateAsync_TresAdministradoresActivos_DesactivarUnoTieneExito()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Role = UserRole.Administrador, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+        _users.Setup(u => u.CountActiveByRoleAsync(UserRole.Administrador, It.IsAny<CancellationToken>())).ReturnsAsync(3);
+
+        var dto = await BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(null, false));
+
+        Assert.False(target.IsActive);
+        Assert.False(dto.IsActive);
+    }
+
+    // Orden de guards (design.md D5): autodesactivación gana PRIMERO. Sin configurar
+    // CountActiveByRoleAsync a propósito — si el orden fuera al revés, el mock sin
+    // configurar devolvería 0 y dispararía el mensaje equivocado.
+    [Fact]
+    public async Task UpdateAsync_DosAdministradoresActivosYIntentaAutodesactivarse_GanaElGuardDeAutodesactivacion()
+    {
+        var self = new User { Id = 1, Email = "a@b.com", Role = UserRole.Administrador, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(self);
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(
+            () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 1, new UpdateUserRequest(null, false)));
+
+        Assert.Equal("No puedes desactivar tu propia cuenta.", ex.Message);
+        _users.Verify(u => u.CountActiveByRoleAsync(It.IsAny<UserRole>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // Mismo principio de orden para el guard de administrador semilla.
+    [Theory]
+    [InlineData("hilbert.mendez@gmail.com")]
+    [InlineData("evr86.skip@gmail.com")]
+    public async Task UpdateAsync_DosAdministradoresActivosYTargetEsSemilla_GanaElGuardDeSemilla(string email)
+    {
+        var seed = new User { Id = 2, Email = email, Role = UserRole.Administrador, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(seed);
+
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(
+            () => BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(null, false)));
+
+        Assert.Equal("No se puede desactivar un usuario administrador semilla.", ex.Message);
+        _users.Verify(u => u.CountActiveByRoleAsync(It.IsAny<UserRole>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // login-lockout: "Admin unlocks a locked account".
     [Fact]
     public async Task UnlockAsync_CuentaBloqueada_LimpiaEstadoYAudita()

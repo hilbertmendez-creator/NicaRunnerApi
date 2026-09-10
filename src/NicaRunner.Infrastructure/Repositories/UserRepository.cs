@@ -49,6 +49,12 @@ public class UserRepository(NicaRunnerDbContext context) : IUserRepository
     public Task<List<User>> GetByRoleAsync(UserRole role, CancellationToken ct = default) =>
         context.Users.Where(u => u.Role == role && u.IsActive).OrderBy(u => u.Id).ToListAsync(ct);
 
+    // backoffice-user-status-toggle: piso de administradores activos (design.md D5) — un
+    // COUNT(*) no materializa filas en el change tracker de la unidad de trabajo que
+    // termina en SaveChangesAsync (a diferencia de GetByRoleAsync(...).Count).
+    public Task<int> CountActiveByRoleAsync(UserRole role, CancellationToken ct = default) =>
+        context.Users.CountAsync(u => u.Role == role && u.IsActive, ct);
+
     public Task<User?> GetByIdAsync(int id, CancellationToken ct = default) =>
         context.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
 

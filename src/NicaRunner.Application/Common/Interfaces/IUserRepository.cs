@@ -11,6 +11,10 @@ public interface IUserRepository
     /// todos los Administradores cuando un Capturista cierra una carrera.</summary>
     Task<List<User>> GetByRoleAsync(UserRole role, CancellationToken ct = default);
 
+    /// <summary>backoffice-user-status-toggle: "Minimum active administrators" (design.md D5)
+    /// — COUNT(*) de usuarios activos con un rol dado, sin materializar filas.</summary>
+    Task<int> CountActiveByRoleAsync(UserRole role, CancellationToken ct = default);
+
     // user-auth: "Unified Identifier Login" (design.md §3.1) — una sola query, nunca
     // secuencial, comparando ambos lados en minúsculas (Email vía LOWER() en SQL,
     // Username ya se guarda normalizado por AliasGenerator/UserManagementService).
