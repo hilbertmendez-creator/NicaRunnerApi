@@ -7,6 +7,7 @@ import { Button, DataTable, LoadingText, EmptyState, Select } from '@nicarunner/
 import type { Column } from '@nicarunner/ui'
 import { UserFormModal } from './UserFormModal'
 import { EntityAuditHistory } from '../../components/EntityAuditHistory'
+import { UserStatusBadge } from '../../components/StatusBadge'
 import { pageTitle } from '../../theme/styles'
 
 const ROLE_OPTIONS: UserRole[] = ['Administrador', 'Capturista', 'Lector']
@@ -49,8 +50,13 @@ export function UsersPage() {
   }
 
   async function handleToggleActive(target: UserDto) {
-    await updateUser(target.id, { isActive: !target.isActive })
-    reload()
+    try {
+      await updateUser(target.id, { isActive: !target.isActive })
+      toast.success(target.isActive ? 'Usuario desactivado' : 'Usuario activado')
+      reload()
+    } catch {
+      toast.error('No se pudo actualizar el estado del usuario')
+    }
   }
 
   // login-lockout: "Admin Unlock". UserDto no expone LockedUntilUtc/FailedLoginCount
@@ -96,7 +102,7 @@ export function UsersPage() {
     },
     {
       header: 'Estado',
-      render: (u) => (u.isActive ? 'Activo' : 'Inactivo'),
+      render: (u) => <UserStatusBadge isActive={u.isActive} />,
     },
     {
       header: 'Creado',
