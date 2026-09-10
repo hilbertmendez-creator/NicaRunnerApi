@@ -1,0 +1,60 @@
+schema: spec-driven
+strict_tdd: true # no explicit marker found; both stacks have test runners (xUnit, Vitest) -> default true
+
+context: |
+  NicaRunnerApi: race-timing platform. .NET 8 Clean Architecture API
+  (Domain/Application/Infrastructure/Api, EF Core + Postgres 16, SignalR, JWT)
+  under src/+tests/, React 19/TS/Vite/Tailwind 4 backoffice under frontend/
+  (npm workspaces, depends on local @nicarunner/ui). Wire contracts (DTOs,
+  enums, auth) are shared source-of-truth with sibling mobile repo NicaRunner
+  (Kotlin/Room) — validate cross-client changes against it. Domain roles:
+  Capturista/Juez, Lector (read-only), Administrador (only reopen role).
+  Race creation is backoffice-only by product decision.
+
+testing:
+  api:
+    framework: xUnit 2.9.3 + Moq 4.20.72
+    unit: true
+    integration: true # WebApplicationFactory-style tests present (e.g. AliasIntegrationTests.cs)
+    e2e: false
+    coverage: coverlet.collector present; not wired into a script (run via `dotnet test --collect:"XPlat Code Coverage"`)
+    lint: none configured (no analyzers/StyleCop found)
+    typecheck: build-time (Nullable + ImplicitUsings enabled)
+  frontend:
+    framework: Vitest 3 + @testing-library/react + jsdom
+    unit: true
+    integration: true # @testing-library/react component tests
+    e2e: false
+    coverage: not configured (no @vitest/coverage-v8 in devDependencies, no coverage script)
+    lint: ESLint 10 (flat config, typescript-eslint) — `npm run lint`
+    typecheck: TypeScript ~6.0.2 via `tsc -b` (part of `npm run build`)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Flag any change touching cross-client wire contracts (DTOs, enums, auth,
+      results/capture) for validation against the sibling NicaRunner mobile repo
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Respect existing domain roles (Capturista/Juez, Lector, Administrador) —
+      do not introduce new role semantics without an explicit decision
+  design:
+    - Preserve Clean/Hexagonal layering (Domain -> Application -> Infrastructure -> Api)
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Respect the 400-line review budget; recommend chained PRs when a slice risks exceeding it
+  apply:
+    guidelines:
+      - Follow existing code patterns (feature-sliced Application layer, repositories in Infrastructure)
+      - Never save working files or tests to repo root
+    tdd: true
+    test_command: "dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release && (cd frontend && npm test)"
+  verify:
+    test_command: "dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release && (cd frontend && npm test)"
+    build_command: "dotnet build NicaRunner.sln --configuration Release && (cd frontend && npm run build)"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
