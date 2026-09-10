@@ -463,4 +463,60 @@ already survive logout and re-login, so recovery follows once the account is rea
 judge reopens that race's screen. Note recovery is not automatic on login: `drainPending` runs
 only when the Capture or Salida screen for that race is opened.
 
-**Status: PR3 is blocked pending a user decision.**
+**Status: RESOLVED. The blocker was fixed and PR3 is cleared to proceed — see the resolution
+note at the end of this file.**
+
+---
+
+# PR3 batch attempt — Phase 5 (tasks 5.1–5.13) — NOT STARTED
+
+## Scope
+
+A follow-up apply session was invoked to implement Phase 5 (tasks 5.1–5.13, session
+revocation) on branch `claude/backoffice-user-toggle-jy1gqu-pr3-session-revocation`, stacked
+on PR2. Before writing any test or code, this session re-read the required inputs (tasks.md,
+design.md, spec.md, apply-progress.md) per the `sdd-apply` skill and found the Phase 0.1
+finding above unresolved: `apply-progress.md` explicitly records "PR3 is blocked pending a
+user decision" due to a documented data-loss defect in `/home/user/NicaRunner`
+(`CaptureRepository.kt`/`RaceCategoryRepository.kt` dequeue pending captures on any 4xx,
+including 401 — Phase 5 turns "rare coincidence" into "normal path within seconds").
+
+The task instructions for this batch made no mention of this finding and gave no evidence the
+user had explicitly decided to accept the risk or that a mitigating mobile-side fix was
+already scheduled. Per the project's STOP discipline (the same standard applied to the
+401-vs-403 load-bearing check in task 5.1), this session treated it as a blocking, user-only
+decision and **stopped before implementing any of tasks 5.1–5.13**. No source files were
+created or modified in this attempt; only this progress note was added.
+
+**Status: still blocked pending a user decision. Phase 5 was not started.**
+
+---
+
+## Phase 0.1 blocker — RESOLVED
+
+The stop above was correct at the time it was written, and the follow-up apply session was
+right to refuse to start Phase 5 while this file still read "blocked". The blocker has since
+been cleared; this note records how, so no later reader repeats the stop.
+
+The user chose "fix mobile first" when the finding was put to them. The minimum fix identified
+in 0.1 was implemented in `/home/user/NicaRunner` on branch
+`claude/backoffice-user-toggle-jy1gqu` and is open as
+[NicaRunner#61](https://github.com/hilbertmendez-creator/NicaRunner/pull/61):
+
+- `CaptureRepository.addVia` and `RaceCategoryRepository.startCategoriesVia` now let 401 and 403
+  fall through **without** dequeuing, exactly as a 5xx already did. Every other 4xx keeps the
+  existing poison-pill behaviour, and the tests that pin that behaviour were left untouched.
+- Four new tests cover 401 and 403 across both queues. They were a genuine RED, failing on
+  `assertFalse(dequeued)` before the fix.
+- `./gradlew :app:testDebugUnitTest` → 133 tests, 0 failures (129 baseline + 4).
+
+An arrival that meets a 401 now stays queued and uploads once the account is reactivated and the
+judge reopens that race's capture screen, instead of being deleted.
+
+**Remaining constraint, and it is a deployment constraint rather than a code one:** PR3 must not
+reach production before NicaRunner#61 is merged and shipped. Landing session revocation against
+an app that still discards a 401-rejected capture would reintroduce the exact data loss 0.1
+found. The `AccountStatus:EnforcePerRequest` flag is the safety valve if the two ever land out
+of order — ship PR3 with it off and turn it on once the app is updated.
+
+Phase 5 is cleared to start.
