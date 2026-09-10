@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Common.Interfaces;
+using NicaRunner.Application.Races.Dtos;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Data;
 
@@ -43,6 +44,16 @@ public class RaceRepository(NicaRunnerDbContext context) : IRaceRepository
 
     public Task<bool> IsJudgeAsync(int raceId, int userId, CancellationToken ct = default) =>
         context.RaceJudges.AnyAsync(j => j.RaceId == raceId && j.UserId == userId, ct);
+
+    // backoffice-user-status-toggle: unión admin OR juez (design.md D6) — ver el
+    // comentario en IRaceRepository.GetActiveForUserAsync sobre por qué el lado AdminId
+    // es obligatorio. Proyecta directamente al DTO angosto (mismo precedente que
+    // IResultRepository.GetPlacingCountsAsync): nunca materializa la entidad Race completa.
+    public Task<List<ActiveRaceSummaryDto>> GetActiveForUserAsync(int userId, CancellationToken ct = default) =>
+        context.Races
+            .Where(r => r.Estado == RaceStatus.EnCurso && (r.AdminId == userId || r.Judges.Any(j => j.UserId == userId)))
+            .Select(r => new ActiveRaceSummaryDto(r.Id, r.Nombre, r.FechaCarrera))
+            .ToListAsync(ct);
 
     public void Remove(Race race) => context.Races.Remove(race);
 
