@@ -8,12 +8,12 @@
 | 400-line budget risk | Low per slice / High if delivered as one PR |
 | Chained PRs recommended | Yes |
 | Suggested split | PR1 (frontend) -> PR2 (API+frontend) -> PR3 (API) |
-| Delivery strategy | ask-on-risk |
-| Chain strategy | pending |
+| Delivery strategy | ask-on-risk (resolved: three chained PRs, stacked-to-main) |
+| Chain strategy | stacked-to-main (resolved) |
 
-Decision needed before apply: Yes
+Decision needed before apply: No — resolved at session preflight (stacked-to-main, PR1 -> main)
 Chained PRs recommended: Yes
-Chain strategy: pending
+Chain strategy: stacked-to-main
 400-line budget risk: Low (per slice, given the 3-way split below)
 
 ### Suggested Work Units
@@ -45,29 +45,29 @@ conflict because the hunks are disjoint.
 
 ## Phase 1: PR1 — Status badge, frontend tests, try/catch fix (frontend only, ~190 lines)
 
-- [ ] 1.1 RED: extend `frontend/src/__tests__/users-page.status-toggle.test.tsx` (new file) with
+- [x] 1.1 RED: extend `frontend/src/__tests__/users-page.status-toggle.test.tsx` (new file) with
       failing assertions for Estado badge label per `isActive` (Activo/Inactivo), using
       `renderWithProviders` per `users-page.pagination.under-load.test.tsx`.
-- [ ] 1.2 RED: add failing assertion that clicking Desactivar/Activar calls
+- [x] 1.2 RED: add failing assertion that clicking Desactivar/Activar calls
       `updateUser(id, { isActive: !previousValue })`.
-- [ ] 1.3 RED: add failing assertion that the signed-in admin's own row renders the toggle button
+- [x] 1.3 RED: add failing assertion that the signed-in admin's own row renders the toggle button
       `disabled`.
-- [ ] 1.4 RED: add failing assertion that a rejected `updateUser` call from `handleToggleActive`
+- [x] 1.4 RED: add failing assertion that a rejected `updateUser` call from `handleToggleActive`
       shows an error toast and does not optimistically update the row.
-- [ ] 1.5 GREEN: generalize `frontend/src/components/StatusBadge.tsx` to a tone-based primitive
+- [x] 1.5 GREEN: generalize `frontend/src/components/StatusBadge.tsx` to a tone-based primitive
       (`tone: 'ok' | 'neutral' | 'muted'`, optional `live` dot) while preserving the exact existing
       `export function StatusBadge({ status }: { status: RaceStatus })` signature (line 28) as a
       thin wrapper so `RacesPage.tsx:77` is untouched.
-- [ ] 1.6 GREEN: add sibling `UserStatusBadge({ isActive }: { isActive: boolean })` in the same
+- [x] 1.6 GREEN: add sibling `UserStatusBadge({ isActive }: { isActive: boolean })` in the same
       file, rendering Activo/Inactivo via the tone primitive.
-- [ ] 1.7 GREEN: wire `UserStatusBadge` into the Estado column in
+- [x] 1.7 GREEN: wire `UserStatusBadge` into the Estado column in
       `frontend/src/features/users/UsersPage.tsx:98-99`, replacing the plain-text render.
-- [ ] 1.8 GREEN: add `try/catch` to `handleToggleActive` (`UsersPage.tsx:51-54`), mirroring the
+- [x] 1.8 GREEN: add `try/catch` to `handleToggleActive` (`UsersPage.tsx:51-54`), mirroring the
       pattern already used by `handleRoleChange` (lines 41-49) — catch, raise an error toast, skip
       the optimistic update on failure.
-- [ ] 1.9 REFACTOR: confirm `RacesPage.tsx:77` renders unchanged (manual/visual check or existing
+- [x] 1.9 REFACTOR: confirm `RacesPage.tsx:77` renders unchanged (manual/visual check or existing
       `RacesPage` test if one asserts badge output).
-- [ ] 1.10 Verify PR1 green: `cd frontend && npm test`. Verify build: `cd frontend && npm run build`.
+- [x] 1.10 Verify PR1 green: `cd frontend && npm test`. Verify build: `cd frontend && npm run build`.
 
 ## Phase 2: PR2 — Two-active-admin guard (API, targets PR1 branch)
 
