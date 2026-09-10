@@ -151,7 +151,7 @@ tokens and would misleadingly suggest an alert state for a routine "Inactivo" ba
   per status. `RacesPage.tsx` itself was not edited (confirmed via `git status` — only
   `StatusBadge.tsx`, `UsersPage.tsx`, and the new test file changed).
 
-## Remaining Tasks
+## Remaining Tasks (as of PR1 batch)
 
 Phase 0 (0.1–0.3) and Phases 2–6 (tasks 2.1 onward) are NOT started — out of scope for
 this batch by explicit instruction.
@@ -167,7 +167,218 @@ this batch by explicit instruction.
 - Estimated review budget impact: 171 authored changed lines, well under the 400-line
   budget and close to the ~190-line forecast
 
-## Status
+## Status (as of PR1 batch)
 
 10/10 Phase 1 tasks complete (1.1–1.10). Ready for verify (Phase 1 scope only) or for the
 next apply batch (Phase 0 / Phase 2) — not started here.
+
+---
+
+# PR2 batch — Phases 2, 3, 4 (tasks 2.1–2.9, 3.1–3.6, 4.1–4.9)
+
+## Scope executed
+
+Phases 2, 3, and 4 only, per explicit instruction. Phase 0, 1 (already done in the PR1
+batch above), 5 and 6 were NOT touched in this batch.
+
+**Mode**: Strict TDD (RED → GREEN → REFACTOR), `openspec/config.yaml` `apply.tdd: true`.
+**Branch**: `claude/backoffice-user-toggle-jy1gqu-pr2-guards` (pre-existing, stacked on the
+PR1 branch, not created here). No commit was made — orchestrator handles git.
+**Artifact store**: `openspec`. Engram is NOT available in this environment (no `engram`
+binary, no `mem_*` tools) — same deviation as PR1, explicitly superseded by the task
+prompt. Progress is persisted only to this file and `tasks.md`.
+
+## Files changed (PR2)
+
+| File | Action | Lines (authored) |
+|------|--------|-------------------|
+| `src/NicaRunner.Application/Common/Interfaces/IUserRepository.cs` | Modified | +4 |
+| `src/NicaRunner.Infrastructure/Repositories/UserRepository.cs` | Modified | +6 |
+| `src/NicaRunner.Application/Users/UserManagementService.cs` | Modified | +11 |
+| `tests/NicaRunner.Tests/UserManagementServiceTests.cs` | Modified | +75 |
+| `tests/NicaRunner.Tests/UserRepositoryTests.cs` | Created | 31 |
+| `src/NicaRunner.Application/Races/Dtos/ActiveRaceSummaryDto.cs` | Created | 6 |
+| `src/NicaRunner.Application/Common/Interfaces/IRaceRepository.cs` | Modified | +11 |
+| `src/NicaRunner.Infrastructure/Repositories/RaceRepository.cs` | Modified | +11 |
+| `src/NicaRunner.Application/Races/IRaceService.cs` | Modified | +7 |
+| `src/NicaRunner.Application/Races/RaceService.cs` | Modified | +3 |
+| `src/NicaRunner.Api/Controllers/UsersController.cs` | Modified | +11/-1 |
+| `tests/NicaRunner.Tests/RaceRepositoryActiveForUserTests.cs` | Created | 58 |
+| `frontend/src/api/endpoints.ts` | Modified | +9 |
+| `frontend/src/api/types.ts` | Modified | +8 |
+| `frontend/src/features/users/UsersPage.tsx` | Modified | +64/-3 |
+| `frontend/src/__tests__/users-page.status-toggle.test.tsx` | Modified | +75 |
+
+`git diff --stat` (13 tracked files): `291 insertions(+), 4 deletions(-)`. Plus 3 new
+files (`UserRepositoryTests.cs` 31, `ActiveRaceSummaryDto.cs` 6,
+`RaceRepositoryActiveForUserTests.cs` 58 = 95 lines, all additions).
+**Total authored changed lines: 390** (295 tracked + 95 new files) — within the 400-line
+review budget cap (forecast was ~270; the union-query and floor-guard SQLite-backed tests
+required to make these scenarios genuinely load-bearing pushed it higher; trimmed comments
+and deduplicated frontend test literals to stay under the cap).
+
+## What was done
+
+1. **Two-active-admin guard (Phase 2, design D5)**: added
+   `IUserRepository.CountActiveByRoleAsync(UserRole, ct)`, implemented in `UserRepository`
+   as `context.Users.CountAsync(u => u.Role == role && u.IsActive, ct)`. Inserted the guard
+   in `UserManagementService.UpdateAsync` between the seed-admin guard (ends line 87) and
+   the diff block (line 89) — exactly where design D8 requires, leaving the constructor
+   untouched for PR3's later cache-invalidation hunk. Trigger: target is currently
+   `Administrador` and `IsActive`, and the request would deactivate them or move them away
+   from `Administrador`; throws `ForbiddenException` when the post-mutation count would be
+   `< 2` (i.e. pre-mutation `n < 3`). Exact message:
+   "No se puede dejar el sistema con menos de dos administradores activos."
+2. **In-flight Capturista pre-check (Phase 3, design D6)**: created
+   `ActiveRaceSummaryDto(Id, Nombre, FechaCarrera)` (no `JoinCode` — narrower than
+   `RaceDto` by design). Added `IRaceRepository.GetActiveForUserAsync(userId, ct)`,
+   implemented as the union query
+   `r.Estado == EnCurso && (r.AdminId == userId || r.Judges.Any(j => j.UserId == userId))`,
+   projected directly to the DTO (same precedent as
+   `IResultRepository.GetPlacingCountsAsync` returning an Application-layer projection
+   type from the repository). Delegated from `RaceService.GetActiveForUserAsync`. Added
+   `GET /api/users/{id}/active-races` to `UsersController`, injecting `IRaceService` as a
+   third constructor parameter — `UserManagementService`'s constructor was not touched,
+   keeping this slice separable from PR3 per design D8.
+3. **Frontend pre-check + confirm dialog (Phase 4)**: added `getUserActiveRaces(id)` to
+   `endpoints.ts` and `ActiveRaceSummary` to `types.ts`. `handleToggleActive` in
+   `UsersPage.tsx` now calls the pre-check only when deactivating (`target.isActive`); if
+   it returns races, it opens an inline confirm `Modal` (from `@nicarunner/ui`, same
+   component `RestartRaceDialog.tsx` uses) naming every affected race, with "Cancelar" and
+   "Desactivar de todos modos" actions; if it returns none, the `PATCH` fires directly as
+   before. The actual `PATCH` call was extracted into `applyToggle` so both the direct path
+   and the dialog-confirm path share it (`handleConfirmDeactivation` calls it after
+   closing the dialog). Per design's File Changes table, the dialog was kept inline in
+   `UsersPage.tsx` rather than extracted to a new component file — no new frontend
+   component file is listed there for PR2.
+
+## TDD Cycle Evidence
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| 2.1 | `UserManagementServiceTests.cs` | Unit (Moq) | ✅ 34/34 pre-batch | ✅ Written, confirmed failing (compile RED: `CountActiveByRoleAsync` missing, then behavior RED: no exception thrown) | ✅ Passed | ✅ (2.2/2.3 vary Role/count) | ➖ None needed |
+| 2.2 | `UserManagementServiceTests.cs` | Unit (Moq) | (same batch) | ✅ Written, confirmed failing | ✅ Passed | — | ➖ None needed |
+| 2.3 | `UserManagementServiceTests.cs` | Unit (Moq) | (same batch) | ➖ Passed trivially pre-guard (see honest note below) | ✅ Passed | ✅ n=3 vs n=2 | ➖ None needed |
+| 2.4 | `UserRepositoryTests.cs` (new) | Repository (Sqlite real) | N/A (new file) | ✅ Written, confirmed failing (compile RED: method missing) | ✅ Passed | ✅ 2 active + 1 inactive admin + 1 active non-admin in one seed | ➖ None needed |
+| 2.5 | `UserManagementServiceTests.cs` (2 tests) | Unit (Moq) | (same batch) | ➖ Passed trivially pre-guard (ordering safety-net, see note) | ✅ Passed | ✅ self-guard + seed-guard cases | ➖ None needed |
+| 2.6–2.7 | — | — | — | (interface + impl, no test of their own — covered by 2.1–2.4) | ✅ compiles + 2.1–2.4 green | — | — |
+| 2.8 | `UserManagementServiceTests.cs` | Unit (Moq) | ✅ full suite 434/434 after | ✅ (drives 2.1/2.2) | ✅ | ✅ | ➖ None needed |
+| 2.9 | full suite | — | — | — | ✅ 434/434 | — | — |
+| 3.1 | `RaceRepositoryActiveForUserTests.cs` (new) | Repository (Sqlite real) | N/A (new file) | ✅ Written, confirmed failing (compile RED: `GetActiveForUserAsync`/`ActiveRaceSummaryDto` missing) | ✅ Passed | ✅ admin-owned race (no RaceJudge row) vs judge-owned race, both EnCurso, in the same seed; Planeada/Terminada siblings prove exclusion | ➖ None needed |
+| 3.2–3.5 | — | — | — | (DTO + interface + impl + controller, no test of their own — covered by 3.1) | ✅ compiles + 3.1 green | — | — |
+| 3.6 | full suite | — | — | — | ✅ 434/434 | — | — |
+| 4.1 | `users-page.status-toggle.test.tsx` | Integration (RTL) | ✅ 4/4 pre-batch | ✅ Written, confirmed failing (no dialog existed) | ✅ Passed | ✅ (4.3 covers 2-race case) | ✅ Clean |
+| 4.2 | `users-page.status-toggle.test.tsx` | Integration (RTL) | (same batch) | ➖ Passed trivially pre-wiring (see honest note below) | ✅ Passed (now genuinely exercises the wired pre-check) | — | ➖ None needed |
+| 4.3 | `users-page.status-toggle.test.tsx` | Integration (RTL) | (same batch) | ✅ Written, confirmed failing | ✅ Passed | ✅ 1-race vs 2-race dialogs | ➖ None needed |
+| 4.4 | `users-page.status-toggle.test.tsx` | Integration (RTL) | (same batch) | ✅ Written, confirmed failing | ✅ Passed | ✅ (4.5 covers cancel path) | ➖ None needed |
+| 4.5 | `users-page.status-toggle.test.tsx` | Integration (RTL) | (same batch) | ✅ Written, confirmed failing | ✅ Passed | ✅ confirm vs cancel | ✅ Extracted `clickDeactivate` helper, shared race fixtures |
+| 4.6–4.8 | — | — | — | (endpoint + type + wiring, no test of their own — covered by 4.1–4.5) | ✅ compiles + 4.1–4.5 green | — | — |
+| 4.9 | full suites | — | — | — | ✅ backend 434/434, frontend 61/61, both builds clean | — | — |
+
+**Honest note on task 2.3 and both 2.5 tests**: these three assertions describe behavior
+that already held true *before* the new guard existed (three admins was always allowed;
+the self- and seed-admin guards already won and already short-circuited before reaching
+any admin-count logic, since that logic didn't exist yet). Running them before adding the
+guard confirmed they passed trivially — not a genuine RED. They function as
+approval/ordering safety-net tests: 2.3 proves the new guard doesn't misfire above the
+floor, and both 2.5 tests prove (via `_users.Verify(..., Times.Never)` on
+`CountActiveByRoleAsync`) that the pre-existing guards still short-circuit before the new
+one runs, which is exactly what task 2.5 asks to confirm. This mirrors the same honest
+disclosure pattern used in the PR1 batch above for tasks 1.1–1.3.
+
+**Honest note on task 4.2**: "pre-check returns no active races → PATCH fires directly
+with no dialog" was already the *only* possible behavior before the pre-check existed
+(there was no dialog to suppress), so the test passed immediately when first written —
+not a genuine RED at that point. It was kept because after wiring `getUserActiveRaces`
+into `handleToggleActive` (tasks 4.6–4.8), this same test became the one proving the
+empty-array path still resolves to a direct `PATCH` without regressing into an
+always-shown dialog; the full suite run after wiring confirms it still passes for the
+right (now real) reason.
+
+**RED baseline runs**:
+- 2.1/2.2/2.4 (compile RED): `dotnet build tests/NicaRunner.Tests/NicaRunner.Tests.csproj -c Release`
+  → `error CS1061: ... does not contain a definition for 'CountActiveByRoleAsync'` (6 errors, one
+  per new call site) before `IUserRepository`/`UserRepository` were touched.
+- 2.1/2.2 (behavior RED, after adding the interface/impl but before the guard):
+  `dotnet test ... --filter "FullyQualifiedName~UserManagementServiceTests|FullyQualifiedName~UserRepositoryTests"`
+  → `Failed: 2, Passed: 32` — both floor tests failed with `Assert.Throws() Failure: No
+  exception was thrown`, confirming the guard did not exist yet, for the right reason.
+- 3.1 (compile RED): same build command →
+  `error CS1061: 'RaceRepository' does not contain a definition for 'GetActiveForUserAsync'`
+  (2 errors) before `IRaceRepository`/`RaceRepository`/`ActiveRaceSummaryDto` existed.
+- 4.1/4.3/4.4/4.5 (behavior RED): `npx vitest run src/__tests__/users-page.status-toggle.test.tsx`
+  → `Test Files 1 failed (1)`, `Tests 4 failed | 5 passed (9)` — the 4 new dialog-behavior
+  tests failed (no dialog existed to find/click), while 4.2 and the 4 pre-existing PR1
+  tests passed (see honest note above for 4.2).
+
+**GREEN runs**: focused `UserManagementServiceTests`+`UserRepositoryTests` filter → `34/34`
+after the guard; `RaceRepositoryActiveForUserTests` filter → `1/1` after the repository/
+service/controller wiring; `npx vitest run src/__tests__/users-page.status-toggle.test.tsx`
+→ `9/9` after wiring the dialog.
+
+### Test Summary
+- **Total tests written this batch**: 12 (6 backend unit/repository in Phase 2, 1 backend
+  repository in Phase 3, 5 frontend integration in Phase 4)
+- **Total tests passing**: backend 434/434 full suite (426 baseline + 8 new); frontend
+  61/61 full suite (56 baseline + 5 new — task 4.2's test already existed as a passing
+  case before wiring, see honest note, so it does not add to the file's test count but its
+  assertion coverage changed meaning)
+- **Layers used**: Unit/Moq (5: 2.1, 2.2, 2.3, 2.5×2), Repository/Sqlite-real (2: 2.4,
+  3.1), Integration/RTL (5: 4.1, 4.3, 4.4, 4.5, plus 4.2 re-verified)
+- **Approval/safety-net tests**: 3 (2.3, both 2.5 cases) — proved guard ordering and
+  above-floor behavior without ever failing first, per the honest note above
+- **Pure functions created**: 0 net-new pure functions; `CountActiveByRoleAsync` and
+  `GetActiveForUserAsync` are thin, intent-stating repository query methods (no business
+  logic to extract), matching the existing `GetPlacingCountsAsync`/`GetCloseBlockerCountsAsync`
+  precedent in `ResultRepository`
+
+## Work Unit Evidence (Hard Gate, all modes)
+
+| Evidence | Value |
+|---|---|
+| Focused test command and exact result | Backend: `dotnet test ... --filter "FullyQualifiedName~UserManagementServiceTests\|FullyQualifiedName~UserRepositoryTests"` → `34/34`; `--filter "FullyQualifiedName~RaceRepositoryActiveForUserTests"` → `1/1`. Frontend: `npx vitest run src/__tests__/users-page.status-toggle.test.tsx` → `9/9` |
+| Runtime harness command/scenario and exact result | `dotnet build NicaRunner.sln --configuration Release --no-incremental` → `Build succeeded`, `3 Warning(s)` (identical pre-existing warnings in `RaceDashboardHub.cs`/`UtcDateTimeConverter.cs`, unrelated to this change), `0 Error(s)`. `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj -c Release` → `Passed: 434, Failed: 0`. `cd frontend && npm test` → `Test Files 17 passed (17)`, `Tests 61 passed (61)`. `cd frontend && npm run build` → `tsup` (packages/ui) clean, `tsc`/`vite build` succeeded (`✓ built in 2.40s`) |
+| Rollback boundary | Revert the 13 modified files plus the 3 new files listed above. `UserManagementService.UpdateAsync` returns to its pre-guard form (guard is a pure in-memory + one COUNT(*) check with no persisted state); `GET /api/users/{id}/active-races` is a new, read-only, additive endpoint with no consumers outside this PR's own dialog; the frontend confirm dialog is client-side only. Matches the design's stated PR2 rollback ("Revert. Guard is in-memory validation with no persisted state; the endpoint is read-only and additive") |
+
+## Deviations from Design
+
+None — implementation matches design D5, D6, and D8 exactly: guard placement (between
+line 87 and line 89, `UserManagementService` constructor untouched), exact exception
+message, `n < 3` threshold, the mandatory admin-OR-judge union query, `ActiveRaceSummaryDto`
+narrower than `RaceDto` (no `JoinCode`), `IRaceService` injected into `UsersController`
+rather than `UserManagementService`, and the confirm dialog kept inline in `UsersPage.tsx`
+(no new frontend component file, matching design's File Changes table for PR2).
+
+One scope note: the assigned tasks (2.1–2.9, 3.1–3.6, 4.1–4.9) do not include a
+`UsersController`-level test for the new `GET /active-races` route — no
+`UsersControllerTests.cs` file exists in the repo and none was requested by the task
+list, so none was added. The endpoint is exercised indirectly by the frontend integration
+tests via the mocked `getUserActiveRaces` client function, and directly by the repository/
+service test proving the underlying query is correct.
+
+## Issues Found
+
+- The forecast in this file's Review Workload Forecast table estimated PR2 at ~270 lines;
+  the actual authored total is 390. The gap comes from the two SQLite-real repository
+  tests (2.4's floor-count exclusion and 3.1's load-bearing union query) needed to make
+  those specific spec scenarios genuine rather than mock-asserted, plus the ordering
+  safety-net tests in 2.5. Comments were trimmed and frontend test fixtures deduplicated
+  to bring the total back under the 400-line cap (initial draft was 462 lines before
+  trimming) — still worth flagging for future PR-size estimates involving Sqlite-backed
+  query-shape tests.
+- Engram is not available in this environment (no `engram` binary, no `mem_*` tools) —
+  same deviation as the PR1 batch, explicitly superseded by the task prompt. This is noted
+  again here rather than assumed carried over silently.
+
+## Remaining Tasks
+
+Phase 0 (0.1–0.3) and Phase 5 (session revocation, PR3) and Phase 6 (final cross-PR
+checks) are NOT started — out of scope for this batch by explicit instruction (PR3 is a
+separate slice).
+
+## Status
+
+Phases 1 (10/10), 2 (9/9), 3 (6/6), and 4 (9/9) tasks complete — 34/34 tasks across those
+four phases. Phase 0 and Phases 5–6 remain (13 tasks: 0.1–0.3, 5.1–5.13, 6.1–6.3). Ready
+for `sdd-verify` on the PR2 scope (Phases 2–4), or for the next apply batch (Phase 0 /
+Phase 5) — not started here.

@@ -71,71 +71,71 @@ conflict because the hunks are disjoint.
 
 ## Phase 2: PR2 — Two-active-admin guard (API, targets PR1 branch)
 
-- [ ] 2.1 RED: add failing test in `tests/NicaRunner.Tests/UserManagementServiceTests.cs` — with
+- [x] 2.1 RED: add failing test in `tests/NicaRunner.Tests/UserManagementServiceTests.cs` — with
       exactly two active `Administrador` users, deactivating one throws `ForbiddenException` with
       detail "No se puede dejar el sistema con menos de dos administradores activos." (spec
       scenario "Deactivation blocked at the floor").
-- [ ] 2.2 RED: add failing test for the same floor triggered by changing `Role` away from
+- [x] 2.2 RED: add failing test for the same floor triggered by changing `Role` away from
       `Administrador` (spec scenario "Role change blocked at the floor").
-- [ ] 2.3 RED: add failing test that with three or more active admins, deactivation/re-role
+- [x] 2.3 RED: add failing test that with three or more active admins, deactivation/re-role
       succeeds (spec scenario "Above the floor, allowed").
-- [ ] 2.4 RED: add failing test that inactive `Administrador` rows are excluded from the count
+- [x] 2.4 RED: add failing test that inactive `Administrador` rows are excluded from the count
       (spec scenario "Only active admins count").
-- [ ] 2.5 RED: add failing test confirming self-deactivation and protected-seed-admin guards still
+- [x] 2.5 RED: add failing test confirming self-deactivation and protected-seed-admin guards still
       win and are evaluated before the new guard (existing guards unchanged, new guard ordered
       after them).
-- [ ] 2.6 GREEN: add `Task<int> CountActiveByRoleAsync(UserRole role, CancellationToken ct)` to
+- [x] 2.6 GREEN: add `Task<int> CountActiveByRoleAsync(UserRole role, CancellationToken ct)` to
       `src/NicaRunner.Application/Common/Interfaces/IUserRepository.cs`.
-- [ ] 2.7 GREEN: implement `CountActiveByRoleAsync` in
+- [x] 2.7 GREEN: implement `CountActiveByRoleAsync` in
       `src/NicaRunner.Infrastructure/Repositories/UserRepository.cs` as
       `context.Users.CountAsync(u => u.Role == role && u.IsActive, ct)`.
-- [ ] 2.8 GREEN: insert the guard block in
+- [x] 2.8 GREEN: insert the guard block in
       `src/NicaRunner.Application/Users/UserManagementService.cs`, between the seed-admin guard
       (line 87) and the diff block (line 89). Trigger: target is currently `Administrador` and
       currently `IsActive`, and (`request.IsActive is false` or `request.Role` changes away from
       `Administrador`). Throw when `n < 3` (post-mutation floor `n - 1 >= 2`).
-- [ ] 2.9 Verify: `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release`.
+- [x] 2.9 Verify: `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release`.
 
 ## Phase 3: PR2 — In-flight Capturista pre-check endpoint (API)
 
-- [ ] 3.1 RED: add a repository/service-level test asserting the active-races query returns races
+- [x] 3.1 RED: add a repository/service-level test asserting the active-races query returns races
       where the target user is `RaceJudge` **and** races where the target user is `Race.AdminId`
       (union), excluding `Planeada`/`Terminada` races. This is load-bearing: `RaceService.JoinByCodeAsync`
       (`src/NicaRunner.Application/Races/RaceService.cs:152-153`) returns early when
       `race.AdminId == userId`, so a race's own admin never gets a `RaceJudge` row — a judges-only
       query would silently miss a running race operated by its admin.
-- [ ] 3.2 GREEN: create `src/NicaRunner.Application/Races/Dtos/ActiveRaceSummaryDto.cs` with
+- [x] 3.2 GREEN: create `src/NicaRunner.Application/Races/Dtos/ActiveRaceSummaryDto.cs` with
       `(int Id, string Nombre, DateTime FechaCarrera)`.
-- [ ] 3.3 GREEN: add `Task<List<ActiveRaceSummaryDto>> GetActiveForUserAsync(int userId, CancellationToken ct = default)`
+- [x] 3.3 GREEN: add `Task<List<ActiveRaceSummaryDto>> GetActiveForUserAsync(int userId, CancellationToken ct = default)`
       to `IRaceRepository`/`RaceRepository.cs`, implementing the union query:
       `context.Races.Where(r => r.Estado == RaceStatus.EnCurso && (r.AdminId == userId || r.Judges.Any(j => j.UserId == userId)))`.
-- [ ] 3.4 GREEN: add `GetActiveForUserAsync` to `IRaceService`/`RaceService.cs`, mapping to
+- [x] 3.4 GREEN: add `GetActiveForUserAsync` to `IRaceService`/`RaceService.cs`, mapping to
       `ActiveRaceSummaryDto`.
-- [ ] 3.5 GREEN: add `GET /api/users/{id}/active-races` to
+- [x] 3.5 GREEN: add `GET /api/users/{id}/active-races` to
       `src/NicaRunner.Api/Controllers/UsersController.cs`, injecting `IRaceService` as a third
       constructor dependency (does not touch `UserManagementService`'s constructor — keeps this
       slice separable from PR3 per design D8).
-- [ ] 3.6 Verify: `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release`.
+- [x] 3.6 Verify: `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release`.
 
 ## Phase 4: PR2 — Frontend pre-check + confirm dialog (frontend, targets PR1 branch)
 
-- [ ] 4.1 RED: add failing frontend test — pre-check returns one active race, admin clicks
+- [x] 4.1 RED: add failing frontend test — pre-check returns one active race, admin clicks
       Desactivar, a confirmation `Modal` appears naming that race.
-- [ ] 4.2 RED: add failing frontend test — pre-check returns no active races, `PATCH` fires
+- [x] 4.2 RED: add failing frontend test — pre-check returns no active races, `PATCH` fires
       directly with no dialog.
-- [ ] 4.3 RED: add failing frontend test — pre-check returns multiple active races, the dialog
+- [x] 4.3 RED: add failing frontend test — pre-check returns multiple active races, the dialog
       names every one.
-- [ ] 4.4 RED: add failing frontend test — admin confirms the dialog, `PATCH` proceeds and
+- [x] 4.4 RED: add failing frontend test — admin confirms the dialog, `PATCH` proceeds and
       deactivation succeeds.
-- [ ] 4.5 RED: add failing frontend test — admin cancels the dialog, no `PATCH` request is sent
+- [x] 4.5 RED: add failing frontend test — admin cancels the dialog, no `PATCH` request is sent
       and the user remains active.
-- [ ] 4.6 GREEN: add `getUserActiveRaces(id)` to `frontend/src/api/endpoints.ts`, after
+- [x] 4.6 GREEN: add `getUserActiveRaces(id)` to `frontend/src/api/endpoints.ts`, after
       `getUserAudit` (lines 351-354).
-- [ ] 4.7 GREEN: add `ActiveRaceSummary` type to `frontend/src/api/types.ts`.
-- [ ] 4.8 GREEN: wire the pre-check call and confirm `Modal` into `handleToggleActive`'s
+- [x] 4.7 GREEN: add `ActiveRaceSummary` type to `frontend/src/api/types.ts`.
+- [x] 4.8 GREEN: wire the pre-check call and confirm `Modal` into `handleToggleActive`'s
       deactivation path in `UsersPage.tsx`, following the `RestartRaceDialog.tsx` naming-affected-
       items precedent.
-- [ ] 4.9 Verify PR2 green (combined with Phase 2/3): `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release`
+- [x] 4.9 Verify PR2 green (combined with Phase 2/3): `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release`
       and `cd frontend && npm test`. Verify build: `dotnet build NicaRunner.sln --configuration Release`
       and `cd frontend && npm run build`.
 

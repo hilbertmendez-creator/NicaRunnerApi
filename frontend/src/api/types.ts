@@ -91,6 +91,14 @@ export interface RaceDto {
   updatedAt: string
 }
 
+// backoffice-user-status-toggle: DTO angosto del pre-check de desactivación
+// (GET /users/{id}/active-races, design.md D6) — no lleva joinCode.
+export interface ActiveRaceSummary {
+  id: number
+  nombre: string
+  fechaCarrera: string
+}
+
 export interface CategoryProgressDto {
   categoryId: number
   nombreCategoria: string

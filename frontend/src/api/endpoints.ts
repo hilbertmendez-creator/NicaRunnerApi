@@ -1,5 +1,6 @@
 import { apiClient } from './client'
 import type {
+  ActiveRaceSummary,
   AdminNotificationsPageDto,
   AssignCategoryRequest,
   AuditLogDto,
@@ -350,6 +351,14 @@ export async function updateUser(id: number, request: UpdateUserRequest): Promis
 
 export async function getUserAudit(id: number): Promise<AuditLogDto[]> {
   const { data } = await apiClient.get<AuditLogDto[]>(`/users/${id}/audit`)
+  return data
+}
+
+// backoffice-user-status-toggle: "In-flight Capturista deactivation warning" (design.md
+// D6) — pre-check de solo lectura antes de desactivar. Advierte, no bloquea (TOCTOU
+// aceptado a propósito).
+export async function getUserActiveRaces(id: number): Promise<ActiveRaceSummary[]> {
+  const { data } = await apiClient.get<ActiveRaceSummary[]>(`/users/${id}/active-races`)
   return data
 }
 
