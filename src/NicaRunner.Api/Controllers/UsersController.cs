@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Auditing.Dtos;
 using NicaRunner.Application.Common.Dtos;
+using NicaRunner.Application.Races;
+using NicaRunner.Application.Races.Dtos;
 using NicaRunner.Application.Users;
 using NicaRunner.Application.Users.Dtos;
 using NicaRunner.Domain.Constants;
@@ -19,7 +21,8 @@ namespace NicaRunner.Api.Controllers;
 [Authorize(Roles = nameof(UserRole.Administrador))]
 public class UsersController(
     IUserManagementService userManagementService,
-    IAuditService auditService) : ControllerBase
+    IAuditService auditService,
+    IRaceService raceService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<PaginatedList<UserDto>>> GetAll([FromQuery] int limit = 50, [FromQuery] int offset = 0, CancellationToken ct = default) =>
@@ -46,6 +49,12 @@ public class UsersController(
     public async Task<ActionResult<List<AuditLogDto>>> GetAudit(
         int id, [FromQuery] int limit = 50, [FromQuery] DateTime? before = null, CancellationToken ct = default) =>
         Ok(await auditService.GetHistoryAsync(AuditEntityTypes.User, id, limit, before, ct));
+
+    /// <summary>backoffice-user-status-toggle: "In-flight Capturista deactivation warning"
+    /// (design.md D6) — pre-check de solo lectura antes de desactivar. Advierte, no bloquea.</summary>
+    [HttpGet("{id:int}/active-races")]
+    public async Task<ActionResult<List<ActiveRaceSummaryDto>>> GetActiveRaces(int id, CancellationToken ct = default) =>
+        Ok(await raceService.GetActiveForUserAsync(id, ct));
 
     private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }

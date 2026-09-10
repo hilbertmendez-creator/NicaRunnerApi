@@ -1,4 +1,5 @@
 using NicaRunner.Application.Common.Dtos;
+using NicaRunner.Application.Races.Dtos;
 using NicaRunner.Domain.Entities;
 
 namespace NicaRunner.Application.Common.Interfaces;
@@ -19,6 +20,16 @@ public interface IRaceRepository
     Task AddAsync(Race race, CancellationToken ct = default);
     Task AddJudgeAsync(RaceJudge judge, CancellationToken ct = default);
     Task<bool> IsJudgeAsync(int raceId, int userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// backoffice-user-status-toggle: "In-flight Capturista deactivation warning"
+    /// (design.md D6) — carreras EnCurso donde el usuario es admin (AdminId) O juez
+    /// (RaceJudge). Unión obligatoria: JoinByCodeAsync nunca crea una fila RaceJudge para
+    /// el propio admin de la carrera (RaceService.cs:152-153), así que una query
+    /// solo-jueces perdería en silencio una carrera EnCurso operada por su admin.
+    /// </summary>
+    Task<List<ActiveRaceSummaryDto>> GetActiveForUserAsync(int userId, CancellationToken ct = default);
+
     void Remove(Race race);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

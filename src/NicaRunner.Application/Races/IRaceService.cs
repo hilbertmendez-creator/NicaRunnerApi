@@ -8,6 +8,13 @@ public interface IRaceService
     Task<RaceDto> CreateAsync(CreateRaceRequest request, int adminId, CancellationToken ct = default);
     Task<PaginatedList<RaceDto>> GetAllAsync(int limit = 50, int offset = 0, CancellationToken ct = default);
     Task<RaceDto> GetByIdAsync(int raceId, CancellationToken ct = default);
+
+    /// <summary>
+    /// backoffice-user-status-toggle: "In-flight Capturista deactivation warning"
+    /// (design.md D6) — pre-check de solo lectura consumido por
+    /// GET /api/users/{id}/active-races, previo a desactivar un usuario.
+    /// </summary>
+    Task<List<ActiveRaceSummaryDto>> GetActiveForUserAsync(int userId, CancellationToken ct = default);
     Task<RaceDto> UpdateAsync(int raceId, UpdateRaceRequest request, int currentUserId, CancellationToken ct = default);
     Task DeleteAsync(int raceId, CancellationToken ct = default);
     Task<RaceDto> StartAsync(int raceId, CancellationToken ct = default);

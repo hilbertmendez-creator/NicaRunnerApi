@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { getUserAudit, getUsers, unlockUser, updateUser } from '../../api/endpoints'
-import type { UserDto, UserRole } from '../../api/types'
+import { getUserActiveRaces, getUserAudit, getUsers, unlockUser, updateUser } from '../../api/endpoints'
+import type { ActiveRaceSummary, UserDto, UserRole } from '../../api/types'
 import { useAuth } from '../../auth/auth-context'
-import { Button, DataTable, LoadingText, EmptyState, Select } from '@nicarunner/ui'
+import { Button, DataTable, LoadingText, EmptyState, Modal, Select } from '@nicarunner/ui'
 import type { Column } from '@nicarunner/ui'
 import { UserFormModal } from './UserFormModal'
 import { EntityAuditHistory } from '../../components/EntityAuditHistory'
@@ -20,6 +20,10 @@ export function UsersPage() {
   const [editing, setEditing] = useState<UserDto | null>(null)
   const [auditingUser, setAuditingUser] = useState<UserDto | null>(null)
   const [unlockingId, setUnlockingId] = useState<number | null>(null)
+  const [pendingDeactivation, setPendingDeactivation] = useState<{
+    user: UserDto
+    races: ActiveRaceSummary[]
+  } | null>(null)
 
   const [pageIndex, setPageIndex] = useState(1) // 1-based; DataTable contract
   const [totalCount, setTotalCount] = useState(0)
@@ -49,7 +53,22 @@ export function UsersPage() {
     }
   }
 
+  // backoffice-user-status-toggle: "In-flight Capturista deactivation warning" (design.md
+  // D6) — el pre-check solo aplica al desactivar (nunca al activar) y es advisory: si
+  // encuentra carreras EnCurso donde el target es admin o juez, pide confirmación antes
+  // del PATCH; si no encuentra ninguna, el PATCH sigue directo, igual que antes.
   async function handleToggleActive(target: UserDto) {
+    if (target.isActive) {
+      const activeRaces = await getUserActiveRaces(target.id)
+      if (activeRaces.length > 0) {
+        setPendingDeactivation({ user: target, races: activeRaces })
+        return
+      }
+    }
+    await applyToggle(target)
+  }
+
+  async function applyToggle(target: UserDto) {
     try {
       await updateUser(target.id, { isActive: !target.isActive })
       toast.success(target.isActive ? 'Usuario desactivado' : 'Usuario activado')
@@ -57,6 +76,13 @@ export function UsersPage() {
     } catch {
       toast.error('No se pudo actualizar el estado del usuario')
     }
+  }
+
+  async function handleConfirmDeactivation() {
+    if (!pendingDeactivation) return
+    const target = pendingDeactivation.user
+    setPendingDeactivation(null)
+    await applyToggle(target)
   }
 
   // login-lockout: "Admin Unlock". UserDto no expone LockedUntilUtc/FailedLoginCount
@@ -194,6 +220,38 @@ export function UsersPage() {
           load={() => getUserAudit(auditingUser.id)}
           onClose={() => setAuditingUser(null)}
         />
+      )}
+
+      {pendingDeactivation && (
+        <Modal onClose={() => setPendingDeactivation(null)} labelledBy="deactivate-user-title">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2 id="deactivate-user-title" className="text-base font-semibold" style={{ color: 'var(--text-hi)' }}>
+                Desactivar a {pendingDeactivation.user.nombre}
+              </h2>
+              <p className="mt-1 text-sm" style={{ color: 'var(--text-lo)' }}>
+                Es juez de{' '}
+                {pendingDeactivation.races.length === 1 ? 'esta carrera' : 'estas carreras'} en
+                curso. La desactivación no se bloquea, pero revisá el impacto antes de confirmar.
+              </p>
+            </div>
+
+            <ul className="flex flex-col gap-1 text-sm" style={{ color: 'var(--text-hi)' }}>
+              {pendingDeactivation.races.map((race) => (
+                <li key={race.id}>{race.nombre}</li>
+              ))}
+            </ul>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setPendingDeactivation(null)}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={handleConfirmDeactivation}>
+                Desactivar de todos modos
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   )

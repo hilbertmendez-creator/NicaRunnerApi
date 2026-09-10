@@ -77,6 +77,9 @@ public class RaceService(
         return ToDto(race);
     }
 
+    public Task<List<ActiveRaceSummaryDto>> GetActiveForUserAsync(int userId, CancellationToken ct = default) =>
+        raceRepository.GetActiveForUserAsync(userId, ct);
+
     public async Task<RaceDto> UpdateAsync(int raceId, UpdateRaceRequest request, int currentUserId, CancellationToken ct = default)
     {
         var race = await GetRaceOrThrowAsync(raceId, ct);
