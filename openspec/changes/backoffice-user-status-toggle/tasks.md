@@ -33,14 +33,14 @@ conflict because the hunks are disjoint.
 
 ## Phase 0: Pre-PR3 verification (blocking, not optional)
 
-- [ ] 0.1 Confirm in `/home/user/NicaRunner` whether unsynced offline-first Room captures could
+- [x] 0.1 Confirm in `/home/user/NicaRunner` whether unsynced offline-first Room captures could
       be stranded by a forced mid-race logout when a Capturista is disabled (design "What would
       make this design wrong" / proposal Cross-client impact). Read-only check against the sibling
       repo; do not modify it.
-- [ ] 0.2 Confirm the deployment is still single-instance (no `ConnectionStrings:Redis` set, no
+- [x] 0.2 Confirm the deployment is still single-instance (no `ConnectionStrings:Redis` set, no
       horizontal scaling). If multi-instance or Redis is active, D2's "immediate" revocation claim
       is false and a Redis-backed `IAccountStatusCache` must ship with PR3, not later.
-- [ ] 0.3 Record both findings before starting Phase 5 (PR3). If either finding contradicts the
+- [x] 0.3 Record both findings before starting Phase 5 (PR3). If either finding contradicts the
       design's assumption, stop and flag it instead of implementing PR3 as specced.
 
 ## Phase 1: PR1 — Status badge, frontend tests, try/catch fix (frontend only, ~190 lines)

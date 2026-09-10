@@ -382,3 +382,85 @@ Phases 1 (10/10), 2 (9/9), 3 (6/6), and 4 (9/9) tasks complete — 34/34 tasks a
 four phases. Phase 0 and Phases 5–6 remain (13 tasks: 0.1–0.3, 5.1–5.13, 6.1–6.3). Ready
 for `sdd-verify` on the PR2 scope (Phases 2–4), or for the next apply batch (Phase 0 /
 Phase 5) — not started here.
+
+## Phase 0 — Pre-PR3 blocking verification (COMPLETE)
+
+Both checks were run before starting PR3, as Phase 0 requires. One passes, one does not.
+
+### 0.2 Single-instance deployment — CONFIRMED, design assumption holds
+
+`render.yaml` declares one `type: web` service on `plan: free`, and no `ConnectionStrings__Redis`
+is set there or in any `appsettings*.json`. `Program.cs:107-117` only registers the SignalR Redis
+backplane when that connection string is present, so it is inactive. D2's per-process
+`IMemoryCache` therefore gives effectively immediate revocation today.
+
+Incidental finding in `render.yaml`: the `Jwt__Key` entry carries a hand-written warning against
+`generateValue: true`, because regenerating it "invalida todos los JWT en uso, tirando las
+sesiones de capturistas en medio de una carrera". The repository already treats cutting a
+Capturista's session mid-race as dangerous. PR3 does that deliberately, which is what makes 0.1
+below decisive rather than academic.
+
+### 0.1 Offline capture safety — FAILED. PR3 is NOT safe to ship as designed.
+
+Verified directly in `/home/user/NicaRunner` (read-only).
+
+Logout does **not** wipe the database. There is no `clearAllTables()` or `deleteDatabase()`
+anywhere in the app, and `AuthRepository.signOut` clears only the `competitions` cache. Room and
+both outboxes (`pending_arrivals`, `pending_category_starts`) survive logout and re-login. That
+was the question Phase 0 asked, and the answer is reassuring — but the loss happens elsewhere.
+
+The real path is an HTTP-status heuristic in the capture queue,
+`app/src/main/java/com/nicarunner/app/data/CaptureRepository.kt:290-294`:
+
+```kotlin
+// 4xx = el servidor entendió y rechazó (carrera cerrada, tiempo fuera de
+// rango). Reintentarlo para siempre deja la cola envenenada [...]
+if (response.code() in 400..499) {
+    dequeue(idempotencyKey)
+    return Result.failure(ApiException(message))
+}
+```
+
+`dequeue` is a hard `DELETE FROM pending_arrivals WHERE idempotencyKey = :key`, not a state flag.
+The identical rule governs the race-start queue at `RaceCategoryRepository.kt:207-210`.
+
+`401` falls inside `400..499`. The rule was written when 4xx could only mean a permanent domain
+rejection — a closed race, a time out of range. Once the API returns 401 for a deactivated
+account, that same branch destroys a recoverable capture.
+
+Sequence on a single tap of "Registrar llegada" by a Capturista deactivated mid-race:
+
+1. The arrival is written to `pending_arrivals`, then POSTed.
+2. The API answers 401.
+3. `TokenAuthenticator` (`app/.../data/api/TokenAuthenticator.kt:69-71`) attempts one refresh;
+   `RefreshTokenService.cs:40` already refuses it because `IsActive` is false, so it calls
+   `tokenStore.clear()` and returns `null`.
+4. Returning `null` hands the original 401 back to the caller as an ordinary response, so
+   `addVia` deletes the row.
+5. `isSignedInFlow` flips and `MainActivity.kt:147` swaps the whole composition to the login
+   screen, most likely cancelling the scope before the explanatory snackbar can render.
+
+The runner who just crossed the line has no recorded time on the phone or on the server.
+
+Two aggravating details:
+- `SalidaViewModel.start()`'s failure path reports "Salida registrada en el dispositivo —
+  pendiente de sincronizar" unconditionally, which is false after a 4xx: the row is already gone.
+- `PerfilScreen.kt:105-110` warns before a *manual* logout that pending items will be lost. A
+  forced logout gives the judge no such dialog.
+
+Blast radius is one row per failing request, not the whole backlog: `drainPending` breaks on
+first failure.
+
+**This is a pre-existing latent defect, not one PR3 introduces.** It can already fire today when
+a deactivated user's 60-minute access token finally expires mid-capture. What PR3 changes is the
+probability: today the window is a rare coincidence, afterwards it is the normal path, reached
+within seconds of deactivation.
+
+**Smallest fix that makes PR3 safe:** exclude 401 (and arguably 403) from the dequeue branch in
+`CaptureRepository.addVia` and `RaceCategoryRepository.startCategoriesVia`, treating auth
+failures like 5xx — keep the row for retry. Two conditionals, no schema change. The queues
+already survive logout and re-login, so recovery follows once the account is reactivated and the
+judge reopens that race's screen. Note recovery is not automatic on login: `drainPending` runs
+only when the Capture or Salida screen for that race is opened.
+
+**Status: PR3 is blocked pending a user decision.**
