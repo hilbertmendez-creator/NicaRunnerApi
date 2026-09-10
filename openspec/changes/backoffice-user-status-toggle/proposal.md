@@ -308,3 +308,41 @@ should be put to the user before or during the design phase:
 Assumptions applied in the absence of answers: Split B is recommended but not chosen; TTL is short
 and design-phase-tunable; the check fails **open** on infrastructure error; SignalR abort is
 deferred to design.
+
+## Decisions (resolved with the user)
+
+Every question raised in `## Proposal question round` is now settled. Later phases must
+treat these as fixed inputs, not as open options to revisit.
+
+| # | Question | Decision |
+| --- | --- | --- |
+| 1 | PR split | **Split B — three chained PRs.** PR1 items 1+2 (~190), PR2 items 4+5 (~270), PR3 item 3 alone (~200). Every slice stays under the 400-line review budget and the authentication hot path is reviewed in isolation. |
+| 2 | Item 4 threshold | **At least two active `Administrador` users.** Confirmed deliberately, with the small-installation cost accepted. |
+| 3 | Item 3 staleness | **Short-TTL cache.** A disabled user may survive a few extra seconds rather than paying a database lookup on every authenticated request. The exact TTL is a design-phase decision. |
+| 4 | Item 3 rollout | **Ship behind a configuration flag,** so the per-request check can be switched off in production without redeploying. This is in addition to failing open on infrastructure error, not a replacement for it. |
+| 5 | SignalR live connections | **Do not forcibly abort.** An already-open hub connection is allowed to end on its own; the disabled user is refused at reconnect. Accepted cost: a disabled Admin or Lector may keep watching a live dashboard for a while. |
+
+### Consequences for the design phase
+
+- Both mitigations for item 3 apply together: the config flag governs whether the check runs
+  at all, and fail-open governs what happens when the cache or database is unreachable while
+  the check is enabled.
+- Item 3 must introduce its own cache. The exploration confirmed there is no
+  `IDistributedCache`, `IMemoryCache`, or `IConnectionMultiplexer` registered anywhere in
+  `src/`; Redis appears only as a SignalR backplane, conditional on `ConnectionStrings:Redis`
+  and inactive in the current single-instance deployment (`Program.cs:107-117`). A design that
+  assumes a shared cache must therefore also state what happens when the API scales to more
+  than one instance and the cache is per-process.
+- Deactivation must invalidate the cached entry at the moment `IsActive` flips in
+  `UserManagementService.UpdateAsync`, or the short TTL becomes the only bound on how long a
+  disabled user survives.
+- The chained-PR delivery makes ordering a hard constraint: PR2 and PR3 both touch
+  `UserManagementService.UpdateAsync`, so the design must keep their edits separable.
+
+### Additional defect to fix (found while scoping)
+
+`handleToggleActive` (`frontend/src/features/users/UsersPage.tsx:51-54`) has no `try/catch`,
+unlike its sibling `handleRoleChange` (lines 41-49) which catches and raises a toast. A failed
+toggle is currently an unhandled promise rejection with no user feedback. Items 4 and 5 make
+server-side rejections a routine outcome rather than an edge case, so this must be fixed in
+PR1 alongside the test coverage that would otherwise not catch it.
