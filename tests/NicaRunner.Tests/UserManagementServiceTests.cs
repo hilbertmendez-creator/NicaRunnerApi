@@ -23,12 +23,14 @@ public class UserManagementServiceTests
     private readonly IEmailTemplateRenderer _emailRenderer = new EmailTemplateRenderer();
     private readonly FakeAuditLogRepository _auditRepo = new();
     private readonly Mock<IAdminNotificationService> _adminNotifications = new();
+    private readonly Mock<IAccountStatusCache> _accountStatusCache = new();
 
     private UserManagementService BuildService()
     {
         _emailSender.Setup(s => s.Channel).Returns(NotificationChannel.Email);
         return new(_users.Object, _passwordHasher.Object, [_emailSender.Object], _emailRenderer,
-            new AuditService(_auditRepo), new AliasAssigner(_users.Object), _adminNotifications.Object);
+            new AuditService(_auditRepo), new AliasAssigner(_users.Object), _adminNotifications.Object,
+            _accountStatusCache.Object);
     }
 
     [Fact]
@@ -402,6 +404,24 @@ public class UserManagementServiceTests
 
         Assert.Equal("No se puede desactivar un usuario administrador semilla.", ex.Message);
         _users.Verify(u => u.CountActiveByRoleAsync(It.IsAny<UserRole>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // backoffice-user-status-toggle PR3, design.md D2 -- Invalidate debe llamarse
+    // DESPUÉS de SaveChangesAsync, no al reasignar IsActive: invalidar antes del commit
+    // deja que un request concurrente repueble el cache con el valor todavía-no-persistido.
+    [Fact]
+    public async Task UpdateAsync_DesactivaUsuario_InvalidaElCacheDespuesDeGuardar()
+    {
+        var target = new User { Id = 2, Email = "b@b.com", Role = UserRole.Capturista, IsActive = true };
+        _users.Setup(u => u.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+        var sequence = new MockSequence();
+        _users.InSequence(sequence).Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _accountStatusCache.InSequence(sequence).Setup(c => c.Invalidate(2));
+
+        await BuildService().UpdateAsync(currentUserId: 1, targetUserId: 2, new UpdateUserRequest(null, false));
+
+        _accountStatusCache.Verify(c => c.Invalidate(2), Times.Once);
     }
 
     // login-lockout: "Admin unlocks a locked account".

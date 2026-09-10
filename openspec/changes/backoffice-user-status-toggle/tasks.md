@@ -143,40 +143,40 @@ conflict because the hunks are disjoint.
 
 Do not start this phase until Phase 0 (0.1-0.3) is recorded.
 
-- [ ] 5.1 RED: add a load-bearing integration test (per `AliasIntegrationTests.cs` pattern in
+- [x] 5.1 RED: add a load-bearing integration test (per `AliasIntegrationTests.cs` pattern in
       `tests/NicaRunner.Tests/`) asserting a disabled user's next authenticated request returns
       **401**, not 403. This is the check the whole "no client changes needed" argument (design
       D1) depends on — if it returns 403 the design falls back to custom middleware and Phase 5
       must be redesigned before continuing.
-- [ ] 5.2 RED: add an integration test asserting an active, valid user is never rejected by the
+- [x] 5.2 RED: add an integration test asserting an active, valid user is never rejected by the
       new check (spec "Active user unaffected").
-- [ ] 5.3 RED: add unit tests on `AccountStatusJwtEvents` for the fail-open matrix (design D4):
+- [x] 5.3 RED: add unit tests on `AccountStatusJwtEvents` for the fail-open matrix (design D4):
       cache/DB throw -> allow + `LogWarning`; user row not found -> allow + `LogWarning`; missing/
       unparseable `NameIdentifier` -> allow + `LogWarning`; `IsActive == false` -> `context.Fail()`
       + `LogInformation`.
-- [ ] 5.4 RED: add a unit test asserting that with `AccountStatus:EnforcePerRequest` off, no
+- [x] 5.4 RED: add a unit test asserting that with `AccountStatus:EnforcePerRequest` off, no
       cache/DB call happens at all.
-- [ ] 5.5 RED: add a unit test on `UserManagementService.UpdateAsync` asserting
+- [x] 5.5 RED: add a unit test on `UserManagementService.UpdateAsync` asserting
       `IAccountStatusCache.Invalidate(userId)` is called after `SaveChangesAsync`, not at the
       `IsActive` assignment (Moq `MockSequence`/callback ordering).
-- [ ] 5.6 GREEN: create `src/NicaRunner.Application/Common/Interfaces/IAccountStatusCache.cs`
+- [x] 5.6 GREEN: create `src/NicaRunner.Application/Common/Interfaces/IAccountStatusCache.cs`
       (`Task<bool> IsActiveAsync(int userId, CancellationToken ct = default)`, `void Invalidate(int userId)`).
-- [ ] 5.7 GREEN: create `src/NicaRunner.Infrastructure/Security/AccountStatusCache.cs`
+- [x] 5.7 GREEN: create `src/NicaRunner.Infrastructure/Security/AccountStatusCache.cs`
       implementing `IAccountStatusCache` via `IMemoryCache` + `IUserRepository.GetByIdAsync`, key
       `account-status:{userId}`, absolute 30s TTL.
-- [ ] 5.8 GREEN: create `src/NicaRunner.Infrastructure/Security/AccountStatusOptions.cs`
+- [x] 5.8 GREEN: create `src/NicaRunner.Infrastructure/Security/AccountStatusOptions.cs`
       (`EnforcePerRequest`, `CacheSeconds`), following the `JwtSettings.cs` pattern.
-- [ ] 5.9 GREEN: create `src/NicaRunner.Api/Auth/AccountStatusJwtEvents.cs` with the
+- [x] 5.9 GREEN: create `src/NicaRunner.Api/Auth/AccountStatusJwtEvents.cs` with the
       `OnTokenValidated` body implementing the fail-open matrix from design D4.
-- [ ] 5.10 GREEN: wire `builder.Services.AddMemoryCache()`, `Configure<AccountStatusOptions>` (near
+- [x] 5.10 GREEN: wire `builder.Services.AddMemoryCache()`, `Configure<AccountStatusOptions>` (near
       `Program.cs:171-175`), DI for `IAccountStatusCache`, and `OnTokenValidated` into the existing
       `JwtBearerEvents` block (`Program.cs:246-260`).
-- [ ] 5.11 GREEN: add `AccountStatus: { EnforcePerRequest: true, CacheSeconds: 30 }` to
+- [x] 5.11 GREEN: add `AccountStatus: { EnforcePerRequest: true, CacheSeconds: 30 }` to
       `src/NicaRunner.Api/appsettings.json`.
-- [ ] 5.12 GREEN: add `IAccountStatusCache` as a new constructor parameter on
+- [x] 5.12 GREEN: add `IAccountStatusCache` as a new constructor parameter on
       `UserManagementService` and call `accountStatusCache.Invalidate(user.Id)` after
       `SaveChangesAsync` (`UserManagementService.cs:132`).
-- [ ] 5.13 Verify PR3 green: `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release`.
+- [x] 5.13 Verify PR3 green: `dotnet test tests/NicaRunner.Tests/NicaRunner.Tests.csproj --configuration Release`.
       Verify build: `dotnet build NicaRunner.sln --configuration Release`.
 
 ## Phase 6: Final cross-PR checks

@@ -19,7 +19,8 @@ public class UserManagementService(
     IEmailTemplateRenderer emailTemplateRenderer,
     IAuditService auditService,
     AliasAssigner aliasAssigner,
-    IAdminNotificationService adminNotificationService) : IUserManagementService
+    IAdminNotificationService adminNotificationService,
+    IAccountStatusCache accountStatusCache) : IUserManagementService
 {
     private const string TempPasswordAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
@@ -141,6 +142,12 @@ public class UserManagementService(
         auditService.TrackChanges(AuditEntityTypes.User, user.Id, currentUserId, changes);
 
         await userRepository.SaveChangesAsync(ct);
+
+        // backoffice-user-status-toggle: invalida DESPUÉS de persistir (design.md D2) --
+        // antes del commit dejaría que un request concurrente repueble el cache con el
+        // valor todavía-no-guardado.
+        accountStatusCache.Invalidate(user.Id);
+
         return ToDto(user);
     }
 

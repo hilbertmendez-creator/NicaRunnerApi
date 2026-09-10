@@ -31,6 +31,14 @@ services:
         value: "60"
       - key: Jwt__RefreshExpiryDays
         value: "30"
+      # Kill switch del corte de sesión inmediato (backoffice-user-status-toggle
+      # PR3). En false la API deja de comprobar por request si la cuenta sigue
+      # activa, y un usuario desactivado vuelve a conservar acceso hasta que
+      # caduque su token. Va con sync: false a propósito: se fija (o se quita)
+      # desde el dashboard, y así un re-sync del Blueprint no lo pisa mientras
+      # esté apagado por una incidencia. Sin setear, manda appsettings.json.
+      - key: AccountStatus__EnforcePerRequest
+        sync: false
       # Envío de correos vía Resend (ver docs/render-setup.md). Ninguna de las
       # dos se fija acá: la llave es un secreto, y el remitente tiene que
       # pertenecer a un dominio verificado en resend.com/domains — fijarlo en el

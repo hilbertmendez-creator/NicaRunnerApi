@@ -173,6 +173,10 @@ builder.Services.Configure<ResendOptions>(builder.Configuration.GetSection("Rese
 builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("GoogleAuth"));
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection("Frontend"));
 builder.Services.Configure<LockoutOptions>(builder.Configuration.GetSection("Lockout"));
+// backoffice-user-status-toggle PR3 (design.md D2/D3) -- EnforcePerRequest=false apaga
+// el chequeo sin deploy (mismo patrón que LockoutOptions.Threshold = 0).
+builder.Services.AddMemoryCache();
+builder.Services.Configure<AccountStatusOptions>(builder.Configuration.GetSection("AccountStatus"));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<AliasAssigner>();
@@ -189,6 +193,7 @@ builder.Services.AddScoped<IExcelRunnerParser, ExcelRunnerParser>();
 builder.Services.AddScoped<IPublicResultTokenRepository, PublicResultTokenRepository>();
 builder.Services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IAccountStatusCache, AccountStatusCache>();
 builder.Services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
 builder.Services.AddHttpClient<ResendEmailSender>(client =>
 {
@@ -256,7 +261,11 @@ builder.Services
                     }
                 }
                 return Task.CompletedTask;
-            }
+            },
+            // backoffice-user-status-toggle PR3 (design.md D1): rechaza con 401 el
+            // próximo request de un usuario desactivado en vez de esperar a que expire
+            // el access token. Política completa en AccountStatusJwtEvents (design.md D4).
+            OnTokenValidated = AccountStatusJwtEvents.OnTokenValidated
         };
     });
 
