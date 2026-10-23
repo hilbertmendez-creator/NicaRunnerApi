@@ -55,6 +55,17 @@ public class RaceRepository(NicaRunnerDbContext context) : IRaceRepository
             .Select(r => new ActiveRaceSummaryDto(r.Id, r.Nombre, r.FechaCarrera))
             .ToListAsync(ct);
 
+    public Task<bool> IsAdminOrJudgeAsync(int raceId, int userId, CancellationToken ct = default) =>
+        context.Races.AnyAsync(
+            r => r.Id == raceId && (r.AdminId == userId || r.Judges.Any(j => j.UserId == userId)), ct);
+
+    public async Task<HashSet<int>> GetRaceIdsForUserAsync(int userId, CancellationToken ct = default) =>
+        (await context.Races
+            .Where(r => r.AdminId == userId || r.Judges.Any(j => j.UserId == userId))
+            .Select(r => r.Id)
+            .ToListAsync(ct))
+        .ToHashSet();
+
     public void Remove(Race race) => context.Races.Remove(race);
 
     public Task SaveChangesAsync(CancellationToken ct = default) =>

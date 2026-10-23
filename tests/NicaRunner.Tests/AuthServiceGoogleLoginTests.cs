@@ -48,9 +48,11 @@ public class AuthServiceGoogleLoginTests
         _users.Verify(u => u.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // AC-3: email nuevo -> crea usuario Provider.Google sin PasswordHash.
+    // AC-3 + race-judge-guard: email nuevo -> crea usuario Provider.Google sin
+    // PasswordHash, pero DESACTIVADO y sin sesión. Antes nacía activo con el rol 0 del
+    // enum (Capturista): cualquiera con un Gmail entraba.
     [Fact]
-    public async Task GoogleLogin_EmailNuevo_CreaUsuarioGoogle()
+    public async Task GoogleLogin_EmailNuevo_CreaUsuarioDesactivadoYNoDaSesion()
     {
         _google.Setup(g => g.ValidateIdTokenAsync("token-ok", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GoogleUserInfo("sub-1", "nuevo@gmail.com", "Nuevo Usuario"));
@@ -63,22 +65,45 @@ public class AuthServiceGoogleLoginTests
             .Callback<User, CancellationToken>((u, _) => created = u)
             .Returns(Task.CompletedTask);
 
-        var result = await BuildService().GoogleLoginAsync(new GoogleLoginRequest("token-ok"));
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(
+            () => BuildService().GoogleLoginAsync(new GoogleLoginRequest("token-ok")));
 
-        Assert.Equal("nuevo@gmail.com", result.Email);
+        Assert.Contains("administrador", ex.Message);
         Assert.NotNull(created);
-        Assert.Equal(AuthProvider.Google, created!.Provider);
+        Assert.False(created!.IsActive);
+        Assert.Equal(UserRole.Capturista, created.Role);
+        Assert.Equal(AuthProvider.Google, created.Provider);
         Assert.Null(created.PasswordHash);
         Assert.Equal("sub-1", created.GoogleId);
         // user-alias: "Alias Assigned on Every User-Creation Path" — sitio 2 (Google
         // sign-in). El alta NO puede fallar por esto (design.md §3.4).
         Assert.True(AliasGenerator.IsValidAliasFormat(created.Username!));
         Assert.Equal("nusuario", created.Username); // "Nuevo Usuario" (2 tokens) -> n + usuario, sin inicial final
-        // AtLeastOnce: BuildAuthResponseAsync persiste el refresh token vía
-        // un segundo SaveChanges para reusar la misma unidad de trabajo del
-        // user repository (no es un commit doble — son dos flushes EF).
-        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
-        Assert.True(result.MustChangePassword);
+        // La fila se persiste aunque se rechace: el Administrador tiene que verla para
+        // habilitarla. Y no sale ninguna sesión.
+        _users.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _jwt.Verify(j => j.GenerateToken(It.IsAny<User>()), Times.Never);
+        _refresh.Verify(r => r.IssueAsync(It.IsAny<User>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // race-judge-guard: una vez habilitada por un Administrador, la misma cuenta entra.
+    [Fact]
+    public async Task GoogleLogin_CuentaGoogleHabilitada_DevuelveSesion()
+    {
+        var habilitada = new User
+        {
+            Id = 9, Email = "nuevo@gmail.com", Nombre = "Nuevo Usuario", GoogleId = "sub-1",
+            Provider = AuthProvider.Google, Role = UserRole.Capturista, IsActive = true
+        };
+        _google.Setup(g => g.ValidateIdTokenAsync("token-ok", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleUserInfo("sub-1", "nuevo@gmail.com", "Nuevo Usuario"));
+        _users.Setup(u => u.GetByGoogleIdAsync("sub-1", It.IsAny<CancellationToken>())).ReturnsAsync(habilitada);
+        SetupTokenGenerator();
+
+        var result = await BuildService().GoogleLoginAsync(new GoogleLoginRequest("token-ok"));
+
+        Assert.Equal(9, result.UserId);
+        _users.Verify(u => u.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // AC-2: email existente con password local -> vincula GoogleId, no duplica usuario.

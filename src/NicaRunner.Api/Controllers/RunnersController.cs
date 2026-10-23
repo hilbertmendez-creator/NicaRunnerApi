@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NicaRunner.Api.Auth;
 using NicaRunner.Application.Runners;
 using NicaRunner.Application.Runners.Dtos;
 using NicaRunner.Domain.Entities;
@@ -12,6 +13,8 @@ namespace NicaRunner.Api.Controllers;
 [Route("api/races/{raceId:int}/runners")]
 [Route("api/v{version:apiVersion}/races/{raceId:int}/runners")]
 [Authorize]
+// race-judge-guard: un Capturista sólo opera las carreras de las que es juez.
+[RaceJudgeRequired]
 public class RunnersController(IRunnerService runnerService) : ControllerBase
 {
     [HttpPost]

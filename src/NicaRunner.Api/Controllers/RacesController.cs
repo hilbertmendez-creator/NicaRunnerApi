@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NicaRunner.Api.Auth;
 using NicaRunner.Application.Auditing;
 using NicaRunner.Application.Auditing.Dtos;
 using NicaRunner.Application.Categories;
@@ -32,13 +33,26 @@ public class RacesController(
         return CreatedAtAction(nameof(GetById), new { raceId = race.Id }, race);
     }
 
+    // race-judge-guard: el JoinCode es la llave para volverse juez, así que sólo lo ve
+    // un Administrador o quien ya opera esa carrera. Al resto se le lista la carrera con
+    // el código vacío: si lo viera, la guarda de juez no protegería nada.
     [HttpGet]
-    public async Task<ActionResult<PaginatedList<RaceDto>>> GetAll([FromQuery] int limit = 50, [FromQuery] int offset = 0, CancellationToken ct = default) =>
-        Ok(await raceService.GetAllAsync(limit, offset, ct));
+    public async Task<ActionResult<PaginatedList<RaceDto>>> GetAll([FromQuery] int limit = 50, [FromQuery] int offset = 0, CancellationToken ct = default)
+    {
+        var page = await raceService.GetAllAsync(limit, offset, ct);
+        if (User.IsInRole(nameof(UserRole.Administrador)))
+            return Ok(page);
+        return Ok(page with { Items = await raceService.HideJoinCodesAsync(page.Items, GetUserId(), ct) });
+    }
 
     [HttpGet("{raceId:int}")]
-    public async Task<ActionResult<RaceDto>> GetById(int raceId, CancellationToken ct) =>
-        Ok(await raceService.GetByIdAsync(raceId, ct));
+    public async Task<ActionResult<RaceDto>> GetById(int raceId, CancellationToken ct)
+    {
+        var race = await raceService.GetByIdAsync(raceId, ct);
+        if (User.IsInRole(nameof(UserRole.Administrador)))
+            return Ok(race);
+        return Ok((await raceService.HideJoinCodesAsync([race], GetUserId(), ct))[0]);
+    }
 
     [HttpPut("{raceId:int}")]
     [Authorize(Roles = nameof(UserRole.Administrador))]
@@ -62,6 +76,7 @@ public class RacesController(
 
     [HttpPost("{raceId:int}/start")]
     [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
+    [RaceJudgeRequired]
     public async Task<ActionResult<RaceDto>> Start(int raceId, CancellationToken ct) =>
         Ok(await raceService.StartAsync(raceId, ct));
 
@@ -103,6 +118,7 @@ public class RacesController(
     /// <response code="409">Hay disputas abiertas, capturas sin dorsal, o categorías todavía Planeada.</response>
     [HttpPost("{raceId:int}/close")]
     [Authorize(Roles = $"{nameof(UserRole.Administrador)},{nameof(UserRole.Capturista)}")]
+    [RaceJudgeRequired]
     [ProducesResponseType(typeof(RaceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

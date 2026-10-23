@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NicaRunner.Api.Auth;
 using NicaRunner.Application.Common.Dtos;
 using NicaRunner.Application.Results;
 using NicaRunner.Application.Results.Dtos;
@@ -15,6 +16,8 @@ namespace NicaRunner.Api.Controllers;
 [Route("api/races/{raceId:int}/results")]
 [Route("api/v{version:apiVersion}/races/{raceId:int}/results")]
 [Authorize]
+// race-judge-guard: un Capturista sólo opera las carreras de las que es juez.
+[RaceJudgeRequired]
 public class ResultsController(IResultService resultService) : ControllerBase
 {
     // Idempotency-Key (header opcional): el cliente envía un identificador

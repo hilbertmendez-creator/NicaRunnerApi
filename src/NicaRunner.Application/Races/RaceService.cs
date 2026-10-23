@@ -77,6 +77,14 @@ public class RaceService(
         return ToDto(race);
     }
 
+    public async Task<List<RaceDto>> HideJoinCodesAsync(List<RaceDto> races, int viewerId, CancellationToken ct = default)
+    {
+        var operadas = await raceRepository.GetRaceIdsForUserAsync(viewerId, ct);
+        return races
+            .Select(r => operadas.Contains(r.Id) ? r : r with { JoinCode = string.Empty })
+            .ToList();
+    }
+
     public Task<List<ActiveRaceSummaryDto>> GetActiveForUserAsync(int userId, CancellationToken ct = default) =>
         raceRepository.GetActiveForUserAsync(userId, ct);
 
