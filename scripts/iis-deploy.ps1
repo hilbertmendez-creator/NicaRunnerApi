@@ -16,7 +16,7 @@ $physicalPath = "E:\HILBERT\Proyectos\Claude Code\NicaRunner-API\publish\NicaRun
 $ancm = Test-Path "$env:ProgramFiles\IIS\Asp.Net Core Module\V2\aspnetcorev2.dll"
 if (-not $ancm) {
     Write-Warning "Falta el ASP.NET Core Hosting Bundle. Descárgalo e instálalo desde:"
-    Write-Warning "  https://dotnet.microsoft.com/download/dotnet/8.0  ->  'Hosting Bundle' (Windows)"
+    Write-Warning "  https://dotnet.microsoft.com/download/dotnet/10.0  ->  'Hosting Bundle' (Windows)"
     Write-Warning "Tras instalarlo, ejecuta 'net stop was /y; net start w3svc' y vuelve a correr este script."
     exit 1
 }

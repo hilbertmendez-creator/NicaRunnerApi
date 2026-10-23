@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NicaRunner.Application.Common;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Data;
@@ -20,6 +21,10 @@ public class AliasIntegrationTests
         connection.Open();
         var options = new DbContextOptionsBuilder<NicaRunnerDbContext>()
             .UseSqlite(connection)
+            // EF Core 9+: las migraciones son de Postgres y el modelo que EF arma para Sqlite
+            // nunca coincide con su snapshot, así que Migrate() lo trataría como error. Acá
+            // se prueba que apliquen, no que coincidan.
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
         var db = new NicaRunnerDbContext(options);
         db.Database.Migrate();

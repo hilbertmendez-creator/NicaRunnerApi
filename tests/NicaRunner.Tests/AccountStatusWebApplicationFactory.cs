@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NicaRunner.Infrastructure.Data;
@@ -48,6 +49,11 @@ public class AccountStatusWebApplicationFactory : WebApplicationFactory<Program>
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<NicaRunnerDbContext>>();
+            // EF Core 9+: AddDbContext guarda su lambda aparte, en
+            // IDbContextOptionsConfiguration, y la vuelve a aplicar al armar las opciones.
+            // Sin quitarla, el UseNpgsql de Program.cs se suma al UseSqlite de acá y EF
+            // rechaza el contexto por tener dos proveedores.
+            services.RemoveAll<IDbContextOptionsConfiguration<NicaRunnerDbContext>>();
             services.AddDbContext<NicaRunnerDbContext>(options => options.UseSqlite(_connection));
         });
     }

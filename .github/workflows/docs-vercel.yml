@@ -42,13 +42,17 @@ jobs:
 
       - name: Generate OpenAPI spec
         env:
+          # La CLI de Swashbuckle 6.6.2 está compilada para .NET 8 y el runner sólo
+          # tiene el runtime de global.json (10): sin esto no arranca. Con Major corre
+          # sobre .NET 10 y genera la misma especificación.
+          DOTNET_ROLL_FORWARD: Major
           ASPNETCORE_ENVIRONMENT: Development
           ConnectionStrings__SqliteConnection: 'Data Source=/tmp/nicarunner.ci.db'
           Docs__ApiServerUrl: ${{ vars.RENDER_API_URL }}
         run: |
           dotnet swagger tofile \
             --output docs-site/openapi.json \
-            src/NicaRunner.Api/bin/Release/net8.0/NicaRunner.Api.dll \
+            src/NicaRunner.Api/bin/Release/net10.0/NicaRunner.Api.dll \
             v1
 
       - name: Validate OpenAPI spec
