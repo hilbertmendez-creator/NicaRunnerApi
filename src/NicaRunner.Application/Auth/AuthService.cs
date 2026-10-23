@@ -98,12 +98,22 @@ public class AuthService(
             user = await userRepository.GetByEmailAsync(google.Email, ct);
             if (user is null)
             {
+                // Cualquier cuenta de Google con el correo verificado llega hasta acá, así
+                // que el alta nace DESACTIVADA y espera a que un Administrador la habilite
+                // desde el backoffice. Antes nacía activa y con el rol por defecto del
+                // enum (Capturista, el valor 0): cualquiera con un Gmail capturaba
+                // llegadas y veía los datos de los corredores. El rol va explícito para
+                // no depender del orden del enum; Capturista y no Lector porque, con la
+                // guarda de juez, un Capturista sólo alcanza las carreras a las que se
+                // unió con el código, y un Lector ve todas.
                 user = new User
                 {
                     Email = google.Email,
                     Nombre = google.Nombre,
                     GoogleId = google.Sub,
-                    Provider = AuthProvider.Google
+                    Provider = AuthProvider.Google,
+                    Role = UserRole.Capturista,
+                    IsActive = false
                 };
                 // Primer sign-in de Google también crea el User inline — mismo generador
                 // que el alta manual (user-alias: "Alias Assigned on Every User-Creation
@@ -112,6 +122,12 @@ public class AuthService(
                 // nunca lanza, así que el sign-in no puede fallar por esto.
                 await aliasAssigner.AssignAsync(user, ct);
                 await userRepository.AddAsync(user, ct);
+
+                // Se guarda ANTES de rechazar: la fila tiene que existir para que el
+                // Administrador la vea y la habilite.
+                await userRepository.SaveChangesAsync(ct);
+                throw new ForbiddenException(
+                    "Tu cuenta quedó registrada. Un administrador tiene que habilitarla antes de que puedas entrar.");
             }
             else
             {

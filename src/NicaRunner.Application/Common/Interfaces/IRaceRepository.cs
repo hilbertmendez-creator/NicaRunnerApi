@@ -30,6 +30,19 @@ public interface IRaceRepository
     /// </summary>
     Task<List<ActiveRaceSummaryDto>> GetActiveForUserAsync(int userId, CancellationToken ct = default);
 
+    /// <summary>
+    /// race-judge-guard: si el usuario puede operar la carrera — es su admin (AdminId) o
+    /// se unió como juez (RaceJudge). Misma unión que GetActiveForUserAsync y por el mismo
+    /// motivo. Una carrera inexistente devuelve false.
+    /// </summary>
+    Task<bool> IsAdminOrJudgeAsync(int raceId, int userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// race-judge-guard: los ids de las carreras que el usuario puede operar (misma
+    /// unión), en cualquier Estado. Decide a quién se le muestra el JoinCode.
+    /// </summary>
+    Task<HashSet<int>> GetRaceIdsForUserAsync(int userId, CancellationToken ct = default);
+
     void Remove(Race race);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

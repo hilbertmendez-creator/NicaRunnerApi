@@ -10,6 +10,14 @@ public interface IRaceService
     Task<RaceDto> GetByIdAsync(int raceId, CancellationToken ct = default);
 
     /// <summary>
+    /// race-judge-guard: vacía el JoinCode de las carreras que el usuario no opera (ni
+    /// admin ni juez). El código es la llave para volverse juez; quien no la tiene no
+    /// la recibe en un listado. No mira el rol: el controller no lo llama para un
+    /// Administrador.
+    /// </summary>
+    Task<List<RaceDto>> HideJoinCodesAsync(List<RaceDto> races, int viewerId, CancellationToken ct = default);
+
+    /// <summary>
     /// backoffice-user-status-toggle: "In-flight Capturista deactivation warning"
     /// (design.md D6) — pre-check de solo lectura consumido por
     /// GET /api/users/{id}/active-races, previo a desactivar un usuario.
