@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NicaRunner.Application.Auth.Dtos;
@@ -180,7 +181,11 @@ public class AuthService(
         if (user is null || user.PasswordHash is null)
             return;
 
-        user.PasswordResetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        // El token crudo sólo viaja en el correo; la base guarda su huella, igual que
+        // los refresh tokens. Quien lea la tabla Users (un respaldo, una consulta con
+        // permisos de más) no puede usar lo que encuentra para tomar una cuenta.
+        var resetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        user.PasswordResetToken = HashResetToken(resetToken);
         user.PasswordResetTokenExpiry = DateTime.UtcNow.Add(ResetTokenLifetime);
         await userRepository.SaveChangesAsync(ct);
 
@@ -193,7 +198,7 @@ public class AuthService(
 
         try
         {
-            var resetLink = EmailLinkBuilder.BuildResetUrl(frontendOptions.Value.BaseUrl, user.PasswordResetToken);
+            var resetLink = EmailLinkBuilder.BuildResetUrl(frontendOptions.Value.BaseUrl, resetToken);
             var rendered = emailTemplateRenderer.RenderPasswordReset(new PasswordResetEmailModel(
                 user.Nombre,
                 resetLink,
@@ -222,7 +227,7 @@ public class AuthService(
 
     public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default)
     {
-        var user = await userRepository.GetByResetTokenAsync(request.Token, ct);
+        var user = await userRepository.GetByResetTokenAsync(HashResetToken(request.Token), ct);
         if (user is null || user.PasswordResetTokenExpiry is null || user.PasswordResetTokenExpiry < DateTime.UtcNow)
             throw new InvalidCredentialsException("El link para restablecer la contraseña no es válido o ya expiró.");
 
@@ -298,4 +303,9 @@ public class AuthService(
             user.Role,
             user.MustChangePassword);
     }
+
+    // SHA-256 en hex minúscula: el mismo formato que RefreshTokenService.Hash. Ocupa
+    // los mismos 64 caracteres que el token crudo, así que la columna no cambia.
+    private static string HashResetToken(string rawToken) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken))).ToLowerInvariant();
 }

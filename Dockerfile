@@ -18,4 +18,9 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
+# La imagen trae el usuario sin privilegios `app` (APP_UID). Sin esto la API corre
+# como root, y una falla en el proceso tendría permiso de escritura sobre todo el
+# contenedor. 8080 no es un puerto privilegiado, así que no hace falta nada más.
+USER $APP_UID
+
 ENTRYPOINT ["dotnet", "NicaRunner.Api.dll"]

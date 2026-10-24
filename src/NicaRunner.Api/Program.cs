@@ -558,6 +558,8 @@ app.Use(async (context, next) =>
     await next();
 });
 
+app.UseMiddleware<PasswordChangeRequiredMiddleware>();
+
 app.UseRateLimiter();
 
 app.MapControllers();

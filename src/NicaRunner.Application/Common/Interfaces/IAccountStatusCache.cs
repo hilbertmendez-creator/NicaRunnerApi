@@ -8,6 +8,11 @@ public interface IAccountStatusCache
     // Un miss recurre a GetByIdAsync y guarda el resultado con TTL.
     Task<bool> IsActiveAsync(int userId, CancellationToken ct = default);
 
+    // Contraseña temporal sin cambiar: MustChangePassword y además una contraseña que
+    // cambiar. Una cuenta sólo de Google no tiene ninguna, y el formulario de cambio le
+    // pediría la actual; si contara, quedaría trabada para siempre.
+    Task<bool> IsPasswordChangePendingAsync(int userId, CancellationToken ct = default);
+
     // Debe llamarse DESPUÉS de persistir (spec.md "Explicit invalidation on deactivation").
     void Invalidate(int userId);
 }
