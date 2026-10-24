@@ -7,4 +7,8 @@ public class AccountStatusOptions
 {
     public bool EnforcePerRequest { get; set; } = true;
     public int CacheSeconds { get; set; } = 30;
+
+    // Lo mismo para el cambio obligatorio de contraseña (PasswordChangeRequiredMiddleware):
+    // en false, el panel vuelve a ser el único que lo exige.
+    public bool EnforcePasswordChange { get; set; } = true;
 }

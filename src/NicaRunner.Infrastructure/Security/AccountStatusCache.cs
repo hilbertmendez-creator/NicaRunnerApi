@@ -30,5 +30,28 @@ public class AccountStatusCache(
         return user.IsActive;
     }
 
-    public void Invalidate(int userId) => cache.Remove(CacheKey(userId));
+    // Sólo se guarda el "no": quien acaba de cambiar la contraseña sigue con el mismo
+    // access token, y un "sí" guardado lo dejaría rebotando hasta que venza el TTL. El "sí"
+    // va a la BD cada vez, pero lo ve sólo quien está en la pantalla de cambio.
+    public async Task<bool> IsPasswordChangePendingAsync(int userId, CancellationToken ct = default)
+    {
+        if (cache.TryGetValue(PasswordChangeCacheKey(userId), out bool _))
+            return false;
+
+        var user = await userRepository.GetByIdAsync(userId, ct)
+            ?? throw new NotFoundException($"No existe el usuario con id {userId}.");
+
+        var pending = user.MustChangePassword && user.PasswordHash is not null;
+        if (!pending)
+            cache.Set(PasswordChangeCacheKey(userId), false, TimeSpan.FromSeconds(options.Value.CacheSeconds));
+        return pending;
+    }
+
+    public void Invalidate(int userId)
+    {
+        cache.Remove(CacheKey(userId));
+        cache.Remove(PasswordChangeCacheKey(userId));
+    }
+
+    private static string PasswordChangeCacheKey(int userId) => $"password-change:{userId}";
 }
