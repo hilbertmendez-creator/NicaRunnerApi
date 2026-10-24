@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -30,6 +33,31 @@ public class AuthServicePasswordResetTests
             _refresh.Object, [_emailSender.Object], _emailRenderer, _frontendOptions,
             new AliasAssigner(_users.Object), Options.Create(new LockoutOptions()),
             NullLogger<AuthService>.Instance);
+    }
+
+    // Lo que la base guarda en vez del token: SHA-256 en hex minúscula. Se calcula
+    // acá por separado para fijar el formato, no se reutiliza el del servicio.
+    private static string Huella(string token) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token))).ToLowerInvariant();
+
+    // El token crudo sólo viaja en el correo. Si la base guardara el mismo valor que
+    // va en el enlace, quien leyera la tabla Users podría tomar la cuenta.
+    [Fact]
+    public async Task ForgotPassword_GuardaLaHuellaYMandaElTokenCrudo()
+    {
+        var user = new User { Id = 1, Email = "a@b.com", Provider = AuthProvider.Local, PasswordHash = "hash" };
+        _users.Setup(u => u.GetByEmailAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        string? texto = null;
+        _emailSender.Setup(s => s.SendAsync("a@b.com", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, string?, string?, CancellationToken>((_, t, _, _, _) => texto = t)
+            .ReturnsAsync(new NotificationSendResult(true, null));
+
+        await BuildService().ForgotPasswordAsync(new ForgotPasswordRequest("a@b.com"));
+
+        var enviado = Regex.Match(texto!, @"reset-password\?token=([0-9A-Fa-f]{64})").Groups[1].Value;
+        Assert.NotEmpty(enviado);
+        Assert.NotEqual(enviado, user.PasswordResetToken);
+        Assert.Equal(Huella(enviado), user.PasswordResetToken);
     }
 
     [Fact]
@@ -87,7 +115,7 @@ public class AuthServicePasswordResetTests
             PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(10),
             MustChangePassword = true
         };
-        _users.Setup(u => u.GetByResetTokenAsync("token-123", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _users.Setup(u => u.GetByResetTokenAsync(Huella("token-123"), It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _passwordHasher.Setup(p => p.Hash("nueva-segura")).Returns("hash-nueva");
 
         await BuildService().ResetPasswordAsync(new ResetPasswordRequest("token-123", "nueva-segura"));
@@ -115,7 +143,7 @@ public class AuthServicePasswordResetTests
             LockedUntilUtc = DateTime.UtcNow.AddMinutes(15),
             LastFailedLoginUtc = DateTime.UtcNow.AddMinutes(-1)
         };
-        _users.Setup(u => u.GetByResetTokenAsync("token-123", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _users.Setup(u => u.GetByResetTokenAsync(Huella("token-123"), It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _passwordHasher.Setup(p => p.Hash("nueva-segura")).Returns("hash-nueva");
 
         await BuildService().ResetPasswordAsync(new ResetPasswordRequest("token-123", "nueva-segura"));
@@ -143,7 +171,7 @@ public class AuthServicePasswordResetTests
             FailedLoginCount = 5,
             LockedUntilUtc = DateTime.UtcNow.AddMinutes(15)
         };
-        _users.Setup(u => u.GetByResetTokenAsync("token-123", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _users.Setup(u => u.GetByResetTokenAsync(Huella("token-123"), It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _users.Setup(u => u.GetByEmailOrUsernameAsync("a@b.com", It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _passwordHasher.Setup(p => p.Hash("nueva-segura")).Returns("hash-nueva");
         _passwordHasher.Setup(p => p.Verify("nueva-segura", "hash-nueva")).Returns(true);
@@ -170,7 +198,7 @@ public class AuthServicePasswordResetTests
             PasswordResetToken = "token-123",
             PasswordResetTokenExpiry = DateTime.UtcNow.AddMinutes(-1)
         };
-        _users.Setup(u => u.GetByResetTokenAsync("token-123", It.IsAny<CancellationToken>())).ReturnsAsync(user);
+        _users.Setup(u => u.GetByResetTokenAsync(Huella("token-123"), It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => BuildService().ResetPasswordAsync(new ResetPasswordRequest("token-123", "nueva-segura")));
@@ -181,7 +209,7 @@ public class AuthServicePasswordResetTests
     [Fact]
     public async Task ResetPassword_TokenInexistente_LanzaInvalidCredentials()
     {
-        _users.Setup(u => u.GetByResetTokenAsync("no-existe", It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
+        _users.Setup(u => u.GetByResetTokenAsync(Huella("no-existe"), It.IsAny<CancellationToken>())).ReturnsAsync((User?)null);
 
         await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => BuildService().ResetPasswordAsync(new ResetPasswordRequest("no-existe", "nueva-segura")));
