@@ -12,6 +12,7 @@ namespace NicaRunner.Tests;
 
 // race-judge-guard -- contra la app real: lo que se prueba es que el filtro esté puesto
 // en cada endpoint que un Capturista alcanza, y eso sólo lo confirma el pipeline completo.
+[Collection(HostRealCollection.Name)]
 public sealed class RaceJudgeGuardIntegrationTests : IAsyncLifetime
 {
     private const string Codigo = "ABC234";

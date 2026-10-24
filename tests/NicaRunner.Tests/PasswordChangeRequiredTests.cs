@@ -16,6 +16,7 @@ namespace NicaRunner.Tests;
 
 // Contra la app real: lo que se prueba es por dónde llega el token (cookie del panel o
 // header de la app), y eso sólo lo decide el pipeline completo.
+[Collection(HostRealCollection.Name)]
 public class PasswordChangeRequiredTests
 {
     private static readonly JwtSettings TestJwtSettings = new()

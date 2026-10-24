@@ -11,6 +11,7 @@ namespace NicaRunner.Tests;
 // backoffice-user-status-toggle PR3, session-revocation spec "Per-request active-status
 // check" -- contra la app real, no un mock: solo el pipeline completo confirma el código
 // de estado HTTP que JwtBearerHandler escribe tras context.Fail().
+[Collection(HostRealCollection.Name)]
 public class AccountStatusIntegrationTests
 {
     private static readonly JwtSettings TestJwtSettings = new()

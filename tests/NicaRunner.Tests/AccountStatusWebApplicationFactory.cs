@@ -9,6 +9,16 @@ using NicaRunner.Infrastructure.Data;
 
 namespace NicaRunner.Tests;
 
+// Program.cs reemplaza el Log.Logger estático de Serilog y lo congela al armar el host, y
+// esta factory le pasa la configuración por variables de entorno del proceso: dos hosts que
+// arrancan a la vez desde clases distintas se pisan ("The logger is already frozen"). Toda
+// clase que arranque el host real va en esta colección, que xUnit corre en serie.
+[CollectionDefinition(Name)]
+public class HostRealCollection
+{
+    public const string Name = "Host real";
+}
+
 // backoffice-user-status-toggle PR3 (design.md D1): arranca Program.cs real (pipeline de
 // JwtBearerEvents incluido) contra una Sqlite en memoria propia, para probar el código de
 // estado HTTP que JwtBearerHandler escribe tras context.Fail() -- un test unitario
