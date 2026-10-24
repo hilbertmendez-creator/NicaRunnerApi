@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NicaRunner.Domain.Entities;
 using NicaRunner.Infrastructure.Data;
 using NicaRunner.Infrastructure.Repositories;
@@ -18,7 +19,13 @@ public class RaceRepositoryActiveForUserTests
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         connection.Open();
-        using var db = new NicaRunnerDbContext(new DbContextOptionsBuilder<NicaRunnerDbContext>().UseSqlite(connection).Options);
+        // EF Core 9+: las migraciones son de Postgres y el modelo que EF arma para Sqlite
+        // nunca coincide con su snapshot, así que Migrate() lo trataría como error. Acá
+        // se prueba que apliquen, no que coincidan.
+        using var db = new NicaRunnerDbContext(new DbContextOptionsBuilder<NicaRunnerDbContext>()
+            .UseSqlite(connection)
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
+            .Options);
         db.Database.Migrate();
 
         var admin = new User { Email = "admin@x.com", Nombre = "Admin", Role = UserRole.Administrador };
