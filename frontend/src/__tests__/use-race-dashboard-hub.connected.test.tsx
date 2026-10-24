@@ -23,12 +23,16 @@ const mockConnection = {
 }
 
 vi.mock('@microsoft/signalr', () => ({
-  HubConnectionBuilder: vi.fn().mockImplementation(() => ({
-    withUrl: vi.fn().mockReturnThis(),
-    withAutomaticReconnect: vi.fn().mockReturnThis(),
-    configureLogging: vi.fn().mockReturnThis(),
-    build: vi.fn().mockReturnValue(mockConnection),
-  })),
+  // `function` y no flecha: el hook hace `new HubConnectionBuilder()`, y desde
+  // vitest 4 un mock con implementación flecha no se puede construir.
+  HubConnectionBuilder: vi.fn().mockImplementation(function () {
+    return {
+      withUrl: vi.fn().mockReturnThis(),
+      withAutomaticReconnect: vi.fn().mockReturnThis(),
+      configureLogging: vi.fn().mockReturnThis(),
+      build: vi.fn().mockReturnValue(mockConnection),
+    }
+  }),
   HubConnectionState: { Connected: 'Connected' },
   LogLevel: { Warning: 3 },
 }))
